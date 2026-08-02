@@ -60,6 +60,9 @@
         <div class="text-sm font-bold text-navy-800 animate-pulse">Đang đồng bộ dữ liệu...</div>
     </div>
 
+    <!-- KHUNG CHỨA THÔNG BẢO NỔI (TOAST CONTAINER) -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[99999] flex flex-col space-y-2 pointer-events-none"></div>
+
     <!-- MÀN HÌNH ĐĂNG NHẬP -->
     <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -168,7 +171,7 @@
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5"><label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-regular fa-clock text-sky-600"></i> Thời gian Tạo</label><input type="datetime-local" id="orderDateInput" class="w-full text-[16px] md:text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 outline-none text-slate-700 bg-white"></div>
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-solid fa-user-tag text-sky-600"></i> Khách Hàng</label>
-                            <!-- Đã đổi vị trí: Tên đứng trước, SĐT đứng sau -->
+                            <!-- Tên trước, SĐT sau theo yêu cầu -->
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="text" id="custName" placeholder="Tên *" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
                                 <input type="text" id="custPhone" placeholder="SĐT *" onblur="autoFillCustomer(this.value)" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
@@ -203,7 +206,7 @@
                             <div class="flex justify-between items-center text-slate-600"><span>Giảm giá:</span><div class="flex items-center gap-1 w-28"><input type="number" id="discountInput" value="0" min="0" oninput="calculateFinalTotal()" class="w-full text-right text-[16px] md:text-sm px-2 py-1 border border-slate-300 focus:border-sky-500 rounded bg-white outline-none">đ</div></div>
                             <div class="flex justify-between text-sm md:text-base font-bold text-navy-800 pt-2 border-t border-slate-200"><span>TỔNG TIỀN:</span><span id="totalDisplay" class="text-sky-700 text-lg md:text-xl">0 đ</span></div>
                         </div>
-                        <button onclick="processOrder()" id="saveOrderBtn" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md mt-2 active:scale-[0.98]"><i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG</button>
+                        <button onclick="processOrder()" id="saveOrderBtn" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md md:mt-2 active:scale-[0.98]"><i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG</button>
                     </div>
                 </div>
 
@@ -240,7 +243,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -428,7 +431,7 @@
     <!-- SCRIPT CHÍNH -->
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
@@ -877,7 +880,7 @@
         function processOrder() {
             const isUploading = state.uploadedImages.some(img => img.status && img.status === 'uploading');
             if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
-            // Đã đổi vị trí lấy dữ liệu: Tên trước, SĐT sau
+            // Lấy Tên trước, SĐT sau
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const dateStr = document.getElementById('orderDateInput').value;
@@ -921,7 +924,7 @@
                 
                 if (showAfterUpload) actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
-                // Nút Nhận Tiền nằm dưới số tiền ở cột Tổng Tiền
+                // Nút Nhận Tiền nằm bên dưới số tiền trong cột Tổng Tiền
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) {
                     totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
@@ -971,7 +974,7 @@
                 // Chuyển thẳng sang Đã trả khách và tính doanh thu ngay lập tức
                 o.status = 'DELIVERED';
                 
-                // Đóng popup mượt mà, cập nhật kho đơn và báo cáo mà không hiện alert thừa
+                // Đóng Modal mượt mà, cập nhật bảng và tính toán ngay không hiện alert thừa
                 closeCollectPaymentModal();
                 renderOrdersTable();
                 renderCustomersTable();
