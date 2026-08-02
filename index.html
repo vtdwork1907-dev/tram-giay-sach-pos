@@ -529,6 +529,27 @@
             }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
+        // QUẢN LÝ THÔNG BÁO THÔNG MINH (TRONG APP VS NGOÀI MÀN HÌNH)
+        function handleOrderNotification(order, isNew = true) {
+            const svcsStr = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+            const title = isNew ? "📦 TẠO ĐƠN MỚI" : "✅ ĐÃ THU TIỀN";
+            const detail = `Khách: ${order.customer.name} - ${order.total.toLocaleString()}đ\nSĐT: ${order.customer.phone}\nDịch vụ: ${svcsStr}`;
+
+            if (isNew) {
+                if (lastNotifiedOrderId === order.id) return;
+                lastNotifiedOrderId = order.id;
+            } else {
+                if (lastPaidNotifiedId === order.id) return;
+                lastPaidNotifiedId = order.id;
+            }
+
+            if (document.visibilityState === 'visible') {
+                showNotification(title, detail);
+            } else {
+                sendNtfyAlert(`${title}: ${order.customer.name} - ${order.total.toLocaleString()}đ`, `SĐT: ${order.customer.phone} | Dịch vụ: ${svcsStr}`);
+            }
+        }
+
         // TÍNH NĂNG XEM ẢNH FULL MÀN HÌNH CHO KHÁCH
         function openImageViewer(url) {
             const modal = document.getElementById('imageViewerModal');
@@ -1147,13 +1168,11 @@
             
             const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             
-            // Đánh dấu order này đã được thiết bị này gọi thông báo để tránh trùng lặp
+            // Đánh dấu để tránh Realtime gọi lại NTFY
             lastNotifiedOrderId = newOrder.id;
             
-            // 1. Luôn hiện popup thông báo trong ứng dụng
+            // Gọi NTFY cho máy tạo đơn
             showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
-            
-            // 2. Gửi lệnh đẩy 1 lần duy nhất lên máy chủ NTFY
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
@@ -1238,13 +1257,10 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
-                // Đánh dấu order này đã được thiết bị này gọi thông báo để tránh trùng lặp
+                // Đánh dấu thiết bị này đã gọi thông báo NTFY
                 lastPaidNotifiedId = o.id;
                 
-                // 1. Luôn hiện popup thông báo trong ứng dụng
                 showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
-                
-                // 2. Chắc chắn gửi 1 lệnh duy nhất lên máy chủ NTFY
                 sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
                 
                 closeCollectPaymentModal();
@@ -1263,7 +1279,6 @@
                 const oldStatus = o.status;
                 o.status = st; 
                 
-                // Nếu đổi sang trạng thái Đã thu tiền (Trả khách) bằng thanh select box
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
                     lastPaidNotifiedId = o.id;
                     showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
@@ -1276,6 +1291,31 @@
                 updateReportMetrics(); 
                 renderDashboard(); 
             } 
+        }
+
+        function deleteOrderImage(orderId, type, index) {
+            if (!confirm("Bạn có chắc chắn muốn xóa bức ảnh này khỏi đơn hàng không?")) return;
+            const o = state.orders.find(x => x.id === orderId);
+            if (!o) return;
+            
+            let imgUrl = null;
+            if (type === 'before' && o.images && o.images[index]) {
+                imgUrl = o.images[index];
+                o.images.splice(index, 1);
+            } else if (type === 'after' && o.imagesAfter && o.imagesAfter[index]) {
+                imgUrl = o.imagesAfter[index];
+                o.imagesAfter.splice(index, 1);
+            }
+            
+            // Xóa ảnh trên Cloudflare R2 để tiết kiệm dung lượng
+            if (imgUrl && imgUrl.startsWith('http')) {
+                deleteFileFromR2(imgUrl);
+            }
+            
+            saveState().then(() => {
+                renderOrdersTable();
+                openComparison(orderId); // Tải lại modal xem ảnh ngay lập tức
+            });
         }
         
         function deleteOrder(id) {
@@ -1306,7 +1346,7 @@
                     const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
                     
                     html += `
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4 relative">
                         <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-between">
                             <span>Cặp góc chụp số #${i + 1}</span>
                             <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
@@ -1315,15 +1355,21 @@
                             <!-- Trước (Before) -->
                             <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                 <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
-                                <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px]">
-                                    ${beforeSrc ? `<img src="${beforeSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh trước</div>`}
+                                <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">
+                                    ${beforeSrc ? `
+                                        <img src="${beforeSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">
+                                        <button onclick="deleteOrderImage('${o.id}', 'before', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh trước</div>`}
                                 </div>
                             </div>
                             <!-- Sau (After) -->
                             <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
                                 <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
-                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px]">
-                                    ${afterSrc ? `<img src="${afterSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh sau</div>`}
+                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">
+                                    ${afterSrc ? `
+                                        <img src="${afterSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">
+                                        <button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh sau</div>`}
                                 </div>
                             </div>
                         </div>
