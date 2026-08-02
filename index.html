@@ -4,15 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TRẠM GIÀY SẠCH - Hệ Thống POS</title>
-    <!-- 1. Icon hiển thị trên thanh tab trình duyệt (Favicon) -->
-    <link rel="icon" type="image/png" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-
-    <!-- 2. Icon hiển thị trên màn hình chính Điện thoại (iPhone / Android) -->
-    <link rel="apple-touch-icon" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-    <meta name="apple-mobile-web-app-title" content="Trạm Giày Sạch">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -20,9 +11,9 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- SUPABASE -->
+    <!-- === THÊM THƯ VIỆN SUPABASE VÀ AWS SDK (CHO R2) === -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- AWS SDK v2 cho Cloudflare R2 -->
+    <!-- Sử dụng thư viện AWS SDK S3 thông qua unpkg (trình duyệt) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
@@ -40,10 +31,12 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
+        /* Loading Overlay Overlay */
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
+        /* Cập nhật style cho ảnh preview */
         .image-preview-item { position: relative; width: 3.5rem; height: 3.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
         .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
@@ -56,12 +49,15 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800 relative">
 
+    <!-- Loading Spinner -->
     <div id="globalLoading">
         <div class="spinner mb-3"></div>
         <div class="text-sm font-bold text-navy-800 animate-pulse">Đang đồng bộ dữ liệu...</div>
     </div>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <!-- ========================================= -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP (AUTH SCREEN) -->
+    <!-- ========================================= -->
     <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -81,6 +77,7 @@
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
                     <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
                 </div>
+                <!-- Thêm Ghi nhớ đăng nhập -->
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
                     <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
@@ -91,7 +88,9 @@
         </div>
     </div>
 
-    <!-- GIAO DIỆN CHÍNH -->
+    <!-- ========================================= -->
+    <!-- PHẦN GIAO DIỆN HỆ THỐNG CHÍNH -->
+    <!-- ========================================= -->
     <header class="bg-navy-800 text-white px-3 md:px-4 pb-2 pt-12 md:pt-2 flex items-center justify-between shadow-md z-20 shrink-0">
         <div class="flex items-center space-x-2 md:space-x-3">
             <div id="logoContainer" class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm overflow-hidden shrink-0"><i id="defaultLogoIcon" class="fa-solid fa-shoe-prints text-navy-800 text-sm md:text-xl"></i><img id="customLogoImg" src="" class="hidden w-full h-full object-cover rounded-full"></div>
@@ -404,23 +403,28 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // === CẤU HÌNH CLOUDFLARE R2 ===
-        const R2_CONFIG = {
-            endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
-            accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
-            secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
-            bucketName: "tram-giay-sach-media",
-            publicDomain: "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev"
-        };
-        
-        // Khởi tạo S3 Client cho R2 (Sử dụng AWS SDK)
-        const s3Client = new aws_sdk_client_s3.S3Client({
-            region: "auto",
-            endpoint: R2_CONFIG.endpoint,
-            credentials: {
-                accessKeyId: R2_CONFIG.accessKeyId,
-                secretAccessKey: R2_CONFIG.secretAccessKey,
+        const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
+        const R2_BUCKET_NAME = "tram-giay-sach-media";
+        let s3Instance = null;
+
+        function getS3Client() {
+            if (!s3Instance) {
+                if (typeof AWS === 'undefined') {
+                    throw new Error("Thư viện AWS SDK chưa tải xong. Vui lòng thử lại sau giây lát.");
+                }
+                AWS.config.update({
+                    accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
+                    secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
+                    region: "auto"
+                });
+                s3Instance = new AWS.S3({
+                    endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
+                    s3ForcePathStyle: true,
+                    signatureVersion: 'v4'
+                });
             }
-        });
+            return s3Instance;
+        }
 
         // Hàm tiện ích để khôi phục tab đã chọn từ localStorage
         function restoreLastTab() {
@@ -479,8 +483,6 @@
             role: null
         };
 
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
-
         // Hàm cập nhật toàn bộ dữ liệu lên Supabase
         async function saveState() {
             const payload = {
@@ -508,38 +510,38 @@
         }
         
         // ================= HÀM UPLOAD ẢNH LÊN CLOUDFLARE R2 =================
-        async function uploadFileToR2(file) {
+        function uploadFileToR2(file) {
             return new Promise((resolve, reject) => {
-                // Đọc file dưới dạng ArrayBuffer để upload
-                const reader = new FileReader();
-                reader.readAsArrayBuffer(file);
-                reader.onload = async (e) => {
-                    const fileBuffer = e.target.result;
-                    // Tạo tên file độc nhất
-                    const fileExtension = file.name.split('.').pop();
-                    const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-                    
-                    const uploadParams = {
-                        Bucket: R2_CONFIG.bucketName,
-                        Key: uniqueFileName,
-                        Body: fileBuffer,
-                        ContentType: file.type,
-                    };
-
-                    try {
-                        // Upload lên R2 dùng AWS SDK PutObjectCommand
-                        const command = new aws_sdk_client_s3.PutObjectCommand(uploadParams);
-                        await s3Client.send(command);
+                try {
+                    const s3 = getS3Client();
+                    const reader = new FileReader();
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = (e) => {
+                        const fileBuffer = e.target.result;
+                        const fileExtension = file.name.split('.').pop();
+                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
                         
-                        // Trả về URL công khai
-                        const publicUrl = `${R2_CONFIG.publicDomain}/${uniqueFileName}`;
-                        resolve(publicUrl);
-                    } catch (error) {
-                        console.error("Lỗi upload lên R2:", error);
-                        reject(error);
-                    }
-                };
-                reader.onerror = (err) => reject(err);
+                        const params = {
+                            Bucket: R2_BUCKET_NAME,
+                            Key: uniqueFileName,
+                            Body: fileBuffer,
+                            ContentType: file.type
+                        };
+
+                        s3.upload(params, function(err, data) {
+                            if (err) {
+                                console.error("Lỗi upload R2:", err);
+                                reject(err);
+                            } else {
+                                const publicUrl = `${R2_PUBLIC_DOMAIN}/${uniqueFileName}`;
+                                resolve(publicUrl);
+                            }
+                        });
+                    };
+                    reader.onerror = (err) => reject(err);
+                } catch(err) {
+                    reject(err);
+                }
             });
         }
         
@@ -577,6 +579,8 @@
             }
         }
 
+        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
+
         function handleLogin() {
             const user = document.getElementById('loginUsername').value.trim();
             const pass = document.getElementById('loginPassword').value.trim();
@@ -593,7 +597,8 @@
                 if (remember) {
                     localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString());
                 } else {
-                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại
+                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại (sẽ bị xóa khi đóng tab nếu xử lý ở sessionStorage)
+                    // Hoặc lưu thời gian hết hạn ngắn. Ở đây ta coi như nhớ tạm 1 ngày
                     localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
                 }
                 
@@ -623,7 +628,7 @@
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
             
-            restoreLastTab(); // Sử dụng hàm khôi phục tab
+            restoreLastTab(); // Sử dụng hàm khôi phục tab thay vì cứng nhắc về dashboard/pos
         }
 
         function renderSettingsUsersTable() {
@@ -631,7 +636,7 @@
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
                     <td class="p-3 text-sky-700 font-mono">${u.username}</td>
-                    <td class="p-3 font-mono text-slate-500">***</td>
+                    <td class="p-3 font-mono text-slate-500">${u.role==='owner'?'***':'***'}</td>
                     <td class="p-3">
                         <span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">
                             ${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}
@@ -768,12 +773,15 @@
 
         async function uploadStoreLogo(e) {
             const file = e.target.files[0]; if(!file) return;
+            
+            // Hiện trạng thái đang tải
             const btnText = document.getElementById('uploadLogoBtnText');
             const oldText = btnText.innerText;
             btnText.innerText = "Đang tải...";
             document.getElementById('logoInput').disabled = true;
             
             try {
+                // Upload thẳng logo lên R2 (không cần base64 nén vào database nữa)
                 const imageUrl = await uploadFileToR2(file);
                 state.logo = imageUrl;
                 await saveState(); 
@@ -877,6 +885,7 @@
                 saveState();
                 renderServicesGrid();
             }
+        }</td><td class="p-3 text-[10px] text-sky-700">${s.category}</td><td class="p-3 text-xs">${s.defaultPrice.toLocaleString()} đ</td><td class="p-3 text-center"><i class="fa-solid ${s.icon}"></i></td><td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
         }
         function addNewService() {
             const name = document.getElementById('addSvcName').value.trim(); const price = parseInt(document.getElementById('addSvcPrice').value) || 0;
@@ -924,20 +933,23 @@
             document.getElementById('cartOrderStatus').value = 'RECEIVED';
             setCurrentDateTimeForOrder(); renderCart(); renderPreviewImages();
         }
-
+        
+        // ================= XỬ LÝ UPLOAD ẢNH ĐƠN HÀNG LÊN CLOUDFLARE R2 =================
         async function handleImageUpload(e, isCamera) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
             
+            // Khóa nút lưu đơn trong lúc upload
             const saveBtn = document.getElementById('saveOrderBtn');
             saveBtn.disabled = true;
             saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
             for (const file of files) {
+                // Tạo một object ảnh tạm với trạng thái uploading
                 const imgId = Date.now() + Math.random().toString(36).substring(7);
                 const tempImage = {
                     id: imgId,
-                    url: URL.createObjectURL(file),
+                    url: URL.createObjectURL(file), // Preview ngay bằng blob nội bộ
                     status: 'uploading',
                     r2Url: null
                 };
@@ -946,7 +958,10 @@
                 renderPreviewImages();
                 
                 try {
+                    // Upload lên R2
                     const r2Url = await uploadFileToR2(file);
+                    
+                    // Cập nhật URL thật sau khi up xong
                     const targetImg = state.uploadedImages.find(img => img.id === imgId);
                     if(targetImg) {
                         targetImg.status = 'done';
@@ -956,13 +971,16 @@
                 } catch (err) {
                     console.error("Lỗi tải ảnh:", err);
                     alert(`Không thể tải ảnh ${file.name} lên server`);
+                    // Xóa ảnh lỗi khỏi danh sách
                     state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId);
                     renderPreviewImages();
                 }
             }
             
+            // Mở lại nút lưu
             saveBtn.disabled = false;
             saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            // Reset input file
             e.target.value = '';
         }
 
@@ -998,6 +1016,7 @@
         }
 
         function processOrder() {
+            // Kiểm tra xem có ảnh nào đang upload chưa xong không
             const isUploading = state.uploadedImages.some(img => img.status && img.status === 'uploading');
             if(isUploading) {
                 return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
@@ -1008,10 +1027,11 @@
             if(!phone || !name || state.cart.length === 0) return alert("Vui lòng nhập tên, SĐT và chọn dịch vụ!");
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0;
             
+            // Lọc ra các URL R2 chuẩn từ danh sách uploadedImages
             const finalImageUrls = state.uploadedImages.map(img => {
-                if(typeof img === 'string') return img;
-                return img.r2Url;
-            }).filter(url => url !== null);
+                if(typeof img === 'string') return img; // Chuỗi base64 cũ (nếu có)
+                return img.r2Url; // Link R2 mới
+            }).filter(url => url !== null); // Loại bỏ null
             
             state.orders.unshift({
                 id: 'DON-' + Math.floor(1000 + Math.random() * 9000), date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
@@ -1110,7 +1130,8 @@
                 pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']; pieChartInst.update();
             }
         }
-
+    </script>
+<script>
         function updateExpenseCharts() {
             const now = new Date();
             const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1188,6 +1209,6 @@
                 expReportPieInst.update();
             }
         }
-    </script>
+</script>
 </body>
 </html>
