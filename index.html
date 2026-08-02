@@ -242,7 +242,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -486,12 +486,12 @@
             }
         }
 
-        // 2. HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY KHÔNG LỖI CORS
-        function sendNtfyAlert(title, message) {
+        // 2. HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY (ĐÃ ĐƯA TÊN KHÁCH & SỐ TIỀN LÊN DÒNG ĐẦU TIÊN)
+        function sendNtfyAlert(coreInfo, detailInfo) {
             const topicName = 'Tramgiaysach_news'; 
             
-            // Gộp tiêu đề và nội dung vào 1 cục text duy nhất để gửi dạng Simple Request
-            const fullMessage = `${title}\n------------------\n${message}`;
+            // Dòng đầu tiên (coreInfo) sẽ hiển thị cực kỳ nổi bật trên popup khóa màn hình của iOS
+            const fullMessage = `${coreInfo}\n${detailInfo}`;
             
             fetch(`https://ntfy.sh/${topicName}`, {
                 method: 'POST',
@@ -702,16 +702,15 @@
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData) {
-                    // Logic nhận thông báo chéo giữa các thiết bị đang MỞ APP
                     if (newData.orders && state.orders) {
                         if (newData.orders.length > state.orders.length) {
                             const newO = newData.orders[0];
                             const svcs = newO.items.map(i => i.name).join(', ');
-                            showNotification("📦 CÓ ĐƠN HÀNG MỚI", `Khách: ${newO.customer.name}\nDịch vụ: ${svcs}\nTổng: ${newO.total.toLocaleString()}đ`);
+                            showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
                         } else {
                             for (let i = 0; i < Math.min(5, newData.orders.length); i++) {
                                 if (newData.orders[i].status === 'DELIVERED' && state.orders[i] && state.orders[i].status !== 'DELIVERED') {
-                                    showNotification("✅ ĐÃ NHẬN THANH TOÁN", `Khách hàng: ${newData.orders[i].customer.name}\nSố tiền: ${newData.orders[i].total.toLocaleString()}đ`);
+                                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newData.orders[i].customer.name} - ${newData.orders[i].total.toLocaleString()}đ`);
                                 }
                             }
                         }
@@ -958,13 +957,13 @@
             };
             state.orders.unshift(newOrder);
             
-            const svcsStr = state.cart.map(i => i.name).join(', ');
+            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             
-            // 1. Hiện thông báo IN-APP cho người vừa thao tác
-            showNotification("📦 TẠO ĐƠN THÀNH CÔNG", `Khách hàng: ${name}\nDịch vụ: ${svcsStr}\nTổng tiền: ${newOrder.total.toLocaleString()}đ`);
+            // 1. In-App Notification
+            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
             
-            // 2. Bắn tín hiệu sang NTFY để điện thoại từ xa kêu
-            sendNtfyAlert("📦 TẠO ĐƠN MỚI", `Khách hàng: ${name}\nDịch vụ: ${svcsStr}\nTổng tiền: ${newOrder.total.toLocaleString()}đ`);
+            // 2. NTFY Push Notification (Đặt tên khách & số tiền ngay dòng đầu để không bị cắt xén)
+            sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `Mã đơn: ${newOrder.id} | SĐT: ${phone}\nDịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
                 clearCart(); 
@@ -1048,11 +1047,11 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
-                // 1. IN-APP Notification
+                // 1. In-App Notification
                 showNotification("✅ THANH TOÁN THÀNH CÔNG", `Khách hàng: ${o.customer.name}\nSố tiền: ${o.total.toLocaleString()}đ`);
                 
-                // 2. NTFY Push Notification
-                sendNtfyAlert("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name}\nMã đơn: ${o.id}\nSố tiền: ${o.total.toLocaleString()}đ`);
+                // 2. NTFY Push Notification (Đặt tên khách & số tiền ngay dòng đầu)
+                sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `Mã đơn: ${o.id} | Trạng thái: Đã trả khách`);
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
