@@ -171,7 +171,6 @@
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5"><label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-regular fa-clock text-sky-600"></i> Thời gian Tạo</label><input type="datetime-local" id="orderDateInput" class="w-full text-[16px] md:text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 outline-none text-slate-700 bg-white"></div>
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-solid fa-user-tag text-sky-600"></i> Khách Hàng</label>
-                            <!-- Tên trước, SĐT sau -->
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="text" id="custName" placeholder="Tên *" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
                                 <input type="text" id="custPhone" placeholder="SĐT *" onblur="autoFillCustomer(this.value)" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
@@ -206,7 +205,7 @@
                             <div class="flex justify-between items-center text-slate-600"><span>Giảm giá:</span><div class="flex items-center gap-1 w-28"><input type="number" id="discountInput" value="0" min="0" oninput="calculateFinalTotal()" class="w-full text-right text-[16px] md:text-sm px-2 py-1 border border-slate-300 focus:border-sky-500 rounded bg-white outline-none">đ</div></div>
                             <div class="flex justify-between text-sm md:text-base font-bold text-navy-800 pt-2 border-t border-slate-200"><span>TỔNG TIỀN:</span><span id="totalDisplay" class="text-sky-700 text-lg md:text-xl">0 đ</span></div>
                         </div>
-                        <button onclick="processOrder()" id="saveOrderBtn" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md mt-2 active:scale-[0.98]"><i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG</button>
+                        <button onclick="processOrder()" id="saveOrderBtn" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md md:mt-2 active:scale-[0.98]"><i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG</button>
                     </div>
                 </div>
 
@@ -243,7 +242,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -315,6 +314,8 @@
             <!-- TAB: CÀI ĐẶT -->
             <section id="tab-settings" class="tab-content hidden space-y-4 pb-16">
                 
+                <!-- NÚT BẬT THÔNG BÁO PUSH ĐÃ BỊ XÓA THEO YÊU CẦU -->
+
                 <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50"><h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Phân Quyền Tài Khoản Nhân Viên</h2><p class="text-[10px] text-sky-700 mt-1">Quản lý có thể xem đơn và nhập chi phí. Nhân viên chỉ được tạo đơn hàng.</p></div>
                     <div class="p-3 md:p-4 flex flex-col md:flex-row flex-wrap gap-2 md:items-end">
@@ -470,8 +471,9 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG APP (CHỈ TRONG ỨNG DỤNG, BÊN DƯỚI DYNAMIC ISLAND)
+        // HÀM HIỂN THỊ THÔNG BÁO CHỈ NỔI TRONG ỨNG DỤNG, TRÁNH DYNAMIC ISLAND CỦA IPHONE
         function showNotification(title, body) {
+            // Khi mở hàm này chỉ luôn hiện thông báo Toast trong DOM
             const container = document.getElementById('toastContainer');
             if (container) {
                 const toast = document.createElement('div');
@@ -486,7 +488,7 @@
                 setTimeout(() => {
                     toast.classList.add('translate-y-[-20px]', 'opacity-0');
                     setTimeout(() => toast.remove(), 300);
-                }, 5000);
+                }, 5000); // Tự động đóng sau 5 giây
             }
         }
 
@@ -535,15 +537,18 @@
 
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
 
+        // Lưu trữ kép: LocalStorage + Supabase để đảm bảo không bao giờ mất đơn khi refresh
         async function saveState() {
             const payload = {
                 users: state.users, logo: state.logo || '', services: state.services,
                 orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
             };
+            // Lưu ngay vào bộ nhớ trong (LocalStorage) trước tiên
             try {
                 localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(payload));
-            } catch (e) {}
+            } catch (e) { console.error("Lỗi lưu LocalStorage:", e); }
 
+            // Sau đó đồng bộ ngầm lên Supabase
             try {
                 const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
                 if (error) {
@@ -551,7 +556,7 @@
                        await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
                     }
                 }
-            } catch (err) {}
+            } catch (err) { console.error("Lỗi đồng bộ Supabase ngầm:", err); }
         }
         
         function uploadFileToR2(file) {
@@ -663,6 +668,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
             
+            // 1. Khôi phục nhanh từ LocalStorage (bộ nhớ trong) trước để lập tức có dữ liệu
             try {
                 const localData = localStorage.getItem('TRAM_LOCAL_STATE');
                 if (localData) {
@@ -674,8 +680,9 @@
                     state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
                     state.logo = parsed.logo || null;
                 }
-            } catch (e) {}
+            } catch (e) { console.error("Lỗi đọc LocalStorage:", e); }
 
+            // 2. Đồng bộ ngầm từ Supabase
             try {
                 const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
                 if (result && result.data) {
@@ -685,7 +692,7 @@
                     state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
                     localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
                 } else if (error && error.code === 'PGRST116') { await saveState(); }
-            } catch (err) {}
+            } catch(err) { console.warn("Dùng chế độ offline từ bộ nhớ trong."); }
 
             renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
             renderSettingsServicesTable(); renderSettingsUsersTable();
@@ -697,11 +704,20 @@
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData) {
+                    // Logic nhận thông báo chéo giữa các thiết bị đang mở App
                     if (newData.orders && state.orders) {
+                        // Nhận diện đơn hàng mới
                         if (newData.orders.length > state.orders.length) {
                             const newO = newData.orders[0];
                             const svcs = newO.items.map(i => i.name).join(', ');
-                            showNotification("📦 CÓ ĐƠN HÀNG MỚI", `Khách: ${newO.customer.name} | Dịch vụ: ${svcs} | Tổng: ${newO.total.toLocaleString()}đ`);
+                            showNotification("📦 TẠO ĐƠN THÀNH CÔNG", `Dịch vụ: ${svcs} | Số tiền: ${newO.total.toLocaleString()}đ`);
+                        } else {
+                            // Nhận diện thanh toán thành công
+                            for (let i = 0; i < Math.min(5, newData.orders.length); i++) {
+                                if (newData.orders[i].status === 'DELIVERED' && state.orders[i] && state.orders[i].status !== 'DELIVERED') {
+                                    showNotification("✅ THANH TOÁN THÀNH CÔNG", `Khách hàng: ${newData.orders[i].customer.name} | Số tiền: ${newData.orders[i].total.toLocaleString()}đ`);
+                                }
+                            }
                         }
                     }
 
@@ -930,6 +946,7 @@
         function processOrder() {
             const isUploading = state.uploadedImages.some(img => img.status && img.status === 'uploading');
             if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
+            
             // Lấy Tên trước, SĐT sau
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
@@ -946,8 +963,11 @@
             };
             state.orders.unshift(newOrder);
             
+            // Kích hoạt thông báo trực tiếp khi vừa bấm lưu
+            const svcsStr = state.cart.map(i => i.name).join(', ');
+            showNotification("📦 TẠO ĐƠN THÀNH CÔNG", `Dịch vụ: ${svcsStr} | Số tiền: ${newOrder.total.toLocaleString()}đ`);
+
             saveState().then(() => { 
-                showNotification("✅ Tạo đơn thành công", `Mã đơn: ${newOrder.id} - ${newOrder.customer.name}`);
                 clearCart(); 
                 renderOrdersTable(); 
                 renderCustomersTable(); 
@@ -1001,7 +1021,6 @@
             }).join('');
         }
 
-        // --- HÀM XỬ LÝ POPUP NHẬN TIỀN VÀ XÁC NHẬN NGAY KHÔNG THÊM THÔNG BÁO ---
         function openCollectPaymentModal(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
@@ -1029,9 +1048,10 @@
             if (!activeCollectingOrderId) return;
             const o = state.orders.find(x => x.id === activeCollectingOrderId);
             if (o) {
-                o.status = 'DELIVERED'; // Chuyển thẳng sang Đã trả khách & tính doanh thu ngay lập tức
+                o.status = 'DELIVERED'; 
                 
-                showNotification("✅ Đã nhận tiền", `Khách ${o.customer.name} thanh toán ${o.total.toLocaleString()}đ.`);
+                // Hiện thông báo thanh toán
+                showNotification("✅ THANH TOÁN THÀNH CÔNG", `Khách hàng: ${o.customer.name} | Số tiền: ${o.total.toLocaleString()}đ`);
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
