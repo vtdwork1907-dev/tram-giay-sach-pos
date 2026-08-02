@@ -465,8 +465,6 @@
         const R2_BUCKET_NAME = "tram-giay-sach-media";
         let s3Instance = null;
         let activeCollectingOrderId = null;
-        let lastNotifiedOrderId = null;
-        let lastPaidNotifiedId = null;
 
         function getS3Client() {
             if (!s3Instance) {
@@ -525,27 +523,6 @@
                 method: 'POST',
                 body: fullMessage
             }).catch(err => console.error("Lỗi gửi ntfy:", err));
-        }
-
-        // QUẢN LÝ THÔNG BÁO THÔNG MINH (TRONG APP VS NGOÀI MÀN HÌNH)
-        function handleOrderNotification(order, isNew = true) {
-            const svcsStr = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-            const title = isNew ? "📦 TẠO ĐƠN MỚI" : "✅ ĐÃ THU TIỀN";
-            const detail = `Khách: ${order.customer.name} - ${order.total.toLocaleString()}đ\nSĐT: ${order.customer.phone}\nDịch vụ: ${svcsStr}`;
-
-            if (isNew) {
-                if (lastNotifiedOrderId === order.id) return;
-                lastNotifiedOrderId = order.id;
-            } else {
-                if (lastPaidNotifiedId === order.id) return;
-                lastPaidNotifiedId = order.id;
-            }
-
-            if (document.visibilityState === 'visible') {
-                showNotification(title, detail);
-            } else {
-                sendNtfyAlert(`${title}: ${order.customer.name} - ${order.total.toLocaleString()}đ`, `SĐT: ${order.customer.phone} | Dịch vụ: ${svcsStr}`);
-            }
         }
 
         // TÍNH NĂNG XEM ẢNH FULL MÀN HÌNH CHO KHÁCH
@@ -607,7 +584,7 @@
                 
                 if (order && screen && box) {
                     screen.classList.remove('hidden');
-                    renderLogo();
+                    renderLogo(); // Đồng bộ logo
                     
                     const statusList = [
                         { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' },
@@ -884,19 +861,23 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // SUPABASE REALTIME LISTENER - ĐÃ SỬA ĐỂ BẮT CẢ THAY ĐỔI TRẠNG THÁI THU TIỀN TỪ THIẾT BỊ KHÁC
+            // SUPABASE REALTIME LISTENER
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData && newData.orders) {
+                    // Cập nhật giao diện nếu có thay đổi từ thiết bị khác
                     if (newData.orders.length > state.orders.length) {
-                        handleOrderNotification(newData.orders[0], true);
+                        const newO = newData.orders[0];
+                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                        // Chỉ hiển thị Toast nội bộ trên thiết bị phụ
+                        showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
                     } else {
-                        // Kiểm tra xem có đơn nào chuyển sang trạng thái thanh toán/trả khách từ thiết bị khác không
                         for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
                             const newOrd = newData.orders[i];
                             const oldOrd = state.orders.find(o => o.id === newOrd.id);
+                            // Nếu thiết bị khác vừa bấm thu tiền, thiết bị này chỉ hiện Toast nội bộ
                             if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
-                                handleOrderNotification(newOrd, false);
+                                showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
                             }
                         }
                     }
@@ -907,6 +888,7 @@
                     renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
                     renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                     
+                    // Cập nhật ngay trang tra cứu nếu khách đang mở link
                     if (window.location.hash.startsWith('#track=')) checkUrlTracking();
                 }
             }).subscribe();
@@ -1150,7 +1132,13 @@
             };
             state.orders.unshift(newOrder);
             
-            handleOrderNotification(newOrder, true);
+            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
+            
+            // 1. Luôn hiện popup thông báo trong ứng dụng
+            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
+            
+            // 2. Chắc chắn gửi 1 lệnh duy nhất lên máy chủ NTFY
+            sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
                 clearCart(); 
@@ -1234,7 +1222,11 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
-                handleOrderNotification(o, false);
+                // 1. Luôn hiện popup thông báo trong ứng dụng
+                showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
+                
+                // 2. Chắc chắn gửi lệnh thông báo cho NTFY
+                sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
@@ -1246,7 +1238,24 @@
             }
         }
 
-        function updateOrderStatus(id, st) { const o = state.orders.find(x => x.id === id); if(o) { o.status = st; saveState(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); } }
+        function updateOrderStatus(id, st) { 
+            const o = state.orders.find(x => x.id === id); 
+            if(o) { 
+                const oldStatus = o.status;
+                o.status = st; 
+                
+                if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
+                    showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
+                    sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
+                }
+                
+                saveState(); 
+                renderOrdersTable(); 
+                renderCustomersTable(); 
+                updateReportMetrics(); 
+                renderDashboard(); 
+            } 
+        }
         
         function deleteOrder(id) {
             if(confirm("Xóa vĩnh viễn đơn hàng này và toàn bộ ảnh liên quan trên Cloudflare?")) {
