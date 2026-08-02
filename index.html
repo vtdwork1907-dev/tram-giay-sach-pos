@@ -554,7 +554,7 @@
             const img = document.getElementById('viewerImage');
             img.src = url;
             modal.classList.remove('hidden');
-            void modal.offsetWidth; // Trigger reflow
+            void modal.offsetWidth;
             modal.classList.remove('opacity-0');
             img.classList.remove('scale-95');
         }
@@ -607,7 +607,7 @@
                 
                 if (order && screen && box) {
                     screen.classList.remove('hidden');
-                    renderLogo(); // Đồng bộ logo
+                    renderLogo();
                     
                     const statusList = [
                         { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' },
@@ -884,12 +884,21 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // SUPABASE REALTIME LISTENER
+            // SUPABASE REALTIME LISTENER - ĐÃ SỬA ĐỂ BẮT CẢ THAY ĐỔI TRẠNG THÁI THU TIỀN TỪ THIẾT BỊ KHÁC
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
-                if (newData) {
-                    if (newData.orders && state.orders && newData.orders.length > state.orders.length) {
+                if (newData && newData.orders) {
+                    if (newData.orders.length > state.orders.length) {
                         handleOrderNotification(newData.orders[0], true);
+                    } else {
+                        // Kiểm tra xem có đơn nào chuyển sang trạng thái thanh toán/trả khách từ thiết bị khác không
+                        for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
+                            const newOrd = newData.orders[i];
+                            const oldOrd = state.orders.find(o => o.id === newOrd.id);
+                            if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
+                                handleOrderNotification(newOrd, false);
+                            }
+                        }
                     }
 
                     state.orders = newData.orders || []; state.expenses = newData.expenses || [];
@@ -898,7 +907,6 @@
                     renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
                     renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                     
-                    // Nếu đang xem link tracking mà cập nhật trạng thái thì render lại luôn
                     if (window.location.hash.startsWith('#track=')) checkUrlTracking();
                 }
             }).subscribe();
