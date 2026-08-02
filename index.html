@@ -22,7 +22,7 @@
     
     <!-- === THÊM THƯ VIỆN SUPABASE VÀ AWS SDK (CHO R2) === -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Sử dụng thư viện AWS SDK S3 thông qua unpkg (trình duyệt) -->
+    <!-- Sử dụng thư viện AWS SDK S3 thông qua cdnjs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
@@ -40,7 +40,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loading Overlay Overlay */
+        /* Loading Overlay */
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -86,7 +86,7 @@
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
                     <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
                 </div>
-                <!-- Thêm Ghi nhớ đăng nhập -->
+                <!-- Ghi nhớ đăng nhập -->
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
                     <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
@@ -375,7 +375,7 @@
                     </div>
                     <div class="overflow-x-auto p-2 md:p-3">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-10 text-center">Icon</th><th class="p-3">Tên Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3 w-44">Mức Giá (VNĐ)</th><th class="p-3 text-right w-20">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-10 text-center">Icon</th><th class="p-3">Tên Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3 w-44">Mức Giá (VNĐ)</th><th class="p-3 text-center w-28">Thứ Tự</th><th class="p-3 text-right w-20">Xóa</th></tr></thead>
                             <tbody id="settingsServicesTable" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -492,6 +492,8 @@
             role: null
         };
 
+        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
+
         // Hàm cập nhật toàn bộ dữ liệu lên Supabase
         async function saveState() {
             const payload = {
@@ -588,8 +590,6 @@
             }
         }
 
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
-
         function handleLogin() {
             const user = document.getElementById('loginUsername').value.trim();
             const pass = document.getElementById('loginPassword').value.trim();
@@ -606,8 +606,7 @@
                 if (remember) {
                     localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString());
                 } else {
-                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại (sẽ bị xóa khi đóng tab nếu xử lý ở sessionStorage)
-                    // Hoặc lưu thời gian hết hạn ngắn. Ở đây ta coi như nhớ tạm 1 ngày
+                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại
                     localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
                 }
                 
@@ -637,7 +636,7 @@
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
             
-            restoreLastTab(); // Sử dụng hàm khôi phục tab thay vì cứng nhắc về dashboard/pos
+            restoreLastTab(); // Sử dụng hàm khôi phục tab
         }
 
         function renderSettingsUsersTable() {
@@ -645,7 +644,7 @@
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
                     <td class="p-3 text-sky-700 font-mono">${u.username}</td>
-                    <td class="p-3 font-mono text-slate-500">${u.role==='owner'?'***':'***'}</td>
+                    <td class="p-3 font-mono text-slate-500">***</td>
                     <td class="p-3">
                         <span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">
                             ${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}
@@ -848,7 +847,8 @@
                 'REPAINT': '🎨 Repaint',
                 'STAIN': '💧 Tẩy Ố'
             };
-            document.getElementById('settingsServicesTable').innerHTML = state.services.map(s => `
+            const total = state.services.length;
+            document.getElementById('settingsServicesTable').innerHTML = state.services.map((s, idx) => `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td>
                     <td class="p-3">
@@ -865,6 +865,16 @@
                             <span class="text-slate-400 text-[10px]">đ</span>
                         </div>
                     </td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển lên trên">
+                                <i class="fa-solid fa-arrow-up text-xs"></i>
+                            </button>
+                            <button onclick="moveServiceDown(${idx})" ${idx === total - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển xuống dưới">
+                                <i class="fa-solid fa-arrow-down text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
                     <td class="p-3 text-right">
                         <button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này">
                             <i class="fa-solid fa-trash"></i>
@@ -872,6 +882,26 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function moveServiceUp(idx) {
+            if (idx <= 0) return;
+            const temp = state.services[idx];
+            state.services[idx] = state.services[idx - 1];
+            state.services[idx - 1] = temp;
+            saveState();
+            renderSettingsServicesTable();
+            renderServicesGrid();
+        }
+
+        function moveServiceDown(idx) {
+            if (idx >= state.services.length - 1) return;
+            const temp = state.services[idx];
+            state.services[idx] = state.services[idx + 1];
+            state.services[idx + 1] = temp;
+            saveState();
+            renderSettingsServicesTable();
+            renderServicesGrid();
         }
 
         function updateServicePrice(id, newPrice) {
@@ -1138,7 +1168,6 @@
                 pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']; pieChartInst.update();
             }
         }
-    
 
         function updateExpenseCharts() {
             const now = new Date();
@@ -1217,6 +1246,6 @@
                 expReportPieInst.update();
             }
         }
-</script>
+    </script>
 </body>
 </html>
