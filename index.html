@@ -242,7 +242,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -469,7 +469,7 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
+        // 1. HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -486,7 +486,7 @@
             }
         }
 
-        // HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY (ĐÃ ĐƯA TÊN KHÁCH & SỐ TIỀN LÊN DÒNG ĐẦU TIÊN)
+        // 2. HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY
         function sendNtfyAlert(title, message) {
             const topicName = 'Tramgiaysach_news'; 
             const fullMessage = `${title}\n${message}`;
@@ -707,10 +707,10 @@
                             const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
                             
                             if (document.visibilityState === 'visible') {
-                                // ĐANG TRONG APP: Chỉ hiện Toast nội bộ
+                                // ĐANG MỞ WEB APP: Chỉ hiện popup trong app
                                 showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
                             } else {
-                                // ĐÃ THOÁT RA NGOÀI APP: Đẩy NTFY ra màn hình khóa với đầy đủ thông tin
+                                // ĐÃ THOÁT RA NGOÀI WEB APP: Đẩy NTFY ra màn hình khóa
                                 sendNtfyAlert(`📦 Đơn mới: ${newO.customer.name} - ${newO.total.toLocaleString()}đ`, `SĐT: ${newO.customer.phone} | Dịch vụ: ${svcs}`);
                             }
                         } else {
@@ -968,6 +968,16 @@
             };
             state.orders.unshift(newOrder);
             
+            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
+            
+            // 1. In-App Notification (Luôn hiện khi thao tác trực tiếp)
+            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
+            
+            // 2. NTFY Push Notification (Nếu đang không mở app)
+            if (document.visibilityState !== 'visible') {
+                sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
+            }
+
             saveState().then(() => { 
                 clearCart(); 
                 renderOrdersTable(); 
@@ -1049,6 +1059,14 @@
             const o = state.orders.find(x => x.id === activeCollectingOrderId);
             if (o) {
                 o.status = 'DELIVERED'; 
+                
+                // 1. In-App Notification
+                showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
+                
+                // 2. NTFY Push Notification (Nếu đang không mở app)
+                if (document.visibilityState !== 'visible') {
+                    sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
+                }
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
