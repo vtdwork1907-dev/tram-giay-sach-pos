@@ -75,11 +75,11 @@
             <div class="p-6 space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Tài khoản</label>
-                    <div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i><input type="text" id="loginUsername" placeholder="Nhập tài khoản..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition"></div>
+                    <div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i><input type="text" id="loginUsername" placeholder="Nhập tài khoản..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" value="admin"></div>
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
-                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
+                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()" value="123"></div>
                 </div>
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
@@ -182,7 +182,6 @@
 
                         <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5"><label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label><select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white"><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán (Tính DS)</option><option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option></select></div>
 
-                        <!-- Cập nhật phần chọn ảnh để hiển thị loading và dùng R2 -->
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
                             <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
@@ -238,7 +237,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -306,72 +305,6 @@
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Phân bổ chi phí</span><div class="flex-1 w-full h-full relative"><canvas id="reportExpensesPieChart"></canvas></div></div>
                 </div>
             </section>
-
-            <!-- TAB: CÀI ĐẶT -->
-            <section id="tab-settings" class="tab-content hidden space-y-4 pb-16">
-                
-                <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                    <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50"><h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Phân Quyền Tài Khoản Nhân Viên</h2><p class="text-[10px] text-sky-700 mt-1">Quản lý có thể xem đơn và nhập chi phí. Nhân viên chỉ được tạo đơn hàng.</p></div>
-                    <div class="p-3 md:p-4 flex flex-col md:flex-row flex-wrap gap-2 md:items-end">
-                        <div class="w-full md:w-auto md:flex-1"><label class="text-[10px] font-bold text-slate-700">Tên Hiển Thị</label><input type="text" id="addUserName" placeholder="VD: Nam Thu Ngân" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Tên Đăng Nhập</label><input type="text" id="addUserLogin" placeholder="VD: nam123" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Mật khẩu</label><input type="password" id="addUserPass" placeholder="••••" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Phân Vai Trò</label><select id="addUserRole" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"><option value="manager">Quản Lý</option><option value="staff">Nhân Viên</option></select></div>
-                        <button onclick="addNewAccount()" class="w-full md:w-auto bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs px-4 py-3 md:py-2 rounded shadow mt-2 md:mt-0">Cấp Tài Khoản</button>
-                    </div>
-                    <div class="flex-1 overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Tên Người Dùng</th><th class="p-3">Tài Khoản</th><th class="p-3">Vai Trò</th><th class="p-3 text-right">Khóa/Xóa</th></tr></thead>
-                            <tbody id="settingsUsersTable" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                    <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 border-b pb-2"><i class="fa-solid fa-image text-navy-800"></i> Ảnh Đại Diện / Logo</h2>
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 md:w-16 md:h-16 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0" id="settingLogoPreview"><i class="fa-solid fa-shoe-prints text-slate-400 text-xl md:text-2xl" id="settingLogoDefault"></i><img src="" class="hidden w-full h-full object-cover" id="settingLogoImg"></div>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="bg-navy-800 hover:bg-navy-900 text-white text-[10px] md:text-xs font-bold px-3 py-2 rounded-lg cursor-pointer transition relative overflow-hidden"><i class="fa-solid fa-upload"></i> <span id="uploadLogoBtnText">Tải Logo Mới</span><input type="file" accept="image/*" class="hidden" onchange="uploadStoreLogo(event)" id="logoInput"></label>
-                            <button onclick="removeStoreLogo()" class="bg-red-100 text-red-600 hover:bg-red-200 text-[10px] md:text-xs font-bold px-3 py-2 rounded-lg transition">Xóa Ảnh</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 md:gap-6">
-                    <div class="flex-1 space-y-3 md:space-y-4">
-                        <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 border-b pb-2"><i class="fa-solid fa-qrcode text-sky-600"></i> Cấu Hình Ngân Hàng (VietQR)</h2>
-                        <div class="space-y-3 text-xs">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div><label class="block font-bold text-slate-700 mb-1">Ngân Hàng</label><select id="cfgBank" class="w-full p-2 text-[16px] md:text-xs border border-slate-300 rounded outline-none font-semibold"><option value="ICB">VietinBank</option><option value="MB">MBBank</option><option value="VCB">Vietcombank</option><option value="TCB">Techcombank</option><option value="VPB">VPBank</option><option value="ACB">ACB</option><option value="BIDV">BIDV</option></select></div>
-                                <div><label class="block font-bold text-slate-700 mb-1">Số Tài Khoản</label><input type="text" id="cfgAccountNo" class="w-full text-[16px] md:text-xs p-2 border border-slate-300 rounded outline-none font-mono font-bold"></div>
-                            </div>
-                            <div><label class="block font-bold text-slate-700 mb-1">Tên Chủ Tài Khoản (Không dấu)</label><input type="text" id="cfgAccountName" class="w-full text-[16px] md:text-xs p-2 border border-slate-300 rounded outline-none uppercase font-bold text-slate-700"></div>
-                            <button onclick="saveQRConfig()" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-3 md:py-2.5 rounded shadow mt-1"><i class="fa-solid fa-floppy-disk mr-1"></i> Lưu Cấu Hình QR</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50 flex items-center justify-between">
-                        <h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-tags text-cyanBrand"></i> Quản Lý Dịch Vụ & Mức Giá</h2>
-                        <span class="text-[10px] md:text-xs font-semibold bg-white text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200 shadow-sm">Chỉnh sửa trực tiếp trong bảng</span>
-                    </div>
-                    <div class="p-3 md:p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row flex-wrap gap-2.5 md:items-end">
-                        <div class="w-full md:w-auto md:flex-1"><label class="text-[11px] font-bold text-slate-700 block mb-1">Tên Dịch Vụ Mới</label><input type="text" id="addSvcName" placeholder="VD: Khâu viền đế" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500 bg-white"></div>
-                        <div class="w-full md:w-36"><label class="text-[11px] font-bold text-slate-700 block mb-1">Danh Mục</label><select id="addSvcCat" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white font-medium"><option value="CLEAN">🧼 Vệ Sinh</option><option value="SOLE">👟 Thay Đế</option><option value="GLUE">🖌️ Dán Đế</option><option value="REPAINT">🎨 Repaint</option><option value="STAIN">💧 Tẩy Ố</option></select></div>
-                        <div class="w-full md:w-36"><label class="text-[11px] font-bold text-slate-700 block mb-1">Giá Mặc Định (VNĐ)</label><input type="number" id="addSvcPrice" placeholder="VD: 80000" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500 bg-white font-bold"></div>
-                        <div class="w-full md:w-32"><label class="text-[11px] font-bold text-slate-700 block mb-1">Icon</label><select id="addSvcIcon" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white font-mono"><option value="fa-soap">fa-soap</option><option value="fa-brush">fa-brush</option><option value="fa-shoe-prints">fa-shoe-prints</option><option value="fa-spray-can">fa-spray-can</option><option value="fa-droplet">fa-droplet</option><option value="fa-palette">fa-palette</option></select></div>
-                        <button onclick="addNewService()" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-5 py-3 md:py-2.5 rounded-lg shadow transition active:scale-95 flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus"></i> Thêm Dịch Vụ</button>
-                    </div>
-                    <div class="overflow-x-auto p-2 md:p-3">
-                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-10 text-center">Icon</th><th class="p-3">Tên Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3 w-44">Mức Giá (VNĐ)</th><th class="p-3 text-center w-28">Thứ Tự</th><th class="p-3 text-right w-20">Xóa</th></tr></thead>
-                            <tbody id="settingsServicesTable" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
         </main>
     </div>
 
@@ -425,7 +358,7 @@
 
     <!-- SCRIPT CHÍNH -->
     <script>
-        // 1. KHỞI TẠO STATE & BIẾN TOÀN CỤC TRƯỚC TIÊN (Tránh lỗi chặn script)
+        // 1. KHỞI TẠO STATE & BIẾN TOÀN CỤC TRƯỚC TIÊN
         const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
 
         let state = {
@@ -444,7 +377,7 @@
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
         let activeCollectingOrderId = null;
 
-        // 2. KHỞI TẠO SUPABASE (Bọc try-catch an toàn)
+        // 2. KHỞI TẠO SUPABASE (Bọc an toàn)
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
         let supabaseClient = null;
@@ -484,16 +417,18 @@
 
         async function saveState() {
             if (!supabaseClient) return;
-            const payload = {
-                users: state.users, logo: state.logo || '', services: state.services,
-                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
-            };
-            const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
-            if (error) {
-                if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
-                   await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
-                } else { console.error("Lỗi lưu dữ liệu:", error.message); }
-            }
+            try {
+                const payload = {
+                    users: state.users, logo: state.logo || '', services: state.services,
+                    orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
+                };
+                const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
+                if (error) {
+                    if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
+                       await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
+                    } else { console.error("Lỗi lưu dữ liệu:", error.message); }
+                }
+            } catch (err) { console.error("Network error on saveState:", err); }
         }
 
         function restoreLastTab() {
@@ -529,7 +464,8 @@
                 if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
                 }
-                const foundUser = (state.users || DEFAULT_USERS).find(u => u.id === savedUserId);
+                const usersList = (state && state.users) ? state.users : DEFAULT_USERS;
+                const foundUser = usersList.find(u => u.id === savedUserId);
                 if (foundUser) {
                     state.currentUser = foundUser;
                     const authScreen = document.getElementById('authScreen');
@@ -548,7 +484,10 @@
                 const pass = document.getElementById('loginPassword').value.trim();
                 const remember = document.getElementById('rememberLogin').checked;
                 if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
-                const foundUser = (state.users || DEFAULT_USERS).find(u => u.username === user && u.password === pass);
+                
+                const usersList = (state && state.users) ? state.users : DEFAULT_USERS;
+                const foundUser = usersList.find(u => u.username === user && u.password === pass);
+                
                 if(foundUser) {
                     state.currentUser = foundUser;
                     localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
@@ -562,7 +501,7 @@
                 } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
             } catch (err) {
                 console.error(err);
-                alert("Đã xảy ra lỗi hệ thống, vui lòng tải lại trang!");
+                alert("Đã xảy ra lỗi đăng nhập: " + err.message);
             }
         }
 
@@ -612,12 +551,13 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            initClock();
-            initCharts();
             const loadingEl = document.getElementById('globalLoading');
             if (loadingEl) loadingEl.style.display = 'flex';
 
             try {
+                if (typeof Chart !== 'undefined') initCharts();
+                initClock();
+
                 if (typeof supabaseClient !== 'undefined' && supabaseClient) {
                     const { data: result, error } = await supabaseClient
                         .from('app_state')
@@ -638,26 +578,27 @@
                     }
                 }
             } catch (err) {
-                console.error("Lỗi kết nối, khởi chạy offline:", err);
+                console.error("Lỗi kết nối khởi tạo, chạy nền offline:", err);
             } finally {
                 if (loadingEl) loadingEl.style.display = 'none';
                 
-                // RENDER GIAO DIỆN CHẮC CHẮN CHẠY
-                renderLogo();
-                renderCategoryTabs();
-                renderServicesGrid(); 
-                renderSettingsServicesTable();
-                renderSettingsUsersTable();
-                renderOrdersTable();
-                renderExpensesTable();
-                renderCustomersTable();
-                updateReportMetrics();
-                loadQRConfig();
-                setCurrentDateTimeForOrder();
-                renderPreviewImages();
-                adjustPOSLayout();
-                renderDashboard();
-                checkAutoLogin();
+                try {
+                    renderLogo();
+                    renderCategoryTabs();
+                    renderServicesGrid(); 
+                    renderSettingsServicesTable();
+                    renderSettingsUsersTable();
+                    renderOrdersTable();
+                    renderExpensesTable();
+                    renderCustomersTable();
+                    updateReportMetrics();
+                    loadQRConfig();
+                    setCurrentDateTimeForOrder();
+                    renderPreviewImages();
+                    adjustPOSLayout();
+                    renderDashboard();
+                    checkAutoLogin();
+                } catch(e) { console.error("Lỗi render giao diện:", e); }
             }
 
             try {
@@ -672,9 +613,7 @@
                         }
                     }).subscribe();
                 }
-            } catch (e) {
-                console.error("Lỗi kết nối realtime:", e);
-            }
+            } catch (e) { console.error("Lỗi kết nối realtime:", e); }
         });
 
         function adjustPOSLayout() {
@@ -991,14 +930,14 @@
                 // Đổi ngay trạng thái thành Đã Trả Khách
                 o.status = 'DELIVERED';
                 
-                // Đóng Modal, cập nhật bảng và tính toán ngay
+                // Đóng Modal, cập nhật bảng và tính toán ngay không báo Alert
                 closeCollectPaymentModal();
                 renderOrdersTable();
                 renderCustomersTable();
                 updateReportMetrics();
                 renderDashboard();
                 
-                // Lưu trạng thái mới lên Supabase ngầm (không cần await chờ)
+                // Lưu ngầm, không cần chờ phản hồi
                 saveState();
             }
         }
@@ -1017,6 +956,7 @@
             }
         }
 
+        // Mở bảng so sánh cuộn dọc từng cặp ảnh, giữ nguyên tỷ lệ gốc object-contain
         function openComparison(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
@@ -1039,18 +979,16 @@
                             <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
-                            <!-- Trước (Before) -->
                             <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                 <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
-                                <div class="p-2 flex items-center justify-center bg-slate-900/5 min-h-[350px] md:min-h-[450px]">
-                                    ${beforeSrc ? `<img src="${beforeSrc}" class="max-h-[500px] w-auto max-w-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh trước</div>`}
+                                <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px]">
+                                    ${beforeSrc ? `<img src="${beforeSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh trước</div>`}
                                 </div>
                             </div>
-                            <!-- Sau (After) -->
                             <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
                                 <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
-                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 min-h-[350px] md:min-h-[450px]">
-                                    ${afterSrc ? `<img src="${afterSrc}" class="max-h-[500px] w-auto max-w-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh sau</div>`}
+                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px]">
+                                    ${afterSrc ? `<img src="${afterSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh sau</div>`}
                                 </div>
                             </div>
                         </div>
