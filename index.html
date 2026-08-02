@@ -40,19 +40,19 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loading Overlay Overlay */
+        /* Loading Overlay */
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Cập nhật style cho ảnh preview */
-        .image-preview-item { position: relative; width: 3.5rem; height: 3.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
+        /* ÉP KHUÔN ẢNH DỌC 3:4 CHO PHẦN UPLOAD (THUMBNAIL PREVIEW) */
+        .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
         .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
         .image-preview-item .upload-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; }
         .image-preview-item .upload-spinner { width: 1.25rem; height: 1.25rem; border: 2px solid #cbd5e1; border-top-color: #0284c7; border-radius: 50%; animation: spin 1s linear infinite; }
         @media (min-width: 768px) {
-            .image-preview-item { width: 3rem; height: 3rem; }
+            .image-preview-item { width: 4.5rem; height: 6rem; }
         }
     </style>
 </head>
@@ -86,7 +86,6 @@
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
                     <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
                 </div>
-                <!-- Thêm Ghi nhớ đăng nhập -->
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
                     <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
@@ -190,7 +189,6 @@
 
                         <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5"><label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label><select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white"><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán (Tính DS)</option><option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option></select></div>
 
-                        <!-- Cập nhật phần chọn ảnh để hiển thị loading và dùng R2 -->
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
                             <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
@@ -270,7 +268,6 @@
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
                     <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
                 </div>
-                <!-- Biểu đồ tròn thống kê chi phí tháng -->
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div class="w-full md:w-1/2 flex flex-col items-center">
                         <span class="text-[10px] md:text-xs font-bold text-slate-600 mb-2 uppercase text-center w-full flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-red-500"></i> Cơ Cấu Chi Phí Tháng Hiện Tại</span>
@@ -384,24 +381,28 @@
         </main>
     </div>
 
-    <!-- MODALS COMPARAISON BEFORE/AFTER -->
+    <!-- MODALS XEM ẢNH TO VÀ COMPARAISON BEFORE/AFTER -->
+    <div id="imageViewerModal" class="fixed inset-0 bg-slate-900/90 z-[60] hidden flex items-center justify-center p-2 lg:p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-[95vw] h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="imageViewerBox">
+            <div class="bg-navy-800 text-white px-3 md:px-4 py-2.5 md:py-3 flex justify-between items-center shrink-0"><h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Ảnh Tình Trạng</h3><button onclick="document.getElementById('imageViewerModal').classList.add('hidden')" class="text-3xl leading-none">&times;</button></div>
+            <div class="p-2 md:p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 overflow-y-auto flex-1 bg-slate-200 content-start" id="imageViewerContent"></div>
+        </div>
+    </div>
+    
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex items-center justify-center p-2 lg:p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
             <div class="bg-navy-800 text-white px-3 md:px-4 py-2.5 md:py-3 flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-code-compare text-sky-400"></i> So Sánh Trước & Sau</h3>
                 <button onclick="closeComparisonModal()" class="text-3xl leading-none hover:text-red-400 transition">&times;</button>
             </div>
-            <!-- Chia đôi màn hình (Trái/Phải hoặc Trên/Dưới) -->
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-slate-200 p-2 gap-2" id="comparisonContent">
-                <!-- Nửa Trước -->
                 <div class="flex-1 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm">
                     <div class="bg-slate-100 text-slate-700 font-bold text-xs text-center py-2 shrink-0 uppercase border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trạng thái Nhận (Before)</div>
-                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-1 gap-2 bg-slate-50 content-start" id="compBeforeImages"></div>
+                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 bg-slate-50 content-start" id="compBeforeImages"></div>
                 </div>
-                <!-- Nửa Sau -->
                 <div class="flex-1 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm">
                     <div class="bg-emerald-50 text-emerald-800 font-bold text-xs text-center py-2 shrink-0 uppercase border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Trạng thái Hoàn thiện (After)</div>
-                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-1 gap-2 bg-slate-50 content-start" id="compAfterImages"></div>
+                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 bg-slate-50 content-start" id="compAfterImages"></div>
                 </div>
             </div>
         </div>
@@ -423,12 +424,10 @@
 
     <!-- SCRIPT CHÍNH -->
     <script>
-        // === KHỞI TẠO SUPABASE CLIENT ===
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // === CẤU HÌNH CLOUDFLARE R2 ===
         const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
         const R2_BUCKET_NAME = "tram-giay-sach-media";
         let s3Instance = null;
@@ -452,13 +451,11 @@
             return s3Instance;
         }
 
-        // Hàm tiện ích để khôi phục tab đã chọn từ localStorage
         function restoreLastTab() {
             const lastTab = localStorage.getItem('TRAM_LAST_TAB');
             if (lastTab && document.getElementById('nav-' + lastTab)) {
-                // Chỉ chuyển tab nếu role cho phép
                 if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) {
-                    switchTab('pos'); // Mặc định cho staff
+                    switchTab('pos');
                 } else {
                     switchTab(lastTab);
                 }
@@ -468,7 +465,6 @@
             }
         }
         
-        // Sửa lại switchTab để lưu tab hiện tại vào localStorage
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => {
@@ -480,19 +476,13 @@
             if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
             if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
             if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
-            
-            // Lưu tab hiện tại
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
 
-        const DEFAULT_USERS = [
-            { id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }
-        ];
+        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
 
         let state = {
-            users: DEFAULT_USERS,
-            currentUser: null,
-            logo: null,
+            users: DEFAULT_USERS, currentUser: null, logo: null,
             services: [
                 { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
                 { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
@@ -501,34 +491,18 @@
                 { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
                 { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
             ],
-            orders: [],
-            expenses: [],
-            qrConfig: { bank: 'ICB', accountNo: '', accountName: '' },
-            cart: [], 
-            uploadedImages: [], // Chứa thông tin ảnh (base64 hoặc URL, trạng thái uploading)
-            role: null
+            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, cart: [], uploadedImages: [], role: null
         };
 
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
 
-        // Hàm cập nhật toàn bộ dữ liệu lên Supabase
         async function saveState() {
             const payload = {
-                users: state.users,
-                logo: state.logo || '',
-                services: state.services,
-                orders: state.orders,
-                expenses: state.expenses,
-                qrConfig: state.qrConfig
+                users: state.users, logo: state.logo || '', services: state.services,
+                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
             };
-
-            const { error } = await supabaseClient
-                .from('app_state')
-                .update({ data: payload })
-                .eq('id', 'main');
-
+            const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
             if (error) {
-                // Nếu bảng chưa có dòng id = 'main', tự động tạo mới
                 if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
                    await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
                 } else {
@@ -537,7 +511,6 @@
             }
         }
         
-        // ================= HÀM UPLOAD ẢNH LÊN CLOUDFLARE R2 =================
         function uploadFileToR2(file) {
             return new Promise((resolve, reject) => {
                 try {
@@ -548,61 +521,34 @@
                         const fileBuffer = e.target.result;
                         const fileExtension = file.name.split('.').pop();
                         const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-                        
-                        const params = {
-                            Bucket: R2_BUCKET_NAME,
-                            Key: uniqueFileName,
-                            Body: fileBuffer,
-                            ContentType: file.type
-                        };
-
+                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: file.type };
                         s3.upload(params, function(err, data) {
-                            if (err) {
-                                console.error("Lỗi upload R2:", err);
-                                reject(err);
-                            } else {
-                                const publicUrl = `${R2_PUBLIC_DOMAIN}/${uniqueFileName}`;
-                                resolve(publicUrl);
-                            }
+                            if (err) { console.error("Lỗi upload R2:", err); reject(err); } 
+                            else { resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`); }
                         });
                     };
                     reader.onerror = (err) => reject(err);
-                } catch(err) {
-                    reject(err);
-                }
+                } catch(err) { reject(err); }
             });
         }
         
-        // ================= XỬ LÝ TỰ ĐỘNG ĐĂNG NHẬP =================
         function checkAutoLogin() {
             const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
             const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
-            
-            // Nếu có nhớ đăng nhập, kiểm tra xem đã quá 30 ngày chưa
             if (savedUserId && loginTime) {
                 const now = new Date().getTime();
-                const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-                
-                if (now - parseInt(loginTime) > thirtyDaysInMs) {
-                    // Quá hạn 30 ngày
-                    localStorage.removeItem('TRAM_ACTIVE_USER');
-                    localStorage.removeItem('TRAM_LOGIN_TIME');
-                    return;
+                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
                 }
-                
                 const foundUser = state.users.find(u => u.id === savedUserId);
                 if (foundUser) {
                     state.currentUser = foundUser;
                     const authScreen = document.getElementById('authScreen');
-                    if (authScreen) {
-                        authScreen.style.display = 'none';
-                        authScreen.classList.add('opacity-0');
-                    }
+                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
                     document.getElementById('currentUserDisplay').innerText = foundUser.name;
                     changeRole(foundUser.role);
                 } else {
-                    localStorage.removeItem('TRAM_ACTIVE_USER');
-                    localStorage.removeItem('TRAM_LOGIN_TIME');
+                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME');
                 }
             }
         }
@@ -611,38 +557,25 @@
             const user = document.getElementById('loginUsername').value.trim();
             const pass = document.getElementById('loginPassword').value.trim();
             const remember = document.getElementById('rememberLogin').checked;
-            
             if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
-            
             const foundUser = state.users.find(u => u.username === user && u.password === pass);
             if(foundUser) {
                 state.currentUser = foundUser;
-                
-                // Lưu session
                 localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
-                if (remember) {
-                    localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString());
-                } else {
-                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại
-                    localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
-                }
-                
+                if (remember) { localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); } 
+                else { localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString()); }
                 document.getElementById('authScreen').classList.add('opacity-0');
                 setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
                 document.getElementById('currentUserDisplay').innerText = foundUser.name;
                 changeRole(foundUser.role);
                 document.getElementById('loginPassword').value = '';
-            } else {
-                alert("Tài khoản hoặc mật khẩu không chính xác!");
-            }
+            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
         }
 
         function handleLogout() {
             if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
                 state.currentUser = null;
-                localStorage.removeItem('TRAM_ACTIVE_USER');
-                localStorage.removeItem('TRAM_LOGIN_TIME');
-                localStorage.removeItem('TRAM_LAST_TAB'); // Xóa cả tab ghi nhớ khi đăng xuất
+                localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
                 document.getElementById('authScreen').style.display = 'flex';
                 setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
             }
@@ -652,8 +585,7 @@
             state.role = r; 
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
-            
-            restoreLastTab(); // Sử dụng hàm khôi phục tab thay vì cứng nhắc về dashboard/pos
+            restoreLastTab();
         }
 
         function renderSettingsUsersTable() {
@@ -662,27 +594,16 @@
                     <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
                     <td class="p-3 text-sky-700 font-mono">${u.username}</td>
                     <td class="p-3 font-mono text-slate-500">***</td>
-                    <td class="p-3">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">
-                            ${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}
-                        </span>
-                    </td>
-                    <td class="p-3 text-right">
-                        ${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td>
+                    <td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
+                </tr>`).join('');
         }
 
         function addNewAccount() {
-            const name = document.getElementById('addUserName').value.trim();
-            const username = document.getElementById('addUserLogin').value.trim();
-            const pass = document.getElementById('addUserPass').value.trim();
-            const role = document.getElementById('addUserRole').value;
-            
+            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim();
+            const pass = document.getElementById('addUserPass').value.trim(); const role = document.getElementById('addUserRole').value;
             if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
             if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
-
             state.users.push({ id: 'U-' + Date.now(), username, password: pass, role, name });
             saveState(); renderSettingsUsersTable();
             document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
@@ -696,71 +617,36 @@
             }
         }
 
-        // ================= KHỞI CHẠY SUPABASE KHI TẢI TRANG =================
         window.addEventListener('DOMContentLoaded', async () => {
-            initClock();
-            initCharts();
-            document.getElementById('globalLoading').style.display = 'flex';
-
-            // 1. Tải dữ liệu từ Supabase lần đầu
-            const { data: result, error } = await supabaseClient
-                .from('app_state')
-                .select('data')
-                .eq('id', 'main')
-                .single();
-
+            initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
+            const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
             if (result && result.data) {
                 const cloudData = result.data;
-                state.users = cloudData.users || DEFAULT_USERS;
-                state.services = cloudData.services || state.services;
-                state.orders = cloudData.orders || [];
-                state.expenses = cloudData.expenses || [];
-                state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
-                state.logo = cloudData.logo || null;
-            } else if (error && error.code === 'PGRST116') {
-                // Lần đầu chạy, tạo luôn dòng main
-                await saveState();
-            }
+                state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
+                state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
+                state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
+            } else if (error && error.code === 'PGRST116') { await saveState(); }
 
-            // Gọi các hàm vẽ giao diện
             renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
             renderSettingsServicesTable(); renderSettingsUsersTable();
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
             updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
-            adjustPOSLayout(); renderDashboard();
-            checkAutoLogin();
-            
+            adjustPOSLayout(); renderDashboard(); checkAutoLogin();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // 2. Lắng nghe thay đổi Real-time từ đám mây (Supabase Realtime)
-            supabaseClient
-                .channel('public:app_state')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
-                    const newData = payload.new.data;
-                    if (newData) {
-                        state.orders = newData.orders || [];
-                        state.expenses = newData.expenses || [];
-                        state.users = newData.users || state.users;
-                        state.services = newData.services || state.services;
-                        state.logo = newData.logo || null;
-                        
-                        renderLogo();
-                        renderOrdersTable();
-                        renderDashboard();
-                        updateReportMetrics();
-                        renderCustomersTable();
-                        renderExpensesTable();
-                        renderServicesGrid();
-                        renderSettingsServicesTable();
-                        renderSettingsUsersTable();
-                    }
-                })
-                .subscribe();
+            supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
+                const newData = payload.new.data;
+                if (newData) {
+                    state.orders = newData.orders || []; state.expenses = newData.expenses || [];
+                    state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
+                    renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                    renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+                }
+            }).subscribe();
         });
 
         function adjustPOSLayout() {
-            const container = document.getElementById('servicesMainContainer');
-            if (!container) return;
+            const container = document.getElementById('servicesMainContainer'); if (!container) return;
             if (window.innerWidth < 1024) document.getElementById('mobileServicesPlaceholder').appendChild(container);
             else document.getElementById('pcServicesPlaceholder').appendChild(container);
         }
@@ -779,8 +665,7 @@
 
             state.orders.forEach(o => {
                 if(o.date && o.date.startsWith(todayStr)) {
-                    grossToday += o.total;
-                    if(o.status === 'PAID' || o.status === 'DELIVERED') revToday += o.total;
+                    grossToday += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') revToday += o.total;
                     if(o.status === 'RECEIVED') cReceived++; if(o.status === 'PROCESSING') cProcessing++;
                     if(o.status === 'PROCESSED') cProcessed++; if(o.status === 'DELIVERED') cDelivered++;
                 }
@@ -798,26 +683,11 @@
 
         async function uploadStoreLogo(e) {
             const file = e.target.files[0]; if(!file) return;
-            
-            // Hiện trạng thái đang tải
-            const btnText = document.getElementById('uploadLogoBtnText');
-            const oldText = btnText.innerText;
-            btnText.innerText = "Đang tải...";
-            document.getElementById('logoInput').disabled = true;
-            
-            try {
-                // Upload thẳng logo lên R2
-                const imageUrl = await uploadFileToR2(file);
-                state.logo = imageUrl;
-                await saveState(); 
-                renderLogo();
-            } catch(error) {
-                alert("Lỗi khi upload logo: " + error.message);
-            } finally {
-                btnText.innerText = oldText;
-                document.getElementById('logoInput').disabled = false;
-                e.target.value = '';
-            }
+            const btnText = document.getElementById('uploadLogoBtnText'); const oldText = btnText.innerText;
+            btnText.innerText = "Đang tải..."; document.getElementById('logoInput').disabled = true;
+            try { const imageUrl = await uploadFileToR2(file); state.logo = imageUrl; await saveState(); renderLogo(); } 
+            catch(error) { alert("Lỗi khi upload logo: " + error.message); } 
+            finally { btnText.innerText = oldText; document.getElementById('logoInput').disabled = false; e.target.value = ''; }
         }
         function removeStoreLogo() { state.logo = null; saveState(); renderLogo(); }
         function renderLogo() {
@@ -857,90 +727,43 @@
         }
 
         function renderSettingsServicesTable() {
-            const catMap = {
-                'CLEAN': '🧼 Vệ Sinh',
-                'SOLE': '👟 Thay Đế',
-                'GLUE': '🖌️ Dán Đế',
-                'REPAINT': '🎨 Repaint',
-                'STAIN': '💧 Tẩy Ố'
-            };
+            const catMap = { 'CLEAN': '🧼 Vệ Sinh', 'SOLE': '👟 Thay Đế', 'GLUE': '🖌️ Dán Đế', 'REPAINT': '🎨 Repaint', 'STAIN': '💧 Tẩy Ố' };
             const total = state.services.length;
             document.getElementById('settingsServicesTable').innerHTML = state.services.map((s, idx) => `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td>
-                    <td class="p-3">
-                        <input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ">
-                    </td>
-                    <td class="p-3">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">
-                            ${catMap[s.category] || s.category}
-                        </span>
-                    </td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-1">
-                            <input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition" title="Thay đổi giá và bấm ra ngoài để lưu">
-                            <span class="text-slate-400 text-[10px]">đ</span>
-                        </div>
-                    </td>
-                    <td class="p-3 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            <button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển lên trên">
-                                <i class="fa-solid fa-arrow-up text-xs"></i>
-                            </button>
-                            <button onclick="moveServiceDown(${idx})" ${idx === total - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển xuống dưới">
-                                <i class="fa-solid fa-arrow-down text-xs"></i>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="p-3 text-right">
-                        <button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="p-3"><input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ"></td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">${catMap[s.category] || s.category}</span></td>
+                    <td class="p-3"><div class="flex items-center gap-1"><input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition" title="Thay đổi giá và bấm ra ngoài để lưu"><span class="text-slate-400 text-[10px]">đ</span></div></td>
+                    <td class="p-3 text-center"><div class="flex items-center justify-center gap-1"><button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển lên trên"><i class="fa-solid fa-arrow-up text-xs"></i></button><button onclick="moveServiceDown(${idx})" ${idx === total - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển xuống dưới"><i class="fa-solid fa-arrow-down text-xs"></i></button></div></td>
+                    <td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`).join('');
         }
 
         function moveServiceUp(idx) {
             if (idx <= 0) return;
-            const temp = state.services[idx];
-            state.services[idx] = state.services[idx - 1];
-            state.services[idx - 1] = temp;
-            saveState();
-            renderSettingsServicesTable();
-            renderServicesGrid();
+            const temp = state.services[idx]; state.services[idx] = state.services[idx - 1]; state.services[idx - 1] = temp;
+            saveState(); renderSettingsServicesTable(); renderServicesGrid();
         }
 
         function moveServiceDown(idx) {
             if (idx >= state.services.length - 1) return;
-            const temp = state.services[idx];
-            state.services[idx] = state.services[idx + 1];
-            state.services[idx + 1] = temp;
-            saveState();
-            renderSettingsServicesTable();
-            renderServicesGrid();
+            const temp = state.services[idx]; state.services[idx] = state.services[idx + 1]; state.services[idx + 1] = temp;
+            saveState(); renderSettingsServicesTable(); renderServicesGrid();
         }
 
         function updateServicePrice(id, newPrice) {
             const val = parseInt(newPrice);
             if(isNaN(val) || val < 0) return alert("Vui lòng nhập giá tiền hợp lệ!");
             const svc = state.services.find(s => s.id === id);
-            if(svc) {
-                svc.defaultPrice = val;
-                saveState();
-                renderServicesGrid();
-            }
+            if(svc) { svc.defaultPrice = val; saveState(); renderServicesGrid(); }
         }
 
         function updateServiceName(id, newName) {
             const val = newName.trim();
             if(!val) return alert("Tên dịch vụ không được để trống!");
             const svc = state.services.find(s => s.id === id);
-            if(svc) {
-                svc.name = val;
-                saveState();
-                renderServicesGrid();
-            }
+            if(svc) { svc.name = val; saveState(); renderServicesGrid(); }
         }
 
         function addNewService() {
@@ -1000,62 +823,30 @@
             if (files.length === 0) return;
             
             const saveBtn = document.getElementById('saveOrderBtn');
-            saveBtn.disabled = true;
-            saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
             for (const file of files) {
                 const imgId = Date.now() + Math.random().toString(36).substring(7);
-                const tempImage = {
-                    id: imgId,
-                    url: URL.createObjectURL(file), // Preview ngay bằng blob nội bộ
-                    status: 'uploading',
-                    r2Url: null
-                };
-                
-                state.uploadedImages.push(tempImage);
-                renderPreviewImages();
+                const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
+                state.uploadedImages.push(tempImage); renderPreviewImages();
                 
                 try {
                     const r2Url = await uploadFileToR2(file);
                     const targetImg = state.uploadedImages.find(img => img.id === imgId);
-                    if(targetImg) {
-                        targetImg.status = 'done';
-                        targetImg.r2Url = r2Url;
-                        renderPreviewImages();
-                    }
+                    if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderPreviewImages(); }
                 } catch (err) {
-                    console.error("Lỗi tải ảnh:", err);
-                    alert(`Không thể tải ảnh ${file.name} lên server`);
-                    state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId);
-                    renderPreviewImages();
+                    console.error("Lỗi tải ảnh:", err); alert(`Không thể tải ảnh ${file.name} lên server`);
+                    state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId); renderPreviewImages();
                 }
             }
-            
-            saveBtn.disabled = false;
-            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            e.target.value = '';
+            saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
         }
 
         function renderPreviewImages() {
-            const c = document.getElementById('renderedImagesBox'); 
-            c.innerHTML = '';
-            
+            const c = document.getElementById('renderedImagesBox'); c.innerHTML = '';
             state.uploadedImages.forEach((imgObj) => { 
                 const isUploading = imgObj.status === 'uploading';
-                
-                c.innerHTML += `
-                <div class="image-preview-item">
-                    <img src="${imgObj.url || imgObj.r2Url || imgObj}" alt="Preview">
-                    ${isUploading ? `
-                        <div class="upload-overlay">
-                            <div class="upload-spinner"></div>
-                        </div>
-                    ` : `
-                        <button type="button" onclick="removeUploadedImage('${imgObj.id || imgObj}')" class="remove-btn">
-                            <i class="fa-solid fa-times"></i>
-                        </button>
-                    `}
-                </div>`; 
+                c.innerHTML += `<div class="image-preview-item"><img src="${imgObj.url || imgObj.r2Url || imgObj}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeUploadedImage('${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`; 
             });
         }
         
@@ -1069,31 +860,21 @@
 
         function processOrder() {
             const isUploading = state.uploadedImages.some(img => img.status && img.status === 'uploading');
-            if(isUploading) {
-                return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
-            }
-            
+            if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
             const phone = document.getElementById('custPhone').value.trim(); const name = document.getElementById('custName').value.trim();
             const dateStr = document.getElementById('orderDateInput').value;
             if(!phone || !name || state.cart.length === 0) return alert("Vui lòng nhập tên, SĐT và chọn dịch vụ!");
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0;
             
-            const finalImageUrls = state.uploadedImages.map(img => {
-                if(typeof img === 'string') return img;
-                return img.r2Url;
-            }).filter(url => url !== null);
+            const finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : img.r2Url; }).filter(url => url !== null);
             
             state.orders.unshift({
                 id: 'DON-' + Math.floor(1000 + Math.random() * 9000), date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, items: JSON.parse(JSON.stringify(state.cart)), 
-                images: finalImageUrls, imagesAfter: [],
-                subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: document.getElementById('cartOrderStatus').value
+                images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: document.getElementById('cartOrderStatus').value
             });
             
-            saveState().then(() => {
-                alert("Lưu đơn thành công!"); 
-                clearCart(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard();
-            });
+            saveState().then(() => { alert("Lưu đơn thành công!"); clearCart(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); });
         }
 
         function renderOrdersTable() {
@@ -1116,33 +897,21 @@
                 if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
                 
                 let actionHtml = '';
-                if (hasBefore || hasAfter) {
-                    actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
-                } else {
-                    actionHtml += `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
-                }
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                else actionHtml += `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
                 
-                if (showAfterUpload) {
-                    actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
-                }
+                if (showAfterUpload) actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
                     <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3">
-                        <div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div>
-                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                            ${imgHtml}
-                            ${actionHtml}
-                        </div>
-                    </td>
+                    <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
                     <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
                     <td class="p-3 font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</td>
                     <td class="p-3"><select onchange="updateOrderStatus('${o.id}', this.value)" class="text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
                     <td class="p-3 text-right"><button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-base px-2"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>
-                `;
+                </tr>`;
             }).join('');
         }
 
@@ -1152,56 +921,31 @@
         function openComparison(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
-            
-            const befContainer = document.getElementById('compBeforeImages');
-            const aftContainer = document.getElementById('compAfterImages');
-            
+            const befContainer = document.getElementById('compBeforeImages'); const aftContainer = document.getElementById('compAfterImages');
             const renderImgs = (imgs, emptyMsg) => {
-                if(!imgs || imgs.length === 0) return `<div class="flex flex-col items-center justify-center h-32 text-slate-400 text-xs italic opacity-70"><i class="fa-regular fa-image text-3xl mb-2"></i> ${emptyMsg}</div>`;
-                return imgs.map(src => `<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden relative group"><img src="${src}" class="w-full h-auto object-cover rounded" loading="lazy"></div>`).join('');
+                if(!imgs || imgs.length === 0) return `<div class="col-span-2 flex flex-col items-center justify-center h-32 text-slate-400 text-xs italic opacity-70"><i class="fa-regular fa-image text-3xl mb-2"></i> ${emptyMsg}</div>`;
+                return imgs.map(src => `<div class="bg-slate-200 rounded-lg shadow-sm border border-slate-300 overflow-hidden relative group aspect-[3/4] flex items-center justify-center"><img src="${src}" class="w-full h-full object-cover" loading="lazy"></div>`).join('');
             };
-            
-            befContainer.innerHTML = renderImgs(o.images, 'Chưa có ảnh lúc nhận');
-            aftContainer.innerHTML = renderImgs(o.imagesAfter, 'Chưa chụp ảnh hoàn thiện');
-            
-            document.getElementById('comparisonModal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
+            befContainer.innerHTML = renderImgs(o.images, 'Chưa có ảnh lúc nhận'); aftContainer.innerHTML = renderImgs(o.imagesAfter, 'Chưa chụp ảnh hoàn thiện');
+            document.getElementById('comparisonModal').classList.remove('hidden'); setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
         }
 
         function closeComparisonModal() {
-            document.getElementById('comparisonBox').classList.add('scale-95');
-            setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200);
+            document.getElementById('comparisonBox').classList.add('scale-95'); setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200);
         }
 
         async function uploadAfterImage(e, orderId) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-            
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
             if (!o.imagesAfter) o.imagesAfter = [];
-            
-            const loading = document.getElementById('globalLoading');
-            loading.style.display = 'flex';
-            loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
-            
-            let uploadedCount = 0;
+            const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
             try {
-                for (const file of files) {
-                    const r2Url = await uploadFileToR2(file);
-                    o.imagesAfter.push(r2Url);
-                    uploadedCount++;
-                }
-                await saveState();
-                renderOrdersTable();
-            } catch (err) {
-                console.error("Lỗi upload ảnh sau:", err);
-                alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại.");
-            } finally {
-                loading.style.display = 'none';
-                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
-                e.target.value = '';
-            }
+                for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
+                await saveState(); renderOrdersTable();
+            } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
+            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
         }
 
         function renderCustomersTable() {
@@ -1260,80 +1004,49 @@
         }
 
         function updateExpenseCharts() {
-            const now = new Date();
-            const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            
+            const now = new Date(); const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
             const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(currentMonthPrefix));
-            const expTabCounts = {};
-            let monthTotal = 0;
+            const expTabCounts = {}; let monthTotal = 0;
             
             monthExpenses.forEach(e => {
                 const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
                 if (!expTabCounts[catName]) expTabCounts[catName] = 0;
-                expTabCounts[catName] += e.amount;
-                monthTotal += e.amount;
+                expTabCounts[catName] += e.amount; monthTotal += e.amount;
             });
 
-            const totalEl = document.getElementById('expTabMonthTotal');
-            if (totalEl) totalEl.innerText = monthTotal.toLocaleString('vi-VN') + ' đ';
-
+            const totalEl = document.getElementById('expTabMonthTotal'); if (totalEl) totalEl.innerText = monthTotal.toLocaleString('vi-VN') + ' đ';
             const catListEl = document.getElementById('expTabCategoryBreakdown');
             if (catListEl) {
-                if (monthExpenses.length === 0) {
-                    catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`;
-                } else {
+                if (monthExpenses.length === 0) { catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`; } 
+                else {
                     const catColors = {'Vật Tư': '#ef4444', 'Vận Hành': '#f59e0b', 'Khác': '#3b82f6'};
                     catListEl.innerHTML = Object.keys(expTabCounts).map(cat => {
-                        const amt = expTabCounts[cat];
-                        const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0;
-                        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
-                            <span class="flex items-center gap-1.5 font-semibold text-slate-700">
-                                <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>
-                                ${cat}
-                            </span>
-                            <div class="text-right">
-                                <span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span>
-                                <span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span>
-                            </div>
-                        </div>`;
+                        const amt = expTabCounts[cat]; const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0;
+                        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100"><span class="flex items-center gap-1.5 font-semibold text-slate-700"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>${cat}</span><div class="text-right"><span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span><span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span></div></div>`;
                     }).join('');
                 }
             }
 
             if (expTabPieInst) {
-                const labels = Object.keys(expTabCounts);
-                const data = Object.values(expTabCounts);
-                expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu'];
-                expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1];
-                expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0'];
-                expTabPieInst.update();
+                const labels = Object.keys(expTabCounts); const data = Object.values(expTabCounts);
+                expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expTabPieInst.update();
             }
 
             const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
             const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
-            const inRange = (dStr) => {
-                const d = dStr.split(' ')[0];
-                if (start && d < start) return false;
-                if (end && d > end) return false;
-                return true;
-            };
+            const inRange = (dStr) => { const d = dStr.split(' ')[0]; if (start && d < start) return false; if (end && d > end) return false; return true; };
 
             const reportExpCounts = {};
             state.expenses.forEach(e => {
                 if (inRange(e.date)) {
                     const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
-                    if (!reportExpCounts[catName]) reportExpCounts[catName] = 0;
-                    reportExpCounts[catName] += e.amount;
+                    if (!reportExpCounts[catName]) reportExpCounts[catName] = 0; reportExpCounts[catName] += e.amount;
                 }
             });
 
             if (expReportPieInst) {
-                const labels = Object.keys(reportExpCounts);
-                const data = Object.values(reportExpCounts);
-                expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu'];
-                expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1];
-                expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0'];
-                expReportPieInst.update();
+                const labels = Object.keys(reportExpCounts); const data = Object.values(reportExpCounts);
+                expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expReportPieInst.update();
             }
         }
     </script>
