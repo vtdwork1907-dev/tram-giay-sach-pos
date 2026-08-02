@@ -45,7 +45,7 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* ÉP KHUÔN ẢNH DỌC 3:4 CHO PHẦN UPLOAD (THUMBNAIL PREVIEW) */
+        /* Thumbnail preview upload */
         .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
         .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
@@ -381,30 +381,25 @@
         </main>
     </div>
 
-    <!-- MODALS XEM ẢNH TO VÀ COMPARAISON BEFORE/AFTER -->
+    <!-- MODALS XEM ẢNH VÀ SO SÁNH TRƯỚC SAU -->
     <div id="imageViewerModal" class="fixed inset-0 bg-slate-900/90 z-[60] hidden flex items-center justify-center p-2 lg:p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-[95vw] h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="imageViewerBox">
-            <div class="bg-navy-800 text-white px-3 md:px-4 py-2.5 md:py-3 flex justify-between items-center shrink-0"><h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Ảnh Tình Trạng</h3><button onclick="document.getElementById('imageViewerModal').classList.add('hidden')" class="text-3xl leading-none">&times;</button></div>
-            <div class="p-2 md:p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 overflow-y-auto flex-1 bg-slate-200 content-start" id="imageViewerContent"></div>
+        <div class="bg-white rounded-2xl w-full max-w-4xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="imageViewerBox">
+            <div class="bg-navy-800 text-white px-3 md:px-4 py-2.5 md:py-3 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-magnifying-glass-plus text-sky-400"></i> Ảnh Tình Trạng</h3>
+                <button onclick="document.getElementById('imageViewerModal').classList.add('hidden')" class="text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-3 md:p-6 overflow-y-auto flex-1 bg-slate-900 flex flex-col items-center gap-4" id="imageViewerContent"></div>
         </div>
     </div>
     
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex items-center justify-center p-2 lg:p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
+        <div class="bg-white rounded-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
             <div class="bg-navy-800 text-white px-3 md:px-4 py-2.5 md:py-3 flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-code-compare text-sky-400"></i> So Sánh Trước & Sau</h3>
                 <button onclick="closeComparisonModal()" class="text-3xl leading-none hover:text-red-400 transition">&times;</button>
             </div>
-            <div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-slate-200 p-2 gap-2" id="comparisonContent">
-                <div class="flex-1 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm">
-                    <div class="bg-slate-100 text-slate-700 font-bold text-xs text-center py-2 shrink-0 uppercase border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trạng thái Nhận (Before)</div>
-                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 bg-slate-50 content-start" id="compBeforeImages"></div>
-                </div>
-                <div class="flex-1 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm">
-                    <div class="bg-emerald-50 text-emerald-800 font-bold text-xs text-center py-2 shrink-0 uppercase border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Trạng thái Hoàn thiện (After)</div>
-                    <div class="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 bg-slate-50 content-start" id="compAfterImages"></div>
-                </div>
-            </div>
+            <!-- Giao diện cuộn dọc từng cặp ảnh so sánh -->
+            <div class="flex-1 overflow-y-auto bg-slate-100 p-3 md:p-6 space-y-4" id="comparisonPairsContainer"></div>
         </div>
     </div>
 
@@ -921,17 +916,52 @@
         function openComparison(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
-            const befContainer = document.getElementById('compBeforeImages'); const aftContainer = document.getElementById('compAfterImages');
-            const renderImgs = (imgs, emptyMsg) => {
-                if(!imgs || imgs.length === 0) return `<div class="col-span-2 flex flex-col items-center justify-center h-32 text-slate-400 text-xs italic opacity-70"><i class="fa-regular fa-image text-3xl mb-2"></i> ${emptyMsg}</div>`;
-                return imgs.map(src => `<div class="bg-slate-200 rounded-lg shadow-sm border border-slate-300 overflow-hidden relative group aspect-[3/4] flex items-center justify-center"><img src="${src}" class="w-full h-full object-cover" loading="lazy"></div>`).join('');
-            };
-            befContainer.innerHTML = renderImgs(o.images, 'Chưa có ảnh lúc nhận'); aftContainer.innerHTML = renderImgs(o.imagesAfter, 'Chưa chụp ảnh hoàn thiện');
-            document.getElementById('comparisonModal').classList.remove('hidden'); setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
+            
+            const container = document.getElementById('comparisonPairsContainer');
+            const maxLen = Math.max((o.images || []).length, (o.imagesAfter || []).length);
+            
+            if (maxLen === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 italic">Chưa có hình ảnh nào được tải lên cho đơn hàng này.</div>`;
+            } else {
+                let html = '';
+                for (let i = 0; i < maxLen; i++) {
+                    const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null;
+                    const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
+                    
+                    html += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+                        <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-between">
+                            <span>Góc chụp / Cặp ảnh số #${i + 1}</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
+                            <!-- Trước (Before) -->
+                            <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
+                                <div class="p-2 flex items-center justify-center bg-slate-900/5 min-h-[300px] md:min-h-[400px]">
+                                    ${beforeSrc ? `<img src="${beforeSrc}" class="max-h-[500px] w-auto object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh trước</div>`}
+                                </div>
+                            </div>
+                            <!-- Sau (After) -->
+                            <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
+                                <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
+                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 min-h-[300px] md:min-h-[400px]">
+                                    ${afterSrc ? `<img src="${afterSrc}" class="max-h-[500px] w-auto object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh sau</div>`}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                container.innerHTML = html;
+            }
+            
+            document.getElementById('comparisonModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
         }
 
         function closeComparisonModal() {
-            document.getElementById('comparisonBox').classList.add('scale-95'); setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200);
+            document.getElementById('comparisonBox').classList.add('scale-95');
+            setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200);
         }
 
         async function uploadAfterImage(e, orderId) {
