@@ -20,9 +20,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- === THÊM THƯ VIỆN SUPABASE VÀ AWS SDK (CHO R2) === -->
+    <!-- SUPABASE & AWS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Sử dụng thư viện AWS SDK S3 thông qua cdnjs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
@@ -40,12 +39,10 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loading Overlay */
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Thumbnail preview upload */
         .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
         .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
@@ -58,15 +55,12 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800 relative">
 
-    <!-- Loading Spinner -->
     <div id="globalLoading">
         <div class="spinner mb-3"></div>
         <div class="text-sm font-bold text-navy-800 animate-pulse">Đang đồng bộ dữ liệu...</div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- MÀN HÌNH ĐĂNG NHẬP (AUTH SCREEN) -->
-    <!-- ========================================= -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP -->
     <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -96,9 +90,7 @@
         </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- PHẦN GIAO DIỆN HỆ THỐNG CHÍNH -->
-    <!-- ========================================= -->
+    <!-- GIAO DIỆN CHÍNH -->
     <header class="bg-navy-800 text-white px-3 md:px-4 pb-2 pt-12 md:pt-2 flex items-center justify-between shadow-md z-20 shrink-0">
         <div class="flex items-center space-x-2 md:space-x-3">
             <div id="logoContainer" class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm overflow-hidden shrink-0"><i id="defaultLogoIcon" class="fa-solid fa-shoe-prints text-navy-800 text-sm md:text-xl"></i><img id="customLogoImg" src="" class="hidden w-full h-full object-cover rounded-full"></div>
@@ -926,7 +918,6 @@
             }
         }
 
-        // Mở bảng so sánh cuộn dọc từng cặp ảnh, giữ nguyên tỷ lệ gốc object-contain
         function openComparison(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
