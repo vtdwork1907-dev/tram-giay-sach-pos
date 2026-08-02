@@ -182,6 +182,7 @@
 
                         <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5"><label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label><select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white"><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán (Tính DS)</option><option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option></select></div>
 
+                        <!-- Cập nhật phần chọn ảnh để hiển thị loading và dùng R2 -->
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
                             <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
@@ -261,7 +262,6 @@
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
                     <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
                 </div>
-                
                 <!-- Biểu đồ tròn thống kê chi phí tháng -->
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div class="w-full md:w-1/2 flex flex-col items-center">
@@ -278,7 +278,6 @@
                         <div id="expTabCategoryBreakdown" class="space-y-1.5 pt-1"></div>
                     </div>
                 </div>
-
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
@@ -302,7 +301,6 @@
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-red-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG CHI PHÍ</span><div id="repExpenses" class="text-lg md:text-2xl font-extrabold text-red-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-sky-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-coins"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">LỢI NHUẬN RÒNG</span><div id="repNetProfit" class="text-lg md:text-2xl font-extrabold text-sky-700 mt-1 relative truncate">0 đ</div></div>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 pb-4">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Dịch vụ đặt nhiều nhất</span><div class="flex-1 w-full h-full relative"><canvas id="servicesPieChart"></canvas></div></div>
@@ -311,7 +309,7 @@
             </section>
 
             <!-- TAB: CÀI ĐẶT -->
-            <section id="tab-settings" class="tab-content hidden h-full flex flex-col space-y-4">
+            <section id="tab-settings" class="tab-content hidden space-y-4 pb-16">
                 
                 <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50"><h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Phân Quyền Tài Khoản Nhân Viên</h2><p class="text-[10px] text-sky-700 mt-1">Quản lý có thể xem đơn và nhập chi phí. Nhân viên chỉ được tạo đơn hàng.</p></div>
@@ -355,18 +353,21 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
-                    <div class="p-3 md:p-4 border-b border-slate-200"><h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-tags text-cyanBrand"></i> Quản Lý Dịch Vụ & Mức Giá</h2></div>
-                    <div class="p-3 md:p-4 bg-sky-50 border-b border-sky-100 flex flex-col md:flex-row flex-wrap gap-2 md:items-end">
-                        <div class="w-full md:w-auto md:flex-1"><label class="text-[10px] font-bold text-slate-700">Tên Dịch Vụ</label><input type="text" id="addSvcName" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Danh Mục</label><select id="addSvcCat" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"><option value="CLEAN">Vệ Sinh</option><option value="SOLE">Thay Đế</option><option value="GLUE">Dán Đế</option><option value="REPAINT">Repaint</option><option value="STAIN">Tẩy Ố</option></select></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Giá Mặc Định</label><input type="number" id="addSvcPrice" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"></div>
-                        <div class="w-full md:w-36"><label class="text-[10px] font-bold text-slate-700">Icon</label><select id="addSvcIcon" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"><option value="fa-soap">fa-soap</option><option value="fa-brush">fa-brush</option><option value="fa-shoe-prints">fa-shoe-prints</option><option value="fa-spray-can">fa-spray-can</option><option value="fa-droplet">fa-droplet</option><option value="fa-palette">fa-palette</option></select></div>
-                        <button onclick="addNewService()" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-4 py-3 md:py-2 rounded shadow mt-2 md:mt-0">Thêm Mới</button>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50 flex items-center justify-between">
+                        <h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-tags text-cyanBrand"></i> Quản Lý Dịch Vụ & Mức Giá</h2>
+                        <span class="text-[10px] md:text-xs font-semibold bg-white text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200 shadow-sm">Chỉnh sửa trực tiếp trong bảng</span>
                     </div>
-                    <div class="flex-1 overflow-y-auto">
+                    <div class="p-3 md:p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row flex-wrap gap-2.5 md:items-end">
+                        <div class="w-full md:w-auto md:flex-1"><label class="text-[11px] font-bold text-slate-700 block mb-1">Tên Dịch Vụ Mới</label><input type="text" id="addSvcName" placeholder="VD: Khâu viền đế" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500 bg-white"></div>
+                        <div class="w-full md:w-36"><label class="text-[11px] font-bold text-slate-700 block mb-1">Danh Mục</label><select id="addSvcCat" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white font-medium"><option value="CLEAN">🧼 Vệ Sinh</option><option value="SOLE">👟 Thay Đế</option><option value="GLUE">🖌️ Dán Đế</option><option value="REPAINT">🎨 Repaint</option><option value="STAIN">💧 Tẩy Ố</option></select></div>
+                        <div class="w-full md:w-36"><label class="text-[11px] font-bold text-slate-700 block mb-1">Giá Mặc Định (VNĐ)</label><input type="number" id="addSvcPrice" placeholder="VD: 80000" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500 bg-white font-bold"></div>
+                        <div class="w-full md:w-32"><label class="text-[11px] font-bold text-slate-700 block mb-1">Icon</label><select id="addSvcIcon" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white font-mono"><option value="fa-soap">fa-soap</option><option value="fa-brush">fa-brush</option><option value="fa-shoe-prints">fa-shoe-prints</option><option value="fa-spray-can">fa-spray-can</option><option value="fa-droplet">fa-droplet</option><option value="fa-palette">fa-palette</option></select></div>
+                        <button onclick="addNewService()" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-5 py-3 md:py-2.5 rounded-lg shadow transition active:scale-95 flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus"></i> Thêm Dịch Vụ</button>
+                    </div>
+                    <div class="overflow-x-auto p-2 md:p-3">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3">Mức Giá</th><th class="p-3 text-center">Icon</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-10 text-center">Icon</th><th class="p-3">Tên Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3 w-44">Mức Giá (VNĐ)</th><th class="p-3 text-right w-20">Xóa</th></tr></thead>
                             <tbody id="settingsServicesTable" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -402,27 +403,32 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // === CẤU HÌNH CLOUDFLARE R2 (AWS SDK V2) ===
-        AWS.config.update({
+        // === CẤU HÌNH CLOUDFLARE R2 ===
+        const R2_CONFIG = {
+            endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
             accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
             secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
-            region: "auto"
-        });
+            bucketName: "tram-giay-sach-media",
+            publicDomain: "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev"
+        };
         
-        const s3 = new AWS.S3({
-            endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
-            s3ForcePathStyle: true,
-            signatureVersion: 'v4'
+        // Khởi tạo S3 Client cho R2 (Sử dụng AWS SDK)
+        const s3Client = new aws_sdk_client_s3.S3Client({
+            region: "auto",
+            endpoint: R2_CONFIG.endpoint,
+            credentials: {
+                accessKeyId: R2_CONFIG.accessKeyId,
+                secretAccessKey: R2_CONFIG.secretAccessKey,
+            }
         });
 
-        const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
-        const R2_BUCKET_NAME = "tram-giay-sach-media";
-
+        // Hàm tiện ích để khôi phục tab đã chọn từ localStorage
         function restoreLastTab() {
             const lastTab = localStorage.getItem('TRAM_LAST_TAB');
             if (lastTab && document.getElementById('nav-' + lastTab)) {
+                // Chỉ chuyển tab nếu role cho phép
                 if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) {
-                    switchTab('pos');
+                    switchTab('pos'); // Mặc định cho staff
                 } else {
                     switchTab(lastTab);
                 }
@@ -432,6 +438,7 @@
             }
         }
         
+        // Sửa lại switchTab để lưu tab hiện tại vào localStorage
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => {
@@ -444,6 +451,7 @@
             if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
             if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
             
+            // Lưu tab hiện tại
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
 
@@ -467,12 +475,13 @@
             expenses: [],
             qrConfig: { bank: 'ICB', accountNo: '', accountName: '' },
             cart: [], 
-            uploadedImages: [],
+            uploadedImages: [], // Chứa thông tin ảnh (base64 hoặc URL, trạng thái uploading)
             role: null
         };
 
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
 
+        // Hàm cập nhật toàn bộ dữ liệu lên Supabase
         async function saveState() {
             const payload = {
                 users: state.users,
@@ -489,6 +498,7 @@
                 .eq('id', 'main');
 
             if (error) {
+                // Nếu bảng chưa có dòng id = 'main', tự động tạo mới
                 if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
                    await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
                 } else {
@@ -497,45 +507,54 @@
             }
         }
         
-        function uploadFileToR2(file) {
+        // ================= HÀM UPLOAD ẢNH LÊN CLOUDFLARE R2 =================
+        async function uploadFileToR2(file) {
             return new Promise((resolve, reject) => {
+                // Đọc file dưới dạng ArrayBuffer để upload
                 const reader = new FileReader();
                 reader.readAsArrayBuffer(file);
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     const fileBuffer = e.target.result;
+                    // Tạo tên file độc nhất
                     const fileExtension = file.name.split('.').pop();
                     const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
                     
-                    const params = {
-                        Bucket: R2_BUCKET_NAME,
+                    const uploadParams = {
+                        Bucket: R2_CONFIG.bucketName,
                         Key: uniqueFileName,
                         Body: fileBuffer,
-                        ContentType: file.type
+                        ContentType: file.type,
                     };
-                    
-                    s3.upload(params, function(err, data) {
-                        if (err) {
-                            console.error("Lỗi upload R2:", err);
-                            reject(err);
-                        } else {
-                            const publicUrl = `${R2_PUBLIC_DOMAIN}/${uniqueFileName}`;
-                            resolve(publicUrl);
-                        }
-                    });
+
+                    try {
+                        // Upload lên R2 dùng AWS SDK PutObjectCommand
+                        const command = new aws_sdk_client_s3.PutObjectCommand(uploadParams);
+                        await s3Client.send(command);
+                        
+                        // Trả về URL công khai
+                        const publicUrl = `${R2_CONFIG.publicDomain}/${uniqueFileName}`;
+                        resolve(publicUrl);
+                    } catch (error) {
+                        console.error("Lỗi upload lên R2:", error);
+                        reject(error);
+                    }
                 };
                 reader.onerror = (err) => reject(err);
             });
         }
         
+        // ================= XỬ LÝ TỰ ĐỘNG ĐĂNG NHẬP =================
         function checkAutoLogin() {
             const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
             const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
             
+            // Nếu có nhớ đăng nhập, kiểm tra xem đã quá 30 ngày chưa
             if (savedUserId && loginTime) {
                 const now = new Date().getTime();
                 const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
                 
                 if (now - parseInt(loginTime) > thirtyDaysInMs) {
+                    // Quá hạn 30 ngày
                     localStorage.removeItem('TRAM_ACTIVE_USER');
                     localStorage.removeItem('TRAM_LOGIN_TIME');
                     return;
@@ -569,10 +588,12 @@
             if(foundUser) {
                 state.currentUser = foundUser;
                 
+                // Lưu session
                 localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
                 if (remember) {
                     localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString());
                 } else {
+                    // Nếu không check "Ghi nhớ", chỉ lưu session hiện tại
                     localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
                 }
                 
@@ -591,7 +612,7 @@
                 state.currentUser = null;
                 localStorage.removeItem('TRAM_ACTIVE_USER');
                 localStorage.removeItem('TRAM_LOGIN_TIME');
-                localStorage.removeItem('TRAM_LAST_TAB');
+                localStorage.removeItem('TRAM_LAST_TAB'); // Xóa cả tab ghi nhớ khi đăng xuất
                 document.getElementById('authScreen').style.display = 'flex';
                 setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
             }
@@ -602,7 +623,7 @@
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
             
-            restoreLastTab();
+            restoreLastTab(); // Sử dụng hàm khôi phục tab
         }
 
         function renderSettingsUsersTable() {
@@ -645,11 +666,13 @@
             }
         }
 
+        // ================= KHỞI CHẠY SUPABASE KHI TẢI TRANG =================
         window.addEventListener('DOMContentLoaded', async () => {
             initClock();
             initCharts();
             document.getElementById('globalLoading').style.display = 'flex';
 
+            // 1. Tải dữ liệu từ Supabase lần đầu
             const { data: result, error } = await supabaseClient
                 .from('app_state')
                 .select('data')
@@ -665,9 +688,11 @@
                 state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
                 state.logo = cloudData.logo || null;
             } else if (error && error.code === 'PGRST116') {
+                // Lần đầu chạy, tạo luôn dòng main
                 await saveState();
             }
 
+            // Gọi các hàm vẽ giao diện
             renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
             renderSettingsServicesTable(); renderSettingsUsersTable();
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
@@ -677,6 +702,7 @@
             
             document.getElementById('globalLoading').style.display = 'none';
 
+            // 2. Lắng nghe thay đổi Real-time từ đám mây (Supabase Realtime)
             supabaseClient
                 .channel('public:app_state')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
@@ -798,7 +824,59 @@
         }
 
         function renderSettingsServicesTable() {
-            document.getElementById('settingsServicesTable').innerHTML = state.services.map(s => `<tr class="border-b hover:bg-slate-50"><td class="p-3 font-bold">${s.name}</td><td class="p-3 text-[10px] text-sky-700">${s.category}</td><td class="p-3 text-xs">${s.defaultPrice.toLocaleString()} đ</td><td class="p-3 text-center"><i class="fa-solid ${s.icon}"></i></td><td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+            const catMap = {
+                'CLEAN': '🧼 Vệ Sinh',
+                'SOLE': '👟 Thay Đế',
+                'GLUE': '🖌️ Dán Đế',
+                'REPAINT': '🎨 Repaint',
+                'STAIN': '💧 Tẩy Ố'
+            };
+            document.getElementById('settingsServicesTable').innerHTML = state.services.map(s => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td>
+                    <td class="p-3">
+                        <input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ">
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">
+                            ${catMap[s.category] || s.category}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-1">
+                            <input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition" title="Thay đổi giá và bấm ra ngoài để lưu">
+                            <span class="text-slate-400 text-[10px]">đ</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateServicePrice(id, newPrice) {
+            const val = parseInt(newPrice);
+            if(isNaN(val) || val < 0) return alert("Vui lòng nhập giá tiền hợp lệ!");
+            const svc = state.services.find(s => s.id === id);
+            if(svc) {
+                svc.defaultPrice = val;
+                saveState();
+                renderServicesGrid();
+            }
+        }
+
+        function updateServiceName(id, newName) {
+            const val = newName.trim();
+            if(!val) return alert("Tên dịch vụ không được để trống!");
+            const svc = state.services.find(s => s.id === id);
+            if(svc) {
+                svc.name = val;
+                saveState();
+                renderServicesGrid();
+            }
         }
         function addNewService() {
             const name = document.getElementById('addSvcName').value.trim(); const price = parseInt(document.getElementById('addSvcPrice').value) || 0;
