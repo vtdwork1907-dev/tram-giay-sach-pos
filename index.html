@@ -39,7 +39,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        #globalLoading { display: none; pointer-events: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
@@ -74,17 +74,17 @@
             <div class="p-6 space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Tài khoản</label>
-                    <div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i><input type="text" id="loginUsername" placeholder="Nhập tài khoản..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" value="admin"></div>
+                    <div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i><input type="text" id="loginUsername" placeholder="Nhập tài khoản..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition"></div>
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
-                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()" value="123"></div>
+                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
                 </div>
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
                     <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
                 </div>
-                <button onclick="handleLogin()" type="button" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-sky-600/30 transition active:scale-95 mt-2 relative z-20">ĐĂNG NHẬP <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i></button>
+                <button onclick="handleLogin()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-sky-600/30 transition active:scale-95 mt-2">ĐĂNG NHẬP <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i></button>
             </div>
             <div class="bg-slate-50 p-4 text-center border-t border-slate-100"><p class="text-[10px] text-slate-400">Chỉ Chủ cửa hàng mới có quyền cấp tài khoản mới.</p></div>
         </div>
@@ -181,7 +181,6 @@
 
                         <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5"><label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label><select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white"><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán (Tính DS)</option><option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option></select></div>
 
-                        <!-- Cập nhật phần chọn ảnh để hiển thị loading và dùng R2 -->
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                             <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
                             <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
@@ -237,7 +236,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Xóa</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -424,47 +423,30 @@
 
     <!-- SCRIPT CHÍNH -->
     <script>
-        // 1. KHỞI TẠO STATE & BIẾN TOÀN CỤC TRƯỚC TIÊN (Tránh lỗi chặn script)
-        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
-
-        let state = {
-            users: DEFAULT_USERS, currentUser: null, logo: null,
-            services: [
-                { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
-                { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
-                { id: 's1', name: 'Thay đế giày thể thao', category: 'SOLE', defaultPrice: 350000, icon: 'fa-shoe-prints' },
-                { id: 'r1', name: 'Repaint thân/đế', category: 'REPAINT', defaultPrice: 200000, icon: 'fa-palette' },
-                { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
-                { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
-            ],
-            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, cart: [], uploadedImages: [], role: null
-        };
-
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
-        let activeCollectingOrderId = null;
-
-        // 2. KHỞI TẠO SUPABASE (Bọc try-catch an toàn)
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
-        let supabaseClient = null;
-        try {
-            if (typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch(e) { console.warn('Supabase không tải được:', e); }
-
-        // 3. KHỞI TẠO R2
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
         const R2_BUCKET_NAME = "tram-giay-sach-media";
         let s3Instance = null;
+        let activeCollectingOrderId = null; // Lưu đơn hàng đang được xử lý thanh toán
 
         function getS3Client() {
             if (!s3Instance) {
-                if (typeof AWS === 'undefined') throw new Error("Thư viện AWS SDK chưa tải xong.");
+                if (typeof AWS === 'undefined') {
+                    throw new Error("Thư viện AWS SDK chưa tải xong.");
+                }
                 AWS.config.update({
                     accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
                     secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
                     region: "auto"
                 });
-                s3Instance = new AWS.S3({ endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com", s3ForcePathStyle: true, signatureVersion: 'v4' });
+                s3Instance = new AWS.S3({
+                    endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
+                    s3ForcePathStyle: true,
+                    signatureVersion: 'v4'
+                });
             }
             return s3Instance;
         }
@@ -481,28 +463,17 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        async function saveState() {
-            if (!supabaseClient) return;
-            const payload = {
-                users: state.users, logo: state.logo || '', services: state.services,
-                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
-            };
-            const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
-            if (error) {
-                if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
-                   await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
-                } else { console.error("Lỗi lưu dữ liệu:", error.message); }
-            }
-        }
-
         function restoreLastTab() {
             const lastTab = localStorage.getItem('TRAM_LAST_TAB');
             if (lastTab && document.getElementById('nav-' + lastTab)) {
                 if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) {
                     switchTab('pos');
-                } else { switchTab(lastTab); }
+                } else {
+                    switchTab(lastTab);
+                }
             } else {
-                if (state.role === 'staff') switchTab('pos'); else switchTab('dashboard');
+                if (state.role === 'staff') switchTab('pos');
+                else switchTab('dashboard');
             }
         }
         
@@ -520,6 +491,59 @@
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
 
+        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
+
+        let state = {
+            users: DEFAULT_USERS, currentUser: null, logo: null,
+            services: [
+                { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
+                { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
+                { id: 's1', name: 'Thay đế giày thể thao', category: 'SOLE', defaultPrice: 350000, icon: 'fa-shoe-prints' },
+                { id: 'r1', name: 'Repaint thân/đế', category: 'REPAINT', defaultPrice: 200000, icon: 'fa-palette' },
+                { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
+                { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
+            ],
+            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, cart: [], uploadedImages: [], role: null
+        };
+
+        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
+
+        async function saveState() {
+            const payload = {
+                users: state.users, logo: state.logo || '', services: state.services,
+                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
+            };
+            const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
+            if (error) {
+                if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
+                   await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
+                } else {
+                   console.error("Lỗi lưu dữ liệu:", error.message);
+                }
+            }
+        }
+        
+        function uploadFileToR2(file) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const s3 = getS3Client();
+                    const reader = new FileReader();
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = (e) => {
+                        const fileBuffer = e.target.result;
+                        const fileExtension = file.name.split('.').pop();
+                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: file.type };
+                        s3.upload(params, function(err, data) {
+                            if (err) { console.error("Lỗi upload R2:", err); reject(err); } 
+                            else { resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`); }
+                        });
+                    };
+                    reader.onerror = (err) => reject(err);
+                } catch(err) { reject(err); }
+            });
+        }
+        
         function checkAutoLogin() {
             const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
             const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
@@ -528,7 +552,7 @@
                 if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
                 }
-                const foundUser = (state.users || DEFAULT_USERS).find(u => u.id === savedUserId);
+                const foundUser = state.users.find(u => u.id === savedUserId);
                 if (foundUser) {
                     state.currentUser = foundUser;
                     const authScreen = document.getElementById('authScreen');
@@ -542,27 +566,22 @@
         }
 
         function handleLogin() {
-            try {
-                const user = document.getElementById('loginUsername').value.trim();
-                const pass = document.getElementById('loginPassword').value.trim();
-                const remember = document.getElementById('rememberLogin').checked;
-                if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
-                const foundUser = (state.users || DEFAULT_USERS).find(u => u.username === user && u.password === pass);
-                if(foundUser) {
-                    state.currentUser = foundUser;
-                    localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
-                    if (remember) { localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); } 
-                    else { localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString()); }
-                    document.getElementById('authScreen').classList.add('opacity-0');
-                    setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
-                    document.getElementById('currentUserDisplay').innerText = foundUser.name;
-                    changeRole(foundUser.role);
-                    document.getElementById('loginPassword').value = '';
-                } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
-            } catch (err) {
-                console.error(err);
-                alert("Đã xảy ra lỗi hệ thống, vui lòng tải lại trang!");
-            }
+            const user = document.getElementById('loginUsername').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+            const remember = document.getElementById('rememberLogin').checked;
+            if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
+            const foundUser = state.users.find(u => u.username === user && u.password === pass);
+            if(foundUser) {
+                state.currentUser = foundUser;
+                localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
+                if (remember) { localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); } 
+                else { localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString()); }
+                document.getElementById('authScreen').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
+                document.getElementById('currentUserDisplay').innerText = foundUser.name;
+                changeRole(foundUser.role);
+                document.getElementById('loginPassword').value = '';
+            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
         }
 
         function handleLogout() {
@@ -611,64 +630,31 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            initClock();
-            initCharts();
-            const loadingEl = document.getElementById('globalLoading');
-            if (loadingEl) loadingEl.style.display = 'flex';
+            initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
+            const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
+            if (result && result.data) {
+                const cloudData = result.data;
+                state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
+                state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
+                state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
+            } else if (error && error.code === 'PGRST116') { await saveState(); }
 
-            try {
-                if (supabaseClient) {
-                    const { data: result, error } = await supabaseClient
-                        .from('app_state')
-                        .select('data')
-                        .eq('id', 'main')
-                        .single();
+            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
+            renderSettingsServicesTable(); renderSettingsUsersTable();
+            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
+            updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
+            adjustPOSLayout(); renderDashboard(); checkAutoLogin();
+            document.getElementById('globalLoading').style.display = 'none';
 
-                    if (result && result.data) {
-                        const cloudData = result.data;
-                        state.users = cloudData.users || DEFAULT_USERS;
-                        state.services = cloudData.services || state.services;
-                        state.orders = cloudData.orders || [];
-                        state.expenses = cloudData.expenses || [];
-                        state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
-                        state.logo = cloudData.logo || null;
-                    } else if (error && (error.code === 'PGRST116' || error.message)) {
-                        await saveState();
-                    }
+            supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
+                const newData = payload.new.data;
+                if (newData) {
+                    state.orders = newData.orders || []; state.expenses = newData.expenses || [];
+                    state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
+                    renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                    renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                 }
-            } catch (err) {
-                console.error("Lỗi kết nối, khởi chạy offline:", err);
-            } finally {
-                if (loadingEl) loadingEl.style.display = 'none';
-            }
-
-            renderLogo();
-            renderCategoryTabs();
-            renderServicesGrid(); 
-            renderSettingsServicesTable();
-            renderSettingsUsersTable();
-            renderOrdersTable();
-            renderExpensesTable();
-            renderCustomersTable();
-            updateReportMetrics();
-            loadQRConfig();
-            setCurrentDateTimeForOrder();
-            renderPreviewImages();
-            adjustPOSLayout();
-            renderDashboard();
-            checkAutoLogin();
-
-            if (supabaseClient) {
-                supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
-                    const newData = payload.new.data;
-                    if (newData) {
-                        state.orders = newData.orders || []; state.expenses = newData.expenses || [];
-                        state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
-                        renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                        renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
-                    }
-                }).subscribe();
-            }
+            }).subscribe();
         });
 
         function adjustPOSLayout() {
@@ -733,9 +719,9 @@
             saveState(); updateQRView(); alert("Đã lưu cấu hình mã QR!");
         }
         function updateQRView() {
-            const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000'; const nameStr = state.qrConfig.accountName || 'TRAM GIAY SACH';
+            const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000';
             const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=0`;
-            document.getElementById('paymentTabQR').src = qrUrl; document.getElementById('paymentTabBank').innerText = {'ICB':'VietinBank','MB':'MBBank','VCB':'Vietcombank','TCB':'Techcombank','VPB':'VPBank','ACB':'ACB','BIDV':'BIDV'}[bank] || bank; document.getElementById('paymentTabAcc').innerText = acc; document.getElementById('paymentTabName').innerText = nameStr;
+            document.getElementById('paymentTabQR').src = qrUrl; document.getElementById('paymentTabBank').innerText = {'ICB':'VietinBank','MB':'MBBank','VCB':'Vietcombank','TCB':'Techcombank','VPB':'VPBank','ACB':'ACB','BIDV':'BIDV'}[bank] || bank; document.getElementById('paymentTabAcc').innerText = acc; document.getElementById('paymentTabName').innerText = state.qrConfig.accountName || 'TRAM GIAY SACH';
         }
 
         function renderCategoryTabs() {
@@ -927,34 +913,27 @@
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
                 else actionHtml += `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
                 
-                if (showAfterUpload) actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition mt-1"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                if (showAfterUpload) actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
-                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
+                // Thêm nút Nhận Tiền đối với các đơn chưa thanh toán/chưa trả
                 if (isUnpaid) {
-                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-2 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                    actionHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-md active:scale-95 flex items-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
                 }
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
                     <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3">
-                        <div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div>
-                        <div class="flex flex-col items-start gap-1 mt-1">
-                            <div class="flex items-center gap-1.5 flex-wrap">${imgHtml}${actionHtml}</div>
-                        </div>
-                    </td>
+                    <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
                     <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
-                    <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
-                    <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
-                    <td class="p-3 text-right align-top"><button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-base px-2"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="p-3 font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</td>
+                    <td class="p-3"><select onchange="updateOrderStatus('${o.id}', this.value)" class="text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
+                    <td class="p-3 text-right"><button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-base px-2"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             }).join('');
         }
 
         // --- HÀM XỬ LÝ POPUP NHẬN TIỀN CỦA TỪNG ĐƠN HÀNG ---
-        let activeCollectingOrderId = null;
-
         function openCollectPaymentModal(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
@@ -964,6 +943,7 @@
             const acc = state.qrConfig.accountNo || '000000000';
             const amount = o.total || 0;
             
+            // Tạo link QR VietQR gắn sẵn số tiền của đơn hàng
             const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${amount}`;
             
             document.getElementById('collectOrderCode').innerText = `Đơn hàng: ${o.id} - KH: ${o.customer.name}`;
@@ -982,18 +962,15 @@
             if (!activeCollectingOrderId) return;
             const o = state.orders.find(x => x.id === activeCollectingOrderId);
             if (o) {
-                // Đổi ngay trạng thái thành Đã Trả Khách
-                o.status = 'DELIVERED';
-                
-                // Đóng Modal, cập nhật bảng và tính toán ngay
-                closeCollectPaymentModal();
-                renderOrdersTable();
-                renderCustomersTable();
-                updateReportMetrics();
-                renderDashboard();
-                
-                // Lưu trạng thái mới lên Supabase ngầm (không cần await chờ)
-                saveState();
+                o.status = 'DELIVERED'; // Chuyển thẳng sang Đã trả khách & tính doanh thu
+                saveState().then(() => {
+                    alert(`Đã xác nhận nhận tiền thành công cho đơn ${o.id}! Đơn hàng đã chuyển sang trạng thái "Đã trả khách".`);
+                    closeCollectPaymentModal();
+                    renderOrdersTable();
+                    renderCustomersTable();
+                    updateReportMetrics();
+                    renderDashboard();
+                });
             }
         }
 
@@ -1033,14 +1010,12 @@
                             <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
-                            <!-- Trước (Before) -->
                             <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                 <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
                                 <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px]">
                                     ${beforeSrc ? `<img src="${beforeSrc}" class="w-full h-full object-contain rounded-lg shadow" loading="lazy">` : `<div class="text-slate-400 italic text-xs py-10">Chưa có ảnh trước</div>`}
                                 </div>
                             </div>
-                            <!-- Sau (After) -->
                             <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
                                 <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
                                 <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px]">
