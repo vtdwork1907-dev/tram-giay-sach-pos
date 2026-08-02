@@ -465,6 +465,10 @@
         const R2_BUCKET_NAME = "tram-giay-sach-media";
         let s3Instance = null;
         let activeCollectingOrderId = null;
+        
+        // Khóa để chống gọi lặp lệnh NTFY
+        let lastNotifiedOrderId = null;
+        let lastPaidNotifiedId = null;
 
         function getS3Client() {
             if (!s3Instance) {
@@ -584,7 +588,7 @@
                 
                 if (order && screen && box) {
                     screen.classList.remove('hidden');
-                    renderLogo(); // Đồng bộ logo
+                    renderLogo();
                     
                     const statusList = [
                         { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' },
@@ -861,23 +865,33 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // SUPABASE REALTIME LISTENER
+            // SUPABASE REALTIME LISTENER - ĐÃ SỬA LỖI ĐỂ KHÔNG BAO GIỜ GỌI NTFY Ở ĐÂY
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData && newData.orders) {
-                    // Cập nhật giao diện nếu có thay đổi từ thiết bị khác
+                    
+                    // 1. Chỉ hiện Toast nội bộ nếu nhận thấy có sự thay đổi đơn hàng từ thiết bị khác (Không gọi NTFY)
                     if (newData.orders.length > state.orders.length) {
                         const newO = newData.orders[0];
-                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        // Chỉ hiển thị Toast nội bộ trên thiết bị phụ
-                        showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                        if (newO.id !== lastNotifiedOrderId) {
+                            lastNotifiedOrderId = newO.id;
+                            const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                            if (document.visibilityState === 'visible') {
+                                showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                            }
+                        }
                     } else {
+                        // 2. Chỉ hiện Toast nội bộ khi có ai đó bấm thanh toán từ thiết bị khác
                         for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
                             const newOrd = newData.orders[i];
                             const oldOrd = state.orders.find(o => o.id === newOrd.id);
-                            // Nếu thiết bị khác vừa bấm thu tiền, thiết bị này chỉ hiện Toast nội bộ
                             if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
-                                showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
+                                if (newOrd.id !== lastPaidNotifiedId) {
+                                    lastPaidNotifiedId = newOrd.id;
+                                    if (document.visibilityState === 'visible') {
+                                        showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
+                                    }
+                                }
                             }
                         }
                     }
@@ -888,7 +902,6 @@
                     renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
                     renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                     
-                    // Cập nhật ngay trang tra cứu nếu khách đang mở link
                     if (window.location.hash.startsWith('#track=')) checkUrlTracking();
                 }
             }).subscribe();
@@ -1134,10 +1147,13 @@
             
             const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             
+            // Đánh dấu order này đã được thiết bị này gọi thông báo để tránh trùng lặp
+            lastNotifiedOrderId = newOrder.id;
+            
             // 1. Luôn hiện popup thông báo trong ứng dụng
             showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
             
-            // 2. Chắc chắn gửi 1 lệnh duy nhất lên máy chủ NTFY
+            // 2. Gửi lệnh đẩy 1 lần duy nhất lên máy chủ NTFY
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
@@ -1222,10 +1238,13 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
+                // Đánh dấu order này đã được thiết bị này gọi thông báo để tránh trùng lặp
+                lastPaidNotifiedId = o.id;
+                
                 // 1. Luôn hiện popup thông báo trong ứng dụng
                 showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
                 
-                // 2. Chắc chắn gửi lệnh thông báo cho NTFY
+                // 2. Chắc chắn gửi 1 lệnh duy nhất lên máy chủ NTFY
                 sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
                 
                 closeCollectPaymentModal();
@@ -1244,7 +1263,9 @@
                 const oldStatus = o.status;
                 o.status = st; 
                 
+                // Nếu đổi sang trạng thái Đã thu tiền (Trả khách) bằng thanh select box
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
+                    lastPaidNotifiedId = o.id;
                     showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
                     sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
                 }
