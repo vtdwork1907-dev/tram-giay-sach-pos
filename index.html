@@ -469,7 +469,7 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // 1. HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
+        // HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -486,12 +486,10 @@
             }
         }
 
-        // 2. HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY (ĐÃ ĐƯA TÊN KHÁCH & SỐ TIỀN LÊN DÒNG ĐẦU TIÊN)
-        function sendNtfyAlert(coreInfo, detailInfo) {
+        // HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY (ĐÃ ĐƯA TÊN KHÁCH & SỐ TIỀN LÊN DÒNG ĐẦU TIÊN)
+        function sendNtfyAlert(title, message) {
             const topicName = 'Tramgiaysach_news'; 
-            
-            // Dòng đầu tiên (coreInfo) sẽ hiển thị cực kỳ nổi bật trên popup khóa màn hình của iOS
-            const fullMessage = `${coreInfo}\n${detailInfo}`;
+            const fullMessage = `${title}\n${message}`;
             
             fetch(`https://ntfy.sh/${topicName}`, {
                 method: 'POST',
@@ -699,18 +697,31 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin();
             document.getElementById('globalLoading').style.display = 'none';
 
+            // SUPABASE REALTIME LISTENER (Tự động nhận diện trong app hay ngoài app để điều phối thông báo)
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData) {
                     if (newData.orders && state.orders) {
                         if (newData.orders.length > state.orders.length) {
                             const newO = newData.orders[0];
-                            const svcs = newO.items.map(i => i.name).join(', ');
-                            showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                            const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                            
+                            if (document.visibilityState === 'visible') {
+                                // ĐANG TRONG APP: Chỉ hiện Toast nội bộ
+                                showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                            } else {
+                                // ĐÃ THOÁT RA NGOÀI APP: Đẩy NTFY ra màn hình khóa với đầy đủ thông tin
+                                sendNtfyAlert(`📦 Đơn mới: ${newO.customer.name} - ${newO.total.toLocaleString()}đ`, `SĐT: ${newO.customer.phone} | Dịch vụ: ${svcs}`);
+                            }
                         } else {
                             for (let i = 0; i < Math.min(5, newData.orders.length); i++) {
                                 if (newData.orders[i].status === 'DELIVERED' && state.orders[i] && state.orders[i].status !== 'DELIVERED') {
-                                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newData.orders[i].customer.name} - ${newData.orders[i].total.toLocaleString()}đ`);
+                                    const o = newData.orders[i];
+                                    if (document.visibilityState === 'visible') {
+                                        showNotification("✅ ĐÃ THU TIỀN", `Khách: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
+                                    } else {
+                                        sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
+                                    }
                                 }
                             }
                         }
@@ -957,14 +968,6 @@
             };
             state.orders.unshift(newOrder);
             
-            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
-            
-            // 1. In-App Notification
-            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
-            
-            // 2. NTFY Push Notification (Đặt tên khách & số tiền ngay dòng đầu để không bị cắt xén)
-            sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `Mã đơn: ${newOrder.id} | SĐT: ${phone}\nDịch vụ: ${svcsStr}`);
-
             saveState().then(() => { 
                 clearCart(); 
                 renderOrdersTable(); 
@@ -1046,12 +1049,6 @@
             const o = state.orders.find(x => x.id === activeCollectingOrderId);
             if (o) {
                 o.status = 'DELIVERED'; 
-                
-                // 1. In-App Notification
-                showNotification("✅ THANH TOÁN THÀNH CÔNG", `Khách hàng: ${o.customer.name}\nSố tiền: ${o.total.toLocaleString()}đ`);
-                
-                // 2. NTFY Push Notification (Đặt tên khách & số tiền ngay dòng đầu)
-                sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `Mã đơn: ${o.id} | Trạng thái: Đã trả khách`);
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
