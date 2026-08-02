@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TRẠM GIÀY SẠCH - Hệ Thống POS</title>
     <!-- 1. Icon hiển thị trên thanh tab trình duyệt (Favicon) -->
-<link rel="icon" type="image/png" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
+    <link rel="icon" type="image/png" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
 
-<!-- 2. Icon hiển thị trên màn hình chính Điện thoại (iPhone / Android) -->
-<link rel="apple-touch-icon" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-<meta name="apple-mobile-web-app-title" content="Trạm Giày Sạch">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- 2. Icon hiển thị trên màn hình chính Điện thoại (iPhone / Android) -->
+    <link rel="apple-touch-icon" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
+    <meta name="apple-mobile-web-app-title" content="Trạm Giày Sạch">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -22,7 +22,7 @@
     
     <!-- SUPABASE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- AWS SDK v2 cho Cloudflare R2 (Ổn định trên trình duyệt) -->
+    <!-- AWS SDK v2 cho Cloudflare R2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
@@ -261,6 +261,24 @@
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
                     <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
                 </div>
+                
+                <!-- Biểu đồ tròn thống kê chi phí tháng -->
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="w-full md:w-1/2 flex flex-col items-center">
+                        <span class="text-[10px] md:text-xs font-bold text-slate-600 mb-2 uppercase text-center w-full flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-red-500"></i> Cơ Cấu Chi Phí Tháng Hiện Tại</span>
+                        <div class="relative w-full h-44 md:h-52 flex items-center justify-center">
+                            <canvas id="expensesTabPieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 space-y-2 text-xs border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+                        <div class="font-bold text-slate-700 mb-1 flex items-center justify-between">
+                            <span>Chi phí tháng này:</span>
+                            <span id="expTabMonthTotal" class="font-extrabold text-red-600 text-sm">0 đ</span>
+                        </div>
+                        <div id="expTabCategoryBreakdown" class="space-y-1.5 pt-1"></div>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
@@ -284,9 +302,11 @@
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-red-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG CHI PHÍ</span><div id="repExpenses" class="text-lg md:text-2xl font-extrabold text-red-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-sky-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-coins"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">LỢI NHUẬN RÒNG</span><div id="repNetProfit" class="text-lg md:text-2xl font-extrabold text-sky-700 mt-1 relative truncate">0 đ</div></div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 pb-4">
-                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 pb-4">
+                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Dịch vụ đặt nhiều nhất</span><div class="flex-1 w-full h-full relative"><canvas id="servicesPieChart"></canvas></div></div>
+                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Phân bổ chi phí</span><div class="flex-1 w-full h-full relative"><canvas id="reportExpensesPieChart"></canvas></div></div>
                 </div>
             </section>
 
@@ -420,7 +440,8 @@
             });
             const activeBtn = document.getElementById('nav-' + id);
             if(activeBtn) { activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); }
-            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); }, 100); }
+            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
+            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
             if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
             
             localStorage.setItem('TRAM_LAST_TAB', id);
@@ -450,6 +471,8 @@
             role: null
         };
 
+        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
+
         async function saveState() {
             const payload = {
                 users: state.users,
@@ -474,7 +497,6 @@
             }
         }
         
-        // HÀM UPLOAD ẢNH LÊN R2 VỚI AWS SDK V2
         function uploadFileToR2(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -535,8 +557,6 @@
                 }
             }
         }
-
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null;
 
         function handleLogin() {
             const user = document.getElementById('loginUsername').value.trim();
@@ -977,16 +997,19 @@
             state.expenses.unshift({ id: Date.now(), date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], name, amount: amt, cat: document.getElementById('expCategory').value });
             saveState(); closeExpenseModal(); renderExpensesTable(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
         }
-        function renderExpensesTable() { document.getElementById('expensesTableBody').innerHTML = state.expenses.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${e.name}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vật tư':'Vận hành'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="state.expenses=state.expenses.filter(x=>x.id!==${e.id});saveState();renderExpensesTable();updateReportMetrics();" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); }
+        function renderExpensesTable() { document.getElementById('expensesTableBody').innerHTML = state.expenses.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${e.name}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vật tư':'Vận hành'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="state.expenses=state.expenses.filter(x=>x.id!==${e.id});saveState();renderExpensesTable();updateReportMetrics();updateExpenseCharts();" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); updateExpenseCharts(); }
 
         function initCharts() {
             Chart.defaults.font.family = "'Lexend', sans-serif";
             barChartInst = new Chart(document.getElementById('revenueBarChart').getContext('2d'), { type: 'bar', data: { labels: ['Kỳ Báo Cáo'], datasets: [{label:'Doanh Thu (Đã Thu)', data:[0], backgroundColor:'#0284c7', borderRadius:4}, {label:'Chi Phí', data:[0], backgroundColor:'#ef4444', borderRadius:4}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true, border: {display: false} }, x: { grid: {display: false} } } } });
             pieChartInst = new Chart(document.getElementById('servicesPieChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: {size: 10} } } }, cutout: '65%' } });
+            expReportPieInst = new Chart(document.getElementById('reportExpensesPieChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: {size: 10} } } }, cutout: '65%' } });
+            expTabPieInst = new Chart(document.getElementById('expensesTabPieChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 10} } } }, cutout: '65%' } });
         }
 
         function clearDateFilter() { document.getElementById('reportStartDate').value = ''; document.getElementById('reportEndDate').value = ''; updateReportMetrics(); }
         function updateReportMetrics() {
+            updateExpenseCharts();
             const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if(start && d < start) return false; if(end && d > end) return false; return true; };
             let grossSales = 0, rev = 0, exp = 0; const svcCounts = {};
@@ -1007,6 +1030,84 @@
                 const labels = Object.keys(svcCounts).map(k => labelsMap[k] || 'Khác'); const data = Object.values(svcCounts);
                 pieChartInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; pieChartInst.data.datasets[0].data = data.length > 0 ? data : [1];
                 pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']; pieChartInst.update();
+            }
+        }
+
+        function updateExpenseCharts() {
+            const now = new Date();
+            const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            
+            const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(currentMonthPrefix));
+            const expTabCounts = {};
+            let monthTotal = 0;
+            
+            monthExpenses.forEach(e => {
+                const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
+                if (!expTabCounts[catName]) expTabCounts[catName] = 0;
+                expTabCounts[catName] += e.amount;
+                monthTotal += e.amount;
+            });
+
+            const totalEl = document.getElementById('expTabMonthTotal');
+            if (totalEl) totalEl.innerText = monthTotal.toLocaleString('vi-VN') + ' đ';
+
+            const catListEl = document.getElementById('expTabCategoryBreakdown');
+            if (catListEl) {
+                if (monthExpenses.length === 0) {
+                    catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`;
+                } else {
+                    const catColors = {'Vật Tư': '#ef4444', 'Vận Hành': '#f59e0b', 'Khác': '#3b82f6'};
+                    catListEl.innerHTML = Object.keys(expTabCounts).map(cat => {
+                        const amt = expTabCounts[cat];
+                        const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0;
+                        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                            <span class="flex items-center gap-1.5 font-semibold text-slate-700">
+                                <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>
+                                ${cat}
+                            </span>
+                            <div class="text-right">
+                                <span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span>
+                                <span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            if (expTabPieInst) {
+                const labels = Object.keys(expTabCounts);
+                const data = Object.values(expTabCounts);
+                expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu'];
+                expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1];
+                expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0'];
+                expTabPieInst.update();
+            }
+
+            const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
+            const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
+            const inRange = (dStr) => {
+                const d = dStr.split(' ')[0];
+                if (start && d < start) return false;
+                if (end && d > end) return false;
+                return true;
+            };
+
+            const reportExpCounts = {};
+            state.expenses.forEach(e => {
+                if (inRange(e.date)) {
+                    const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
+                    if (!reportExpCounts[catName]) reportExpCounts[catName] = 0;
+                    reportExpCounts[catName] += e.amount;
+                }
+            });
+
+            if (expReportPieInst) {
+                const labels = Object.keys(reportExpCounts);
+                const data = Object.values(reportExpCounts);
+                expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu'];
+                expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1];
+                expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0'];
+                expReportPieInst.update();
             }
         }
     </script>
