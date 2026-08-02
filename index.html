@@ -4,15 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TRẠM GIÀY SẠCH - Hệ Thống POS</title>
-    <!-- 1. Icon hiển thị trên thanh tab trình duyệt (Favicon) -->
-    <link rel="icon" type="image/png" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-
-    <!-- 2. Icon hiển thị trên màn hình chính Điện thoại (iPhone / Android) -->
-    <link rel="apple-touch-icon" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-    <meta name="apple-mobile-web-app-title" content="Trạm Giày Sạch">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -22,7 +13,7 @@
     
     <!-- === THÊM THƯ VIỆN SUPABASE VÀ AWS SDK (CHO R2) === -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Sử dụng thư viện AWS SDK S3 thông qua cdnjs -->
+    <!-- Sử dụng thư viện AWS SDK S3 thông qua unpkg (trình duyệt) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
@@ -40,7 +31,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loading Overlay */
+        /* Loading Overlay Overlay */
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -86,7 +77,7 @@
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
                     <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()"></div>
                 </div>
-                <!-- Ghi nhớ đăng nhập -->
+                <!-- Thêm Ghi nhớ đăng nhập -->
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
                     <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
@@ -123,11 +114,11 @@
         <nav class="fixed bottom-0 left-0 w-full bg-navy-900 flex flex-row overflow-x-auto hide-scroll z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:relative md:w-20 lg:w-48 md:flex-col md:justify-start md:p-2 lg:p-3 md:space-y-1 md:pb-0 md:shadow-lg md:shrink-0 transition-all">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all bg-sky-600 text-white md:shadow-md"><i class="fa-solid fa-house text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Trang Chủ</span></button>
             <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-cash-register text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Tạo Đơn</span></button>
-            <button onclick="switchTab('payment')" id="nav-payment" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-emerald-400 md:text-emerald-400"><i class="fa-solid fa-qrcode text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Mã QR</span></button>
             <button onclick="switchTab('orders')" id="nav-orders" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-list-check text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Kho Đơn</span></button>
             <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-users text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Khách Hàng</span></button>
             <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-file-invoice-dollar text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Chi Phí</span></button>
             <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-chart-line text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Báo Cáo</span></button>
+            <button onclick="switchTab('payment')" id="nav-payment" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-emerald-400 md:text-emerald-400"><i class="fa-solid fa-qrcode text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Mã QR</span></button>
             <div class="hidden md:block pt-4 border-t border-slate-700/60 w-full mt-2"></div>
             <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-sliders text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Cài Đặt</span></button>
         </nav>
