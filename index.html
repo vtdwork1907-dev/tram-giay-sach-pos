@@ -63,11 +63,14 @@
     <!-- KHUNG CHỨA THÔNG BÁO NỔI TRONG APP -->
     <div id="toastContainer" class="fixed top-16 right-4 left-4 md:left-auto md:w-80 z-[99999] flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- GIAO DIỆN TRA CỨU DÀNH RIÊNG CHO KHÁCH HÀNG (HIỆN KHI BẤM LINK) -->
-    <div id="customerTrackingScreen" class="fixed inset-0 bg-slate-100 z-[200] hidden overflow-y-auto flex flex-col items-center p-3 md:p-6">
-        <div class="w-full max-w-xl bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden my-auto">
+    <!-- GIAO DIỆN TRA CỨU DÀNH RIÊNG CHO KHÁCH HÀNG (SỬA LỖI CUỘN TRANG & ĐỒNG BỘ LOGO) -->
+    <div id="customerTrackingScreen" class="fixed inset-0 bg-slate-100 z-[200] hidden overflow-y-auto p-4 md:p-8">
+        <div class="w-full max-w-xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden my-4">
             <div class="bg-navy-800 text-white p-6 text-center relative">
-                <div class="w-16 h-16 bg-white text-navy-800 rounded-full flex items-center justify-center mx-auto shadow-lg mb-3 text-2xl font-bold"><i class="fa-solid fa-shoe-prints"></i></div>
+                <div class="w-16 h-16 bg-white text-navy-800 rounded-full flex items-center justify-center mx-auto shadow-lg mb-3 text-2xl font-bold overflow-hidden">
+                    <div id="trackingDefaultLogo" class="flex items-center justify-center w-full h-full"><i class="fa-solid fa-shoe-prints"></i></div>
+                    <img id="trackingCustomLogo" src="" class="hidden w-full h-full object-cover">
+                </div>
                 <h1 class="font-bold text-xl tracking-wider">TRẠM GIÀY SẠCH</h1>
                 <p class="text-xs text-sky-200 mt-1">Cổng Tra Cứu Tình Trạng Giày Chăm Sóc</p>
             </div>
@@ -456,6 +459,8 @@
         const R2_BUCKET_NAME = "tram-giay-sach-media";
         let s3Instance = null;
         let activeCollectingOrderId = null;
+        let lastNotifiedOrderId = null;
+        let lastPaidNotifiedId = null;
 
         function getS3Client() {
             if (!s3Instance) {
@@ -516,6 +521,27 @@
             }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
+        // QUẢN LÝ THÔNG BÁO THÔNG MINH (TRONG APP VS NGOÀI MÀN HÌNH)
+        function handleOrderNotification(order, isNew = true) {
+            const svcsStr = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+            const title = isNew ? "📦 TẠO ĐƠN MỚI" : "✅ ĐÃ THU TIỀN";
+            const detail = `Khách: ${order.customer.name} - ${order.total.toLocaleString()}đ\nSĐT: ${order.customer.phone}\nDịch vụ: ${svcsStr}`;
+
+            if (isNew) {
+                if (lastNotifiedOrderId === order.id) return;
+                lastNotifiedOrderId = order.id;
+            } else {
+                if (lastPaidNotifiedId === order.id) return;
+                lastPaidNotifiedId = order.id;
+            }
+
+            if (document.visibilityState === 'visible') {
+                showNotification(title, detail);
+            } else {
+                sendNtfyAlert(`${title}: ${order.customer.name} - ${order.total.toLocaleString()}đ`, `SĐT: ${order.customer.phone} | Dịch vụ: ${svcsStr}`);
+            }
+        }
+
         // TÍNH NĂNG XUẤT VÀ HIỂN THỊ LINK TRA CỨU CHO KHÁCH HÀNG
         function copyTrackingLink(orderId) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
@@ -531,7 +557,6 @@
             if (hash.startsWith('#track=')) {
                 const orderId = hash.replace('#track=', '');
                 
-                // Đảm bảo load đủ dữ liệu đơn hàng nếu F5 trực tiếp trang tra cứu
                 if (state.orders.length === 0) {
                     try {
                         const localData = localStorage.getItem('TRAM_LOCAL_STATE');
@@ -554,8 +579,8 @@
                 
                 if (order && screen && box) {
                     screen.classList.remove('hidden');
+                    renderLogo(); // Đồng bộ logo cho màn hình tra cứu
                     
-                    // Xử lý các mốc trạng thái
                     const statusList = [
                         { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' },
                         { key: 'PROCESSING', label: 'Đang xử lý', icon: 'fa-clock-rotate-left', desc: 'Đang tiến hành Spa giày' },
@@ -582,7 +607,6 @@
                             </div>`;
                     }).join('');
 
-                    // Hình ảnh Before / After
                     let beforeImgs = (order.images || []).map(url => `<img src="${url}" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm">`).join('');
                     let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm">`).join('');
 
@@ -836,9 +860,7 @@
                 const newData = payload.new.data;
                 if (newData) {
                     if (newData.orders && state.orders && newData.orders.length > state.orders.length) {
-                        const newO = newData.orders[0];
-                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                        handleOrderNotification(newData.orders[0], true);
                     }
 
                     state.orders = newData.orders || []; state.expenses = newData.expenses || [];
@@ -897,10 +919,20 @@
         function removeStoreLogo() { state.logo = null; saveState(); renderLogo(); }
         function renderLogo() {
             const has = !!state.logo;
+            // 1. Main app header logo
             document.getElementById('defaultLogoIcon').style.display = has ? 'none' : 'block'; document.getElementById('customLogoImg').style.display = has ? 'block' : 'none';
             if(has) document.getElementById('customLogoImg').src = state.logo;
+            // 2. Settings page logo
             document.getElementById('settingLogoDefault').style.display = has ? 'none' : 'block'; document.getElementById('settingLogoImg').style.display = has ? 'block' : 'none';
             if(has) document.getElementById('settingLogoImg').src = state.logo;
+            // 3. Customer Tracking Screen logo
+            const trackDefault = document.getElementById('trackingDefaultLogo');
+            const trackCustom = document.getElementById('trackingCustomLogo');
+            if (trackDefault && trackCustom) {
+                trackDefault.style.display = has ? 'none' : 'flex';
+                trackCustom.style.display = has ? 'block' : 'none';
+                if (has) trackCustom.src = state.logo;
+            }
         }
 
         function loadQRConfig() {
@@ -1082,15 +1114,7 @@
             };
             state.orders.unshift(newOrder);
             
-            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
-            
-            // 1. Luôn hiện popup thông báo trong ứng dụng
-            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
-            
-            // 2. Kích hoạt NTFY (Nếu đang ở ngoài app)
-            if (document.visibilityState !== 'visible') {
-                sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
-            }
+            handleOrderNotification(newOrder, true);
 
             saveState().then(() => { 
                 clearCart(); 
@@ -1174,13 +1198,7 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
-                // 1. In-App Notification
-                showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
-                
-                // 2. NTFY Push Notification
-                if (document.visibilityState !== 'visible') {
-                    sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
-                }
+                handleOrderNotification(o, false);
                 
                 closeCollectPaymentModal();
                 renderOrdersTable();
