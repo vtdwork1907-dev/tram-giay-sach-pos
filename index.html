@@ -867,7 +867,7 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // SUPABASE REALTIME LISTENER - ĐÃ KHÓA LỆNH GỌI NTFY Ở ĐÂY HOÀN TOÀN
+            // SUPABASE REALTIME LISTENER - ĐÃ KHÓA LỆNH GỌI NTFY Ở ĐÂY HOÀN TOÀN ĐỂ CHỐNG LẶP
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData && newData.orders) {
@@ -934,7 +934,6 @@
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
 
             const generateDashRow = (o, showNote = false) => {
-                const showAfterUpload = ['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status);
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
                 const hasBefore = o.images && o.images.length > 0;
                 const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
@@ -945,9 +944,10 @@
                 
                 let actionHtml = '';
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 w-full"><i class="fa-solid fa-eye"></i> Xem Ảnh</button>`;
-                else actionHtml += `<div class="text-[9px] text-slate-400 mb-1">Không ảnh</div>`;
+                else actionHtml += `<div class="text-[9px] text-slate-400 mb-1 text-center">Không ảnh</div>`;
                 
-                if (showAfterUpload) actionHtml += `<label class="text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition mt-1 w-full"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                // Nút Chụp Sau luôn hiển thị trên Trang chủ
+                actionHtml += `<label class="text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition mt-1 w-full"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-sm">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) {
@@ -1182,9 +1182,10 @@
             
             const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             
+            // Hiện thông báo trong app ngay lập tức
             showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
             
-            // CHỈ GỌI NTFY Ở ĐÂY LÀ DUY NHẤT 1 LẦN CHO NGƯỜI BẤM NÚT
+            // CHỈ GỌI NTFY Ở ĐÂY DUY NHẤT 1 LẦN BỞI THIẾT BỊ BẤM NÚT (KHÔNG QUAN TÂM VISIBILITYSTATE ĐỂ ĐẢM BẢO KHÔNG BỊ TRƯỢT LỆNH)
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
@@ -1218,9 +1219,9 @@
                 
                 let actionHtml = '';
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
-                else actionHtml += `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
+                else actionHtml += `<span class="text-[9px] text-slate-400 block mb-1">Không ảnh</span>`;
                 
-                if (showAfterUpload) actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition mt-1"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition mt-1 w-max"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) {
@@ -1292,8 +1293,7 @@
                 
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
                     showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
-                    
-                    // NẾU NGƯỜI DÙNG ĐỔI TRẠNG THÁI BẰNG THANH CHỌN (SELECT BOX) CŨNG GỌI NTFY 1 LẦN DUY NHẤT
+                    // CHỈ GỌI KHI NGƯỜI DÙNG BẤM TỪ MÁY HỌ
                     sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
                 }
                 
@@ -1325,6 +1325,7 @@
             
             saveState().then(() => {
                 renderOrdersTable();
+                renderDashboard(); // Update dashboard images too
                 openComparison(orderId);
             });
         }
@@ -1407,7 +1408,7 @@
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
             try {
                 for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
-                await saveState(); renderOrdersTable();
+                await saveState(); renderOrdersTable(); renderDashboard();
             } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
             finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
         }
