@@ -316,13 +316,44 @@
                     </div>
                 </div>
 
+                <!-- THANH CÔNG CỤ GOM ĐƠN HÀNG LOẠT -->
+                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-3 rounded-2xl items-center justify-between gap-3 flex-wrap text-xs shadow-sm">
+                    <div class="font-bold text-sky-900 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-sky-600 text-sm"></i>
+                        Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2.5 py-0.5 rounded-full font-extrabold text-xs">0</span> đơn hàng
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-slate-500 font-semibold text-[11px]">Đổi trạng thái hàng loạt:</span>
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSING')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
+                            <i class="fa-solid fa-clock-rotate-left"></i> ⏳ Đang làm
+                        </button>
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSED')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
+                            <i class="fa-solid fa-circle-check"></i> ✅ Đã xong
+                        </button>
+                        <button onclick="clearSelectedOrders()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2.5 py-1.5 rounded-xl transition text-xs">
+                            Bỏ chọn
+                        </button>
+                    </div>
+                </div>
+
                 <!-- THANH THỐNG KÊ SỐ LƯỢNG DỊCH VỤ CHƯA LÀM -->
                 <div id="pendingServicesSummary" class="text-xs bg-amber-50 text-amber-800 p-2 md:p-3 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-2 items-center"></div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Thao Tác Link KH</th></tr></thead>
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider">
+                                    <th class="p-3 w-8 text-center"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
+                                    <th class="p-3">Mã & Ngày Đơn</th>
+                                    <th class="p-3">Khách Hàng</th>
+                                    <th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th>
+                                    <th class="p-3 whitespace-normal">Dịch Vụ (SL) <span class="text-[10px] text-slate-400 font-normal lowercase block">(Bấm vào để đổi trạng thái)</span></th>
+                                    <th class="p-3 min-w-[100px]">Tổng Tiền</th>
+                                    <th class="p-3">Tình Trạng</th>
+                                    <th class="p-3 text-right">Thao Tác Link KH</th>
+                                </tr>
+                            </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -1368,12 +1399,12 @@
                 }
                 const exist = shoe.services.find(s => s.id === svc.id);
                 if (exist) exist.qty += 1;
-                else shoe.services.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1 });
+                else shoe.services.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED' });
                 renderMultiShoeList();
             } else {
                 const exist = state.cart.find(c => c.id === svc.id);
                 if(exist) exist.qty += 1; 
-                else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1 });
+                else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED' });
                 renderCart();
             }
             recalculateSubtotalInput();
@@ -1507,6 +1538,7 @@
                     s.services.forEach(svc => {
                         finalCartItems.push({
                             ...svc,
+                            status: svc.status || 'RECEIVED',
                             name: `[${shoeLabel}] ${svc.name}`
                         });
                     });
@@ -1524,7 +1556,7 @@
                 if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
                 if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
                 
-                finalCartItems = JSON.parse(JSON.stringify(state.cart));
+                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED' }));
                 finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : img.r2Url; }).filter(url => url !== null);
             }
             
@@ -1568,6 +1600,108 @@
             });
         }
 
+        /* =========================================================================
+           HÀM XỬ LÝ GOM ĐƠN VÀ TRẠNG THÁI TỪNG DỊCH VỤ (ITEM STATUS & BULK ACTIONS)
+        ========================================================================= */
+        function toggleSelectAllOrders(checked) {
+            document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = checked);
+            updateBulkSelectionUI();
+        }
+
+        function updateBulkSelectionUI() {
+            const checkedCbs = document.querySelectorAll('.order-select-cb:checked');
+            const toolbar = document.getElementById('bulkActionToolbar');
+            const countSpan = document.getElementById('selectedOrdersCount');
+            if (checkedCbs.length > 0) {
+                if (toolbar) toolbar.classList.remove('hidden'); toolbar.classList.add('flex');
+                if (countSpan) countSpan.innerText = checkedCbs.length;
+            } else {
+                if (toolbar) toolbar.classList.add('hidden'); toolbar.classList.remove('flex');
+                const headerCb = document.getElementById('selectAllOrdersHeader');
+                if (headerCb) headerCb.checked = false;
+            }
+        }
+
+        function clearSelectedOrders() {
+            document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = false);
+            const headerCb = document.getElementById('selectAllOrdersHeader');
+            if (headerCb) headerCb.checked = false;
+            updateBulkSelectionUI();
+        }
+
+        function cycleItemStatus(orderId, itemIdKey) {
+            const o = state.orders.find(x => x.id === orderId);
+            if (!o) return;
+            const item = o.items.find(i => String(i.cartId || i.id) === String(itemIdKey));
+            if (!item) return;
+
+            const cur = item.status || 'RECEIVED';
+            if (cur === 'RECEIVED') item.status = 'PROCESSING';
+            else if (cur === 'PROCESSING') item.status = 'PROCESSED';
+            else item.status = 'RECEIVED';
+
+            recalculateOrderStatus(o);
+            saveState();
+            renderOrdersTable();
+            renderDashboard();
+        }
+
+        function recalculateOrderStatus(o) {
+            if (!o.items || o.items.length === 0) return;
+            
+            const allDone = o.items.every(i => i.status === 'PROCESSED');
+            const anyProgress = o.items.some(i => i.status === 'PROCESSING' || i.status === 'PROCESSED');
+
+            // Không tự nhảy nếu đơn đã PAID hoặc DELIVERED
+            if (['PAID', 'DELIVERED'].includes(o.status)) return;
+
+            if (allDone) {
+                o.status = 'PROCESSED';
+            } else if (anyProgress) {
+                o.status = 'PROCESSING';
+            } else {
+                o.status = 'RECEIVED';
+            }
+        }
+
+        function bulkUpdateSelectedOrders(targetStatus) {
+            const checkedCbs = document.querySelectorAll('.order-select-cb:checked');
+            if (checkedCbs.length === 0) return alert("Vui lòng chọn ít nhất một đơn hàng!");
+
+            const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
+            let updatedCount = 0;
+
+            checkedCbs.forEach(cb => {
+                const orderId = cb.value;
+                const o = state.orders.find(x => x.id === orderId);
+                if (!o) return;
+
+                let modified = false;
+                o.items.forEach(item => {
+                    const svcInfo = state.services.find(s => s.id === item.id);
+                    const cat = svcInfo ? svcInfo.category : 'KHÁC';
+
+                    if (serviceFilter === 'ALL' || cat === serviceFilter) {
+                        item.status = targetStatus;
+                        modified = true;
+                    }
+                });
+
+                if (modified) {
+                    recalculateOrderStatus(o);
+                    updatedCount++;
+                }
+            });
+
+            saveState();
+            renderOrdersTable();
+            renderDashboard();
+            updateBulkSelectionUI();
+
+            const statusText = targetStatus === 'PROCESSING' ? 'Đang làm' : 'Đã xong';
+            showNotification("⚡ CẬP NHẬT HÀNG LOẠT", `Đã cập nhật trạng thái [${statusText}] cho ${updatedCount} đơn hàng!`);
+        }
+
         function renderOrdersTable() {
             const search = document.getElementById('searchOrderInput').value.toLowerCase(); 
             const statusFilter = document.getElementById('filterOrderStatus').value;
@@ -1579,12 +1713,14 @@
             const pendingCounts = {};
             
             state.orders.forEach(o => {
-                if (o.status === 'RECEIVED') {
+                if (o.status === 'RECEIVED' || o.status === 'PROCESSING') {
                     o.items.forEach(item => {
-                        const svcInfo = state.services.find(s => s.id === item.id);
-                        const cat = svcInfo ? svcInfo.category : 'KHÁC';
-                        if (!pendingCounts[cat]) pendingCounts[cat] = 0;
-                        pendingCounts[cat] += item.qty;
+                        if (item.status !== 'PROCESSED') {
+                            const svcInfo = state.services.find(s => s.id === item.id);
+                            const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                            if (!pendingCounts[cat]) pendingCounts[cat] = 0;
+                            pendingCounts[cat] += item.qty;
+                        }
                     });
                 }
             });
@@ -1658,23 +1794,48 @@
                 actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button>`;
                 actionColumn += `</div>`;
 
-                // LỌC CHỈ HIỂN THỊ DỊCH VỤ THUỘC CATEGORY ĐƯỢC CHỌN (NẾU ĐANG BẬT BỘ LỌC)
+                // LỌC CÁC MỤC DỊCH VỤ CẦN HIỂN THỊ
                 const displayItems = serviceFilter === 'ALL' ? o.items : o.items.filter(item => {
                     const svcInfo = state.services.find(s => s.id === item.id);
                     return svcInfo && svcInfo.category === serviceFilter;
                 });
 
+                // TÔ MÀU VÀ CLICK XOAY VÒNG CHO TỪNG DỊCH VỤ
+                const servicesBadgeHtml = displayItems.map(i => {
+                    const st = i.status || 'RECEIVED';
+                    let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700';
+                    let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
+
+                    if (st === 'PROCESSING') {
+                        badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm';
+                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>';
+                    } else if (st === 'PROCESSED') {
+                        badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm';
+                        iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>';
+                    }
+
+                    const itemIdKey = i.cartId || i.id;
+                    return `<span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')"
+                                  class="${badgeClass} border px-2 py-1 rounded-md mr-1 inline-block mb-1 cursor-pointer transition hover:scale-105 select-none"
+                                  title="Bấm để chuyển: Mới nhận -> Đang làm (Màu Vàng) -> Đã xong (Màu Xanh)">
+                                ${iconHtml}${i.name} (x${i.qty})
+                            </span>`;
+                }).join('');
+
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-3 text-center align-top pt-3.5"><input type="checkbox" class="order-select-cb w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
                     <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
                     <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
                     <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
-                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${displayItems.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
+                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${servicesBadgeHtml}</td>
                     <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
                     <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
                     <td class="p-3 text-right align-top">${actionColumn}</td>
                 </tr>`;
             }).join('');
+
+            updateBulkSelectionUI();
         }
 
         function openCollectPaymentModal(orderId) {
