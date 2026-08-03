@@ -218,14 +218,27 @@
                     </div>
 
                     <div class="p-3 overflow-visible lg:overflow-y-auto space-y-3 lg:flex-1">
-                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5"><label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-regular fa-clock text-sky-600"></i> Thời gian Tạo</label><input type="datetime-local" id="orderDateInput" class="w-full text-[16px] md:text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 outline-none text-slate-700 bg-white"></div>
-                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-                            <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1"><i class="fa-solid fa-user-tag text-sky-600"></i> Khách Hàng</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="text" id="custName" placeholder="Tên *" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
-                                <input type="text" id="custPhone" placeholder="SĐT *" onblur="autoFillCustomer(this.value)" class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
+                        
+                        <!-- THỜI GIAN & KHÁCH HÀNG (ĐÃ GỘP GỌN LẠI) -->
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-2 shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-white border border-slate-200 text-sky-600 w-[38px] h-[38px] flex items-center justify-center rounded-lg shrink-0 shadow-sm"><i class="fa-regular fa-clock"></i></span>
+                                <input type="datetime-local" id="orderDateInput" class="w-full text-[16px] md:text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 outline-none text-slate-700 bg-white">
                             </div>
-                            <input type="text" id="custNote" placeholder="Ghi chú yêu cầu chung..." class="w-full text-[16px] md:text-xs px-2 py-2 md:py-1.5 rounded-lg border border-slate-300 outline-none">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="relative">
+                                    <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-user"></i></span>
+                                    <input type="text" id="custName" placeholder="Tên khách *" class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
+                                </div>
+                                <div class="relative">
+                                    <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-phone"></i></span>
+                                    <input type="text" id="custPhone" placeholder="SĐT *" onblur="autoFillCustomer(this.value)" class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-comment-dots"></i></span>
+                                <input type="text" id="custNote" placeholder="Ghi chú yêu cầu chung..." class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
+                            </div>
                         </div>
 
                         <div id="mobileServicesPlaceholder" class="flex lg:hidden flex-col shrink-0 w-full mb-1">
