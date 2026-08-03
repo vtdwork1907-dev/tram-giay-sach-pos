@@ -185,8 +185,8 @@
                         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Cần Xử Lý Gấp (5 Đơn Tồn Lâu Nhất)</h2>
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
                             <div class="overflow-x-auto w-full">
-                                <table class="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48">Hình Ảnh (Before/After)</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
+                                <table class="w-full min-w-[600px] text-left text-xs border-collapse whitespace-nowrap">
+                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider text-[10px]"><th class="p-2 w-[70px]">Mã & Ngày</th><th class="p-2 w-[80px]">Khách Hàng</th><th class="p-2 w-28">Hình Ảnh</th><th class="p-2 min-w-[110px]">Dịch Vụ</th><th class="p-2 w-[70px]">Tổng Tiền</th><th class="p-2 w-[80px]">Tình Trạng</th></tr></thead>
                                     <tbody id="dashPendingOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -197,8 +197,8 @@
                         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-comment-dots text-indigo-500"></i> Đơn Có Ghi Chú / Yêu Cầu</h2>
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
                             <div class="overflow-x-auto w-full">
-                                <table class="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
+                                <table class="w-full min-w-[600px] text-left text-xs border-collapse whitespace-nowrap">
+                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider text-[10px]"><th class="p-2 w-[70px]">Mã & Ngày</th><th class="p-2 w-[80px]">Khách Hàng</th><th class="p-2 w-36 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-2 min-w-[110px]">Dịch Vụ</th><th class="p-2 w-[70px]">Tổng Tiền</th><th class="p-2 w-[80px]">Tình Trạng</th></tr></thead>
                                     <tbody id="dashNotedOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -548,7 +548,7 @@
             <button onclick="closeCollectPaymentModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-2 shadow-inner"><i class="fa-solid fa-hand-holding-dollar"></i></div>
             <h3 class="font-bold text-slate-800 text-lg">Nhận Tiền Thanh Toán</h3>
-            <p id="collectOrderCode" class="text-xs font-bold text-sky-700 font-mono mt-0.5">Mã đơn: DON-XXXX</p>
+            <p id="collectOrderCode" class="text-xs font-bold text-sky-700 font-mono mt-0.5">Mã đơn: BON-XXXX</p>
             
             <div class="p-3 bg-slate-50 border-2 border-dashed border-emerald-200 rounded-2xl my-4 w-full flex justify-center bg-white shadow-sm">
                 <img id="collectQRImg" src="" class="w-52 h-56 object-contain rounded-xl">
@@ -1215,31 +1215,51 @@
                 const hasBefore = o.images && o.images.length > 0;
                 const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
                 
+                const parts = o.date.split(' ');
+                const dStr = parts[0]; 
+                const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+
                 let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 mb-1 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 mb-1 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
+                if (hasBefore) imgHtml += `<span class="text-[9px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[9px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 rounded border border-sky-200 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${o.imagesAfter.length}</span>`;
                 
                 let actionHtml = '';
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 w-full"><i class="fa-solid fa-eye"></i> Xem Ảnh</button>`;
-                else actionHtml += `<div class="text-[9px] text-slate-400 mb-1 text-center">Không ảnh</div>`;
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[9px] font-bold bg-navy-800 text-white px-1.5 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                else actionHtml += `<div class="text-[9px] text-slate-400 italic text-center w-full">Không ảnh</div>`;
                 
-                actionHtml += `<label class="text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition mt-1 w-full"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
-                
-                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm">${o.total.toLocaleString()} đ</div>`;
+                actionHtml += `<label class="text-[9px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 py-1 rounded shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+
+                const servicesBadgeHtml = o.items.map(i => {
+                    const st = i.status || 'RECEIVED';
+                    let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700';
+                    let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
+
+                    if (st === 'PROCESSING') {
+                        badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm';
+                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>';
+                    } else if (st === 'PROCESSED') {
+                        badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm';
+                        iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>';
+                    }
+                    const itemIdKey = i.cartId || i.id;
+                    return `<span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} border px-1.5 py-0.5 rounded mr-1 mb-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[9px]" title="Bấm để chuyển trạng thái">${iconHtml}${i.name} (x${i.qty})</span>`;
+                }).join('');
+
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-[11px]">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) {
-                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1 w-full text-[9px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-1.5 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
                 }
 
-                let noteHtml = showNote ? `<div class="text-[11px] text-red-600 font-bold italic mb-1.5 whitespace-normal leading-tight max-w-[180px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
+                let noteHtml = showNote ? `<div class="text-[9px] text-red-600 font-bold italic mb-1 whitespace-normal leading-tight max-w-[120px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date.split(' ')[0]}</span></td>
-                    <td class="p-3"><div class="font-bold text-sm">${o.customer.name}</div><div class="text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3 align-top whitespace-normal min-w-[140px]">${noteHtml}<div>${imgHtml}</div>${actionHtml}</td>
-                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
-                    <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
-                    <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
+                    <td class="p-2 align-top"><span class="font-mono text-sky-700 font-bold text-[10px]">${o.id}</span><br><span class="text-[8px] text-slate-500 font-mono">${tStr}<br>${dStr}</span></td>
+                    <td class="p-2 align-top"><div class="font-bold text-[11px] truncate max-w-[80px]" title="${o.customer.name}">${o.customer.name}</div><div class="text-[9px] text-slate-500 font-mono mt-0.5">${o.customer.phone}</div></td>
+                    <td class="p-2 align-top whitespace-normal min-w-[100px]">${noteHtml}<div class="mb-1">${imgHtml}</div><div class="flex gap-1 w-full">${actionHtml}</div></td>
+                    <td class="p-2 align-top whitespace-normal min-w-[130px] leading-tight">${servicesBadgeHtml}</td>
+                    <td class="p-2 align-top min-w-[70px]">${totalCellHtml}</td>
+                    <td class="p-2 align-top min-w-[80px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] font-bold p-1.5 rounded border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
                 </tr>`;
             };
 
@@ -1753,7 +1773,7 @@
             const initStatus = document.getElementById('cartOrderStatus').value;
             
             const newOrder = {
-                id: 'DON-' + Math.floor(1000 + Math.random() * 9000), 
+                id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
                 date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, 
                 items: finalCartItems, 
