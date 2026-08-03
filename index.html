@@ -255,21 +255,7 @@
                 <div id="pcServicesPlaceholder" class="hidden lg:flex flex-1 flex-col overflow-hidden shrink-0 h-full"></div>
             </section>
 
-            <!-- CÁC TAB CÒN LẠI -->
-            <section id="tab-payment" class="tab-content hidden h-full flex flex-col items-center justify-center py-6">
-                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
-                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
-                    <h2 class="font-bold text-slate-800 text-2xl mb-1">Mã QR Thanh Toán</h2>
-                    <p class="text-xs text-slate-500 mb-6">Đưa mã này cho khách hàng quét để tự động điền STK</p>
-                    <div class="p-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl shadow-sm mb-6 w-full flex justify-center bg-white"><img id="paymentTabQR" src="" class="w-56 h-56 object-contain rounded-xl"></div>
-                    <div class="w-full space-y-2.5">
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Ngân hàng:</span><span id="paymentTabBank" class="font-bold text-navy-800"></span></div>
-                        <div class="flex items-center justify-between bg-sky-50 p-3 rounded-xl text-sm border border-sky-100"><span class="text-sky-800 font-medium">Số tài khoản:</span><span id="paymentTabAcc" class="font-mono font-bold text-sky-700 text-base"></span></div>
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Chủ tài khoản:</span><span id="paymentTabName" class="font-bold text-slate-800 uppercase"></span></div>
-                    </div>
-                </div>
-            </section>
-
+            <!-- TAB: KHO ĐƠN -->
             <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
@@ -278,7 +264,22 @@
                             <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                             <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                         </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">📋 Tất cả trạng thái</option><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán</option><option value="DELIVERED">🤝 Đã trả khách</option></select>
+                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none">
+                            <option value="ALL">📋 Tất cả trạng thái</option>
+                            <option value="RECEIVED">📦 Đã nhận</option>
+                            <option value="PROCESSING">⏳ Đang xử lý</option>
+                            <option value="PROCESSED">✅ Đã xử lý xong</option>
+                            <option value="PAID">💰 Đã thanh toán</option>
+                            <option value="DELIVERED">🤝 Đã trả khách</option>
+                        </select>
+                        <select id="filterOrderCategory" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none">
+                            <option value="ALL">🔖 Tất cả dịch vụ</option>
+                            <option value="CLEAN">🧼 Vệ sinh</option>
+                            <option value="SOLE">👟 Thay đế</option>
+                            <option value="STAIN">💧 Tẩy ố</option>
+                            <option value="REPAINT">🎨 Repaint</option>
+                            <option value="GLUE">🖌️ Dán đế</option>
+                        </select>
                         <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
                     </div>
                 </div>
@@ -1226,15 +1227,33 @@
         }
 
         function renderOrdersTable() {
-            const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
-            const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); 
+            const statusFilter = document.getElementById('filterOrderStatus').value;
+            const categoryFilter = document.getElementById('filterOrderCategory') ? document.getElementById('filterOrderCategory').value : 'ALL';
+            const sDate = document.getElementById('filterOrderStart').value; 
+            const eDate = document.getElementById('filterOrderEnd').value;
+            
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
+            
             const filtered = state.orders.filter(o => {
                 const dateOnly = o.date.split(' ')[0];
-                if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
+                if(sDate && dateOnly < sDate) return false; 
+                if(eDate && dateOnly > eDate) return false;
                 if(statusFilter !== 'ALL' && o.status !== statusFilter) return false;
-                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; return true;
+                
+                // Lọc chính xác theo Danh mục / Dịch vụ
+                if(categoryFilter !== 'ALL') {
+                    const hasCat = o.items.some(item => {
+                        const svc = state.services.find(s => s.id === item.id);
+                        return svc && svc.category === categoryFilter;
+                    });
+                    if(!hasCat) return false;
+                }
+
+                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
+                return true;
             });
+
             document.getElementById('ordersTableBody').innerHTML = filtered.map(o => {
                 const showAfterUpload = ['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status);
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
