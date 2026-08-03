@@ -255,59 +255,43 @@
                 <div id="pcServicesPlaceholder" class="hidden lg:flex flex-1 flex-col overflow-hidden shrink-0 h-full"></div>
             </section>
 
-            <!-- TAB: KHO ĐƠN -->
-            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
-                <div class="bg-white p-2 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
-                    <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
-                    <div class="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 w-full">
-                        <div class="col-span-2 md:col-span-1 flex items-center bg-slate-50 border border-slate-300 rounded-lg p-1">
-                            <span class="text-[9px] text-slate-500 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[12px] md:text-xs py-0.5 px-1 bg-transparent outline-none w-full">
-                            <span class="text-[9px] text-slate-500 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[12px] md:text-xs py-0.5 px-1 bg-transparent outline-none w-full">
-                        </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="col-span-1 text-[12px] md:text-xs py-1.5 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50">
-                            <option value="ALL">📋 Tất cả trạng thái</option>
-                            <option value="RECEIVED">📦 Đã nhận</option>
-                            <option value="PROCESSING">⏳ Đang xử lý</option>
-                            <option value="PROCESSED">✅ Đã xử lý xong</option>
-                            <option value="PAID">💰 Đã thanh toán</option>
-                            <option value="DELIVERED">🤝 Đã trả khách</option>
-                        </select>
-                        <select id="filterOrderCategory" onchange="renderOrdersTable()" class="col-span-1 text-[12px] md:text-xs py-1.5 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50">
-                            <option value="ALL">🔖 Tất cả dịch vụ</option>
-                            <option value="CLEAN">🧼 Vệ sinh</option>
-                            <option value="SOLE">👟 Thay đế</option>
-                            <option value="STAIN">💧 Tẩy ố</option>
-                            <option value="REPAINT">🎨 Repaint</option>
-                            <option value="GLUE">🖌️ Dán đế</option>
-                        </select>
-                        <div class="col-span-2 md:col-span-1 relative flex-1">
-                            <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
-                            <input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1.5 text-[12px] md:text-xs rounded-lg border border-slate-300 outline-none w-full">
-                        </div>
+            <!-- CÁC TAB CÒN LẠI -->
+            <section id="tab-payment" class="tab-content hidden h-full flex flex-col items-center justify-center py-6">
+                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
+                    <h2 class="font-bold text-slate-800 text-2xl mb-1">Mã QR Thanh Toán</h2>
+                    <p class="text-xs text-slate-500 mb-6">Đưa mã này cho khách hàng quét để tự động điền STK</p>
+                    <div class="p-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl shadow-sm mb-6 w-full flex justify-center bg-white"><img id="paymentTabQR" src="" class="w-56 h-56 object-contain rounded-xl"></div>
+                    <div class="w-full space-y-2.5">
+                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Ngân hàng:</span><span id="paymentTabBank" class="font-bold text-navy-800"></span></div>
+                        <div class="flex items-center justify-between bg-sky-50 p-3 rounded-xl text-sm border border-sky-100"><span class="text-sky-800 font-medium">Số tài khoản:</span><span id="paymentTabAcc" class="font-mono font-bold text-sky-700 text-base"></span></div>
+                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Chủ tài khoản:</span><span id="paymentTabName" class="font-bold text-slate-800 uppercase"></span></div>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col relative">
-                    <div class="overflow-auto flex-1 h-full absolute inset-0">
-                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap min-w-[800px]">
-                            <thead class="sticky top-0 z-20 bg-slate-100 shadow-sm">
-                                <tr class="text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
-                                    <th class="p-2 w-24">Mã & Ngày</th>
-                                    <th class="p-2 w-28">Khách Hàng</th>
-                                    <th class="p-2 w-48 whitespace-normal">Ghi Chú & Hình Ảnh</th>
-                                    <th class="p-2 whitespace-normal">Dịch Vụ (SL)</th>
-                                    <th class="p-2 min-w-[80px]">Tổng Tiền</th>
-                                    <th class="p-2 w-24">Tình Trạng</th>
-                                    <th class="p-2 text-right w-24">Thao Tác</th>
-                                </tr>
-                            </thead>
+            </section>
+
+            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-1 flex-1 lg:flex-none">
+                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
+                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
+                        </div>
+                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">📋 Tất cả trạng thái</option><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán</option><option value="DELIVERED">🤝 Đã trả khách</option></select>
+                        <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Thao Tác Link KH</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- CÁC TAB CÒN LẠI -->
             <section id="tab-customers" class="tab-content hidden h-full flex flex-col space-y-4">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200"><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-crown text-amber-500"></i> Xếp Hạng Khách Hàng VIP</h2></div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
@@ -370,7 +354,7 @@
                 </div>
             </section>
 
-            <!-- CÀI ĐẶT -->
+            <!-- TAB: CÀI ĐẶT -->
             <section id="tab-settings" class="tab-content hidden space-y-4 pb-16">
                 
                 <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
@@ -455,7 +439,7 @@
             <button onclick="closeCollectPaymentModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-2 shadow-inner"><i class="fa-solid fa-hand-holding-dollar"></i></div>
             <h3 class="font-bold text-slate-800 text-lg">Nhận Tiền Thanh Toán</h3>
-            <p id="collectOrderCode" class="text-xs font-bold text-sky-700 font-mono mt-0.5">Mã đơn: BON-XXXX</p>
+            <p id="collectOrderCode" class="text-xs font-bold text-sky-700 font-mono mt-0.5">Mã đơn: DON-XXXX</p>
             
             <div class="p-3 bg-slate-50 border-2 border-dashed border-emerald-200 rounded-2xl my-4 w-full flex justify-center bg-white shadow-sm">
                 <img id="collectQRImg" src="" class="w-52 h-56 object-contain rounded-xl">
@@ -497,6 +481,7 @@
         let s3Instance = null;
         let activeCollectingOrderId = null;
         
+        // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
 
@@ -531,6 +516,7 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
+        // HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -547,6 +533,7 @@
             }
         }
 
+        // HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY
         function sendNtfyAlert(title, message) {
             const topicName = 'Tramgiaysach_news'; 
             const fullMessage = `${title}\n${message}`;
@@ -557,10 +544,12 @@
             }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
+        // HÀM MỞ ỨNG DỤNG ZALO HOẶC ZALO WEB ĐỂ GỬI LINK CHO KHÁCH
         function sendZaloTracking(orderId, phone, customerName) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
             const message = `Dạ, Trạm Giày Sạch xin gửi quý khách ${customerName} link tra cứu tiến độ chăm sóc giày:\n${trackingUrl}\nCảm ơn quý khách đã tin tưởng ủng hộ cửa hàng ạ! ❤️`;
             
+            // Lấy riêng số điện thoại
             let cleanPhone = phone.replace(/\D/g, '');
             if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
             
@@ -568,6 +557,7 @@
             window.open(zaloUrl, '_blank');
         }
 
+        // TÍNH NĂNG XEM ẢNH FULL MÀN HÌNH CHO KHÁCH
         function openImageViewer(url) {
             const modal = document.getElementById('imageViewerModal');
             const img = document.getElementById('viewerImage');
@@ -589,6 +579,7 @@
             }, 300);
         }
 
+        // TÍNH NĂNG XUẤT VÀ HIỂN THỊ LINK TRA CỨU CHO KHÁCH HÀNG
         function copyTrackingLink(orderId) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
             navigator.clipboard.writeText(trackingUrl).then(() => {
@@ -724,10 +715,6 @@
             });
             const activeBtn = document.getElementById('nav-' + id);
             if(activeBtn) { activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); }
-            
-            // XỬ LÝ LỖI MẤT BẢNG TẠO ĐƠN TRÊN PC: Tự động sắp xếp lại giao diện khi vào tab
-            if(id === 'pos') { setTimeout(adjustPOSLayout, 50); }
-            
             if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
             if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
             if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
@@ -767,13 +754,33 @@
             } catch (err) {}
         }
         
+        function uploadFileToR2(file) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const s3 = getS3Client();
+                    const reader = new FileReader();
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = (e) => {
+                        const fileBuffer = e.target.result;
+                        const fileExtension = file.name.split('.').pop();
+                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: file.type };
+                        s3.upload(params, function(err, data) {
+                            if (err) reject(err); else resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`);
+                        });
+                    };
+                    reader.onerror = (err) => reject(err);
+                } catch(err) { reject(err); }
+            });
+        }
+        
         function checkAutoLogin() {
             const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
             const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
             if (savedUserId && loginTime) {
                 const now = new Date().getTime();
-                if (now - parseInt(loginTime) > 365 * 24 * 60 * 60 * 1000) {
-                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return false;
+                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
                 }
                 const foundUser = state.users.find(u => u.id === savedUserId);
                 if (foundUser) {
@@ -782,12 +789,10 @@
                     if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
                     document.getElementById('currentUserDisplay').innerText = foundUser.name;
                     changeRole(foundUser.role);
-                    return true;
                 } else {
                     localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME');
                 }
             }
-            return false;
         }
 
         function handleLogin() {
@@ -806,7 +811,6 @@
                 document.getElementById('currentUserDisplay').innerText = foundUser.name;
                 changeRole(foundUser.role);
                 document.getElementById('loginPassword').value = '';
-                restoreLastTab();
             } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
         }
 
@@ -823,6 +827,7 @@
             state.role = r; 
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
+            restoreLastTab();
         }
 
         function renderSettingsUsersTable() {
@@ -854,42 +859,7 @@
             }
         }
 
-        // HÀM CHỈNH SỬA LỖI MẤT BẢNG DỊCH VỤ TRÊN PC 
-        // Thay vì dùng appendChild (dễ bị mất DOM), dùng contains để kiểm tra chính xác
-        function adjustPOSLayout() {
-            const container = document.getElementById('servicesMainContainer'); 
-            const mobilePlace = document.getElementById('mobileServicesPlaceholder');
-            const pcPlace = document.getElementById('pcServicesPlaceholder');
-            if (!container || !mobilePlace || !pcPlace) return;
-            
-            if (window.innerWidth < 1024) {
-                if (!mobilePlace.contains(container)) mobilePlace.appendChild(container);
-            } else {
-                if (!pcPlace.contains(container)) pcPlace.appendChild(container);
-            }
-        }
-
-        window.addEventListener('resize', adjustPOSLayout);
-        window.addEventListener('load', adjustPOSLayout);
-
-        // HÀM XỬ LÝ LỖI KHÔNG TỰ ĐỘNG ĐIỀN ĐƯỢC GIỜ VÀ KHÔNG CHO SỬA GIỜ
-        function setCurrentDateTimeForOrder() { 
-            try {
-                const now = new Date(); 
-                const yyyy = now.getFullYear();
-                const MM = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const hh = String(now.getHours()).padStart(2, '0');
-                const mm = String(now.getMinutes()).padStart(2, '0');
-                
-                // Trả về đúng format chuẩn YYYY-MM-DDTHH:mm cho thẻ input datetime-local
-                document.getElementById('orderDateInput').value = `${yyyy}-${MM}-${dd}T${hh}:${mm}`; 
-            } catch (e) {
-                console.error("Lỗi set thời gian:", e);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
             
             try {
@@ -903,54 +873,31 @@
                     state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
                     state.logo = parsed.logo || null;
                 }
-            } catch (e) {
-                console.error("Lỗi đọc dữ liệu local:", e);
-            }
-
-            const isLoggedIn = checkAutoLogin();
-
-            // Gọi chạy ngay các hàm này bên ngoài luồng kiểm tra chính để tránh bị nghẽn
-            setCurrentDateTimeForOrder();
-            adjustPOSLayout();
+            } catch (e) {}
 
             try {
-                renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
-                renderSettingsServicesTable(); renderSettingsUsersTable();
-                renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
-                updateReportMetrics(); loadQRConfig(); renderPreviewImages();
-                renderDashboard(); checkUrlTracking();
-            } catch(e) {
-                console.error("Lỗi render UI:", e);
-            } 
-            
+                const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
+                if (result && result.data) {
+                    const cloudData = result.data;
+                    state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
+                    state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
+                    state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
+                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
+                } else if (error && error.code === 'PGRST116') { await saveState(); }
+            } catch(err) {}
+
+            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
+            renderSettingsServicesTable(); renderSettingsUsersTable();
+            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
+            updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
+            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
-            if (isLoggedIn) restoreLastTab();
 
-            supabaseClient.from('app_state').select('data').eq('id', 'main').single()
-                .then(async ({ data: result, error }) => {
-                    if (result && result.data) {
-                        const cloudData = result.data;
-                        state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
-                        state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
-                        state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
-                        localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
-                        
-                        renderLogo(); renderSettingsServicesTable(); renderSettingsUsersTable();
-                        renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); renderServicesGrid();
-                        
-                        if (state.currentUser) {
-                            const stillExists = state.users.find(u => u.id === state.currentUser.id);
-                            if (!stillExists) {
-                                handleLogout();
-                            }
-                        }
-                    } else if (error && error.code === 'PGRST116') { await saveState(); }
-                })
-                .catch(err => console.error("Lỗi tải dữ liệu Supabase:", err));
-
+            // SUPABASE REALTIME LISTENER - ĐÃ KHÓA LỆNH GỌI NTFY Ở ĐÂY HOÀN TOÀN ĐỂ CHỐNG LẶP
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData && newData.orders) {
+                    
                     if (newData.orders.length > state.orders.length) {
                         const newO = newData.orders[0];
                         const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
@@ -980,6 +927,184 @@
             }).subscribe();
         });
 
+        function adjustPOSLayout() {
+            const container = document.getElementById('servicesMainContainer'); if (!container) return;
+            if (window.innerWidth < 1024) document.getElementById('mobileServicesPlaceholder').appendChild(container);
+            else document.getElementById('pcServicesPlaceholder').appendChild(container);
+        }
+        window.addEventListener('resize', adjustPOSLayout);
+
+        function initClock() {
+            setInterval(() => { 
+                const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN');
+                document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`;
+            }, 1000);
+        }
+
+        function renderDashboard() {
+            const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
+
+            state.orders.forEach(o => {
+                if(o.date && o.date.startsWith(todayStr)) {
+                    grossToday += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') revToday += o.total;
+                    if(o.status === 'RECEIVED') cReceived++; if(o.status === 'PROCESSING') cProcessing++;
+                    if(o.status === 'PROCESSED') cProcessed++; if(o.status === 'DELIVERED') cDelivered++;
+                }
+            });
+
+            document.getElementById('dashGrossSales').innerText = grossToday.toLocaleString() + ' đ'; document.getElementById('dashRevenue').innerText = revToday.toLocaleString() + ' đ';
+            document.getElementById('dashCountReceived').innerText = cReceived; document.getElementById('dashCountProcessing').innerText = cProcessing;
+            document.getElementById('dashCountProcessed').innerText = cProcessed; document.getElementById('dashCountDelivered').innerText = cDelivered;
+
+            const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
+
+            const generateDashRow = (o, showNote = false) => {
+                const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
+                const hasBefore = o.images && o.images.length > 0;
+                const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
+                
+                let imgHtml = '';
+                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 mb-1 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 mb-1 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
+                
+                let actionHtml = '';
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 w-full"><i class="fa-solid fa-eye"></i> Xem Ảnh</button>`;
+                else actionHtml += `<div class="text-[9px] text-slate-400 mb-1 text-center">Không ảnh</div>`;
+                
+                actionHtml += `<label class="text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition mt-1 w-full"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm">${o.total.toLocaleString()} đ</div>`;
+                if (isUnpaid) {
+                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                }
+
+                let noteHtml = showNote ? `<div class="text-[11px] text-red-600 font-bold italic mb-1.5 whitespace-normal leading-tight max-w-[180px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
+
+                return `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date.split(' ')[0]}</span></td>
+                    <td class="p-3"><div class="font-bold text-sm">${o.customer.name}</div><div class="text-[10px] text-slate-500">${o.customer.phone}</div></td>
+                    <td class="p-3 align-top whitespace-normal min-w-[140px]">${noteHtml}<div>${imgHtml}</div>${actionHtml}</td>
+                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
+                    <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
+                    <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
+                </tr>`;
+            };
+
+            const pending = state.orders.filter(o => o.status === 'RECEIVED').sort((a,b) => a.date.localeCompare(b.date)).slice(0, 5);
+            const tbodyPending = document.getElementById('dashPendingOrdersBody');
+            if(pending.length === 0) tbodyPending.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Cửa hàng đã xử lý hết đơn mới! Rất tuyệt vời.</td></tr>`;
+            else tbodyPending.innerHTML = pending.map(o => generateDashRow(o, false)).join('');
+
+            const notedOrders = state.orders.filter(o => o.customer.note && o.customer.note.trim() !== '' && o.status !== 'DELIVERED').sort((a,b) => b.date.localeCompare(a.date));
+            const tbodyNoted = document.getElementById('dashNotedOrdersBody');
+            if(notedOrders.length === 0) tbodyNoted.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Không có đơn hàng nào đang có yêu cầu đặc biệt.</td></tr>`;
+            else tbodyNoted.innerHTML = notedOrders.map(o => generateDashRow(o, true)).join('');
+        }
+
+        async function uploadStoreLogo(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const btnText = document.getElementById('uploadLogoBtnText'); const oldText = btnText.innerText;
+            btnText.innerText = "Đang tải..."; document.getElementById('logoInput').disabled = true;
+            try { const imageUrl = await uploadFileToR2(file); state.logo = imageUrl; await saveState(); renderLogo(); } 
+            catch(error) { alert("Lỗi khi upload logo: " + error.message); } 
+            finally { btnText.innerText = oldText; document.getElementById('logoInput').disabled = false; e.target.value = ''; }
+        }
+        function removeStoreLogo() { state.logo = null; saveState(); renderLogo(); }
+        function renderLogo() {
+            const has = !!state.logo;
+            document.getElementById('defaultLogoIcon').style.display = has ? 'none' : 'block'; document.getElementById('customLogoImg').style.display = has ? 'block' : 'none';
+            if(has) document.getElementById('customLogoImg').src = state.logo;
+            document.getElementById('settingLogoDefault').style.display = has ? 'none' : 'block'; document.getElementById('settingLogoImg').style.display = has ? 'block' : 'none';
+            if(has) document.getElementById('settingLogoImg').src = state.logo;
+            const trackDefault = document.getElementById('trackingDefaultLogo');
+            const trackCustom = document.getElementById('trackingCustomLogo');
+            if (trackDefault && trackCustom) {
+                trackDefault.style.display = has ? 'none' : 'flex'; trackCustom.style.display = has ? 'block' : 'none';
+                if (has) trackCustom.src = state.logo;
+            }
+        }
+
+        function loadQRConfig() {
+            document.getElementById('cfgBank').value = state.qrConfig.bank || 'ICB'; document.getElementById('cfgAccountNo').value = state.qrConfig.accountNo || ''; document.getElementById('cfgAccountName').value = state.qrConfig.accountName || '';
+            updateQRView();
+        }
+        function saveQRConfig() {
+            state.qrConfig.bank = document.getElementById('cfgBank').value; state.qrConfig.accountNo = document.getElementById('cfgAccountNo').value.trim(); state.qrConfig.accountName = document.getElementById('cfgAccountName').value.trim();
+            saveState(); updateQRView(); alert("Đã lưu cấu hình mã QR!");
+        }
+        function updateQRView() {
+            const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000'; const nameStr = state.qrConfig.accountName || 'TRAM GIAY SACH';
+            const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=0`;
+            document.getElementById('paymentTabQR').src = qrUrl; document.getElementById('paymentTabBank').innerText = {'ICB':'VietinBank','MB':'MBBank','VCB':'Vietcombank','TCB':'Techcombank','VPB':'VPBank','ACB':'ACB','BIDV':'BIDV'}[bank] || bank; document.getElementById('paymentTabAcc').innerText = acc; document.getElementById('paymentTabName').innerText = nameStr;
+        }
+
+        function renderCategoryTabs() {
+            const cats = [{k: 'ALL', n: 'Tất Cả'}, {k: 'CLEAN', n: 'Vệ Sinh'}, {k: 'SOLE', n: 'Thay Đế'}, {k: 'STAIN', n: 'Tẩy Ố'}, {k: 'REPAINT', n: 'Repaint'}, {k: 'GLUE', n: 'Dán Đế'}];
+            document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-4 py-1.5 md:px-3.5 rounded-lg text-[12px] md:text-[11px] font-semibold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
+        }
+        function filterCategory(c) { activeCategory = c; renderCategoryTabs(); renderServicesGrid(); }
+
+        function renderServicesGrid() {
+            const filtered = activeCategory === 'ALL' ? state.services : state.services.filter(s => s.category === activeCategory);
+            document.getElementById('servicesGrid').innerHTML = filtered.map(s => `
+                <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-sky-50 border border-slate-200 rounded-2xl cursor-pointer transition flex flex-col items-center justify-center p-2 md:p-3 text-center shadow-sm hover:shadow group aspect-square relative active:scale-95 shrink-0 min-h-[100px]">
+                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-3xl md:text-4xl mb-2 opacity-90 group-hover:text-sky-600 transition"></i><h4 class="font-bold text-[10px] md:text-xs text-slate-800 leading-tight line-clamp-2">${s.name}</h4><span class="text-[9px] font-semibold text-slate-500 mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
+                </div>`).join('');
+        }
+
+        function renderSettingsServicesTable() {
+            const catMap = { 'CLEAN': '🧼 Vệ Sinh', 'SOLE': '👟 Thay Đế', 'GLUE': '🖌️ Dán Đế', 'REPAINT': '🎨 Repaint', 'STAIN': '💧 Tẩy Ố' };
+            const total = state.services.length;
+            document.getElementById('settingsServicesTable').innerHTML = state.services.map((s, idx) => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td>
+                    <td class="p-3"><input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ"></td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">${catMap[s.category] || s.category}</span></td>
+                    <td class="p-3"><div class="flex items-center gap-1"><input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition" title="Thay đổi giá và bấm ra ngoài để lưu"><span class="text-slate-400 text-[10px]">đ</span></div></td>
+                    <td class="p-3 text-center"><div class="flex items-center justify-center gap-1"><button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển lên trên"><i class="fa-solid fa-arrow-up text-xs"></i></button><button onclick="moveServiceDown(${idx})" ${idx === total - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển xuống dưới"><i class="fa-solid fa-arrow-down text-xs"></i></button></div></td>
+                    <td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`).join('');
+        }
+
+        function moveServiceUp(idx) {
+            if (idx <= 0) return;
+            const temp = state.services[idx]; state.services[idx] = state.services[idx - 1]; state.services[idx - 1] = temp;
+            saveState(); renderSettingsServicesTable(); renderServicesGrid();
+        }
+
+        function moveServiceDown(idx) {
+            if (idx >= state.services.length - 1) return;
+            const temp = state.services[idx]; state.services[idx] = state.services[idx + 1]; state.services[idx + 1] = temp;
+            saveState(); renderSettingsServicesTable(); renderServicesGrid();
+        }
+
+        function updateServicePrice(id, newPrice) {
+            const val = parseInt(newPrice);
+            if(isNaN(val) || val < 0) return alert("Vui lòng nhập giá tiền hợp lệ!");
+            const svc = state.services.find(s => s.id === id);
+            if(svc) { svc.defaultPrice = val; saveState(); renderServicesGrid(); }
+        }
+
+        function updateServiceName(id, newName) {
+            const val = newName.trim();
+            if(!val) return alert("Tên dịch vụ không được để trống!");
+            const svc = state.services.find(s => s.id === id);
+            if(svc) { svc.name = val; saveState(); renderServicesGrid(); }
+        }
+
+        function addNewService() {
+            const name = document.getElementById('addSvcName').value.trim(); const price = parseInt(document.getElementById('addSvcPrice').value) || 0;
+            if(!name) return alert("Nhập tên dịch vụ!");
+            state.services.push({ id: 'SVC-' + Date.now(), name, category: document.getElementById('addSvcCat').value, defaultPrice: price, icon: document.getElementById('addSvcIcon').value });
+            saveState(); renderSettingsServicesTable(); renderServicesGrid(); document.getElementById('addSvcName').value = ''; document.getElementById('addSvcPrice').value = '';
+        }
+
+        function deleteService(id) { if(confirm("Xóa dịch vụ?")) { state.services = state.services.filter(s => s.id !== id); saveState(); renderSettingsServicesTable(); renderServicesGrid(); } }
+
+        function setCurrentDateTimeForOrder() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById('orderDateInput').value = now.toISOString().slice(0,16); }
+        
         function autoFillCustomer(phone) { const cust = state.orders.find(o => o.customer.phone === phone); if(cust) document.getElementById('custName').value = cust.customer.name; }
 
         function addToCart(svcId) {
@@ -1074,8 +1199,7 @@
             const finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : img.r2Url; }).filter(url => url !== null);
             
             const newOrder = {
-                id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
-                date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
+                id: 'DON-' + Math.floor(1000 + Math.random() * 9000), date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, items: JSON.parse(JSON.stringify(state.cart)), 
                 images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: document.getElementById('cartOrderStatus').value
             };
@@ -1083,9 +1207,13 @@
             
             const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             
+            // Đánh dấu để tránh Realtime gọi lại NTFY
             lastNotifiedOrderId = newOrder.id;
             
+            // Hiện thông báo trong app
             showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
+            
+            // GỬI LỆNH ĐẾN NTFY (1 LẦN DUY NHẤT TỪ MÁY NÀY)
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             saveState().then(() => { 
@@ -1098,32 +1226,15 @@
         }
 
         function renderOrdersTable() {
-            const search = document.getElementById('searchOrderInput').value.toLowerCase(); 
-            const statusFilter = document.getElementById('filterOrderStatus').value;
-            const categoryFilter = document.getElementById('filterOrderCategory') ? document.getElementById('filterOrderCategory').value : 'ALL';
-            const sDate = document.getElementById('filterOrderStart').value; 
-            const eDate = document.getElementById('filterOrderEnd').value;
-            
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
+            const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
-            
             const filtered = state.orders.filter(o => {
                 const dateOnly = o.date.split(' ')[0];
-                if(sDate && dateOnly < sDate) return false; 
-                if(eDate && dateOnly > eDate) return false;
+                if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
                 if(statusFilter !== 'ALL' && o.status !== statusFilter) return false;
-                
-                if(categoryFilter !== 'ALL') {
-                    const hasCat = o.items.some(item => {
-                        const svc = state.services.find(s => s.id === item.id);
-                        return svc && svc.category === categoryFilter;
-                    });
-                    if(!hasCat) return false;
-                }
-
-                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
-                return true;
+                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; return true;
             });
-
             document.getElementById('ordersTableBody').innerHTML = filtered.map(o => {
                 const showAfterUpload = ['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status);
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
@@ -1131,8 +1242,8 @@
                 const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
                 
                 let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 mb-1 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 mb-1 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
+                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
                 
                 let actionHtml = '';
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
@@ -1145,6 +1256,7 @@
                     totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
                 }
 
+                // Cột Thao Tác (Zalo + Link)
                 let actionColumn = `<div class="flex flex-col gap-1.5 items-end mt-1">`;
                 if (o.customer.phone && o.customer.phone.trim() !== '') {
                     actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-comment-sms"></i> Gửi Zalo</button>`;
@@ -1153,17 +1265,15 @@
                 actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button>`;
                 actionColumn += `</div>`;
 
-                let noteHtml = o.customer.note ? `<div class="text-[10px] text-slate-600 italic mb-1.5 whitespace-normal leading-tight max-w-[160px]" title="${o.customer.note}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note}</div>` : '';
-
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-2 font-mono text-sky-700 font-bold text-[11px] align-top w-24">${o.id}<br><span class="text-[9px] text-slate-400 font-sans whitespace-nowrap">${o.date}</span></td>
-                    <td class="p-2 align-top w-24"><div class="font-bold text-[12px] leading-tight line-clamp-2 w-24 whitespace-normal">${o.customer.name}</div><div class="text-[9px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-2 align-top whitespace-normal min-w-[140px]">${noteHtml}<div>${imgHtml}</div>${actionHtml}</td>
-                    <td class="p-2 text-[10px] whitespace-normal min-w-[130px] align-top">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
-                    <td class="p-2 align-top min-w-[90px]">${totalCellHtml}</td>
-                    <td class="p-2 align-top w-24"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
-                    <td class="p-2 text-right align-top w-28">${actionColumn}</td>
+                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
+                    <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
+                    <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
+                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
+                    <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
+                    <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
+                    <td class="p-3 text-right align-top">${actionColumn}</td>
                 </tr>`;
             }).join('');
         }
@@ -1197,6 +1307,7 @@
             if (o) {
                 o.status = 'DELIVERED'; 
                 
+                // Gắn khóa chống lặp
                 lastPaidNotifiedId = o.id;
                 
                 showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
@@ -1219,6 +1330,7 @@
                 o.status = st; 
                 
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
+                    // Gắn khóa chống lặp
                     lastPaidNotifiedId = o.id;
                     showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
                     sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
