@@ -310,7 +310,15 @@
                             <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                             <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                         </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">📋 Tất cả trạng thái</option><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán</option><option value="DELIVERED">🤝 Đã trả khách</option></select>
+                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none">
+                            <option value="ACTIVE" selected>⚡ Đơn đang làm (Mặc định)</option>
+                            <option value="ALL">📋 Tất cả đơn (Cả đơn đã thu)</option>
+                            <option value="RECEIVED">📦 Đã nhận</option>
+                            <option value="PROCESSING">⏳ Đang xử lý</option>
+                            <option value="PROCESSED">✅ Đã xử lý xong</option>
+                            <option value="PAID">💰 Đã thanh toán</option>
+                            <option value="DELIVERED">🤝 Đã trả khách / Đã thu tiền</option>
+                        </select>
                         <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">🛠️ Tất cả dịch vụ</option><option value="CLEAN">🧼 Vệ sinh</option><option value="SOLE">👟 Thay đế</option><option value="STAIN">💧 Tẩy ố</option><option value="REPAINT">🎨 Repaint</option><option value="GLUE">🖌️ Dán đế</option></select>
                         <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
                     </div>
@@ -1751,7 +1759,13 @@
                 const dateOnly = o.date.split(' ')[0];
                 if(sDate && dateOnly < sDate) return false; 
                 if(eDate && dateOnly > eDate) return false;
-                if(statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+                
+                // MẶC ĐỊNH 'ACTIVE': TỰ ĐỘNG ẨN CÁC ĐƠN ĐÃ THU TIỀN / ĐÃ TRẢ KHÁCH (DELIVERED, PAID)
+                if (statusFilter === 'ACTIVE') {
+                    if (o.status === 'DELIVERED' || o.status === 'PAID') return false;
+                } else if (statusFilter !== 'ALL' && o.status !== statusFilter) {
+                    return false;
+                }
                 
                 if(serviceFilter !== 'ALL') {
                     const hasService = o.items.some(item => {
