@@ -309,77 +309,64 @@
             </section>
 
             <!-- TAB: KHO ĐƠN -->
-            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-2">
-                <!-- KHU VỰC BỘ LỌC TỐI ƯU NHỎ GỌN TRÊN ĐIỆN THOẠI -->
-                <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
-                        <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
-                            <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
-                            <input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
+            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-1 flex-1 lg:flex-none">
+                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
+                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px]">
-                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
-                            <span class="text-[8px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[10px] py-0.5 px-0.5 bg-transparent outline-none w-full">
-                            <span class="text-[8px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[10px] py-0.5 px-0.5 bg-transparent outline-none w-full">
-                        </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[11px] py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
-                            <option value="ACTIVE" selected>⚡ Đơn đang làm</option>
-                            <option value="ALL">📋 Tất cả đơn</option>
+                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none">
+                            <option value="ACTIVE" selected>⚡ Đơn đang làm (Mặc định)</option>
+                            <option value="ALL">📋 Tất cả đơn (Cả đơn đã thu)</option>
                             <option value="RECEIVED">📦 Đã nhận</option>
                             <option value="PROCESSING">⏳ Đang xử lý</option>
                             <option value="PROCESSED">✅ Đã xử lý xong</option>
                             <option value="PAID">💰 Đã thanh toán</option>
-                            <option value="DELIVERED">🤝 Đã trả khách</option>
+                            <option value="DELIVERED">🤝 Đã trả khách / Đã thu tiền</option>
                         </select>
-                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[11px] py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
-                            <option value="ALL">🛠️ Tất cả dịch vụ</option>
-                            <option value="CLEAN">🧼 Vệ sinh</option>
-                            <option value="SOLE">👟 Thay đế</option>
-                            <option value="STAIN">💧 Tẩy ố</option>
-                            <option value="REPAINT">🎨 Repaint</option>
-                            <option value="GLUE">🖌️ Dán đế</option>
-                        </select>
+                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">🛠️ Tất cả dịch vụ</option><option value="CLEAN">🧼 Vệ sinh</option><option value="SOLE">👟 Thay đế</option><option value="STAIN">💧 Tẩy ố</option><option value="REPAINT">🎨 Repaint</option><option value="GLUE">🖌️ Dán đế</option></select>
+                        <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
                     </div>
                 </div>
 
                 <!-- THANH CÔNG CỤ GOM ĐƠN HÀNG LOẠT -->
-                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-2 md:p-2.5 rounded-xl items-center justify-between gap-2 flex-wrap text-xs shadow-sm">
-                    <div class="font-bold text-sky-900 flex items-center gap-1.5 text-[11px]">
-                        <i class="fa-solid fa-layer-group text-sky-600 text-xs"></i>
-                        Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2 py-0.5 rounded-full font-extrabold text-[10px]">0</span> đơn
+                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-3 rounded-2xl items-center justify-between gap-3 flex-wrap text-xs shadow-sm">
+                    <div class="font-bold text-sky-900 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-sky-600 text-sm"></i>
+                        Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2.5 py-0.5 rounded-full font-extrabold text-xs">0</span> đơn hàng
                     </div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <button onclick="bulkUpdateSelectedOrders('PROCESSING')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg shadow-sm transition flex items-center gap-1 text-[10px] active:scale-95">
-                            ⏳ Đang làm
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-slate-500 font-semibold text-[11px]">Đổi trạng thái hàng loạt:</span>
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSING')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
+                            <i class="fa-solid fa-clock-rotate-left"></i> ⏳ Đang làm
                         </button>
-                        <button onclick="bulkUpdateSelectedOrders('PROCESSED')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg shadow-sm transition flex items-center gap-1 text-[10px] active:scale-95">
-                            ✅ Đã xong
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSED')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
+                            <i class="fa-solid fa-circle-check"></i> ✅ Đã xong
                         </button>
-                        <button onclick="clearSelectedOrders()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2 py-1 rounded-lg transition text-[10px]">
+                        <button onclick="clearSelectedOrders()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2.5 py-1.5 rounded-xl transition text-xs">
                             Bỏ chọn
                         </button>
                     </div>
                 </div>
 
                 <!-- THANH THỐNG KÊ SỐ LƯỢNG DỊCH VỤ CHƯA LÀM -->
-                <div id="pendingServicesSummary" class="text-[11px] bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center"></div>
+                <div id="pendingServicesSummary" class="text-xs bg-amber-50 text-amber-800 p-2 md:p-3 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-2 items-center"></div>
 
-                <!-- BẢNG KHO ĐƠN CÓ TIÊU ĐỀ BẢNG CỐ ĐỊNH (STICKY HEADER) -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col relative">
-                    <div class="overflow-x-auto flex-1 max-h-full">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider shadow-sm">
-                                <tr>
-                                    <th class="p-2 w-7 text-center bg-slate-100"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
-                                    <th class="p-2 min-w-[85px] max-w-[95px] bg-slate-100">Mã & Ngày</th>
-                                    <th class="p-2 min-w-[85px] max-w-[100px] bg-slate-100">Khách Hàng</th>
-                                    <th class="p-2 min-w-[110px] bg-slate-100">Ghi Chú & Ảnh</th>
-                                    <th class="p-2 min-w-[130px] whitespace-normal bg-slate-100">Dịch Vụ (SL)</th>
-                                    <th class="p-2 min-w-[80px] bg-slate-100">Tổng Tiền</th>
-                                    <th class="p-2 min-w-[85px] bg-slate-100">Tình Trạng</th>
-                                    <th class="p-2 text-right min-w-[80px] bg-slate-100">Thao Tác</th>
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider">
+                                    <th class="p-3 w-8 text-center"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
+                                    <th class="p-3">Mã & Ngày Đơn</th>
+                                    <th class="p-3">Khách Hàng</th>
+                                    <th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th>
+                                    <th class="p-3 whitespace-normal">Dịch Vụ (SL) <span class="text-[10px] text-slate-400 font-normal lowercase block">(Bấm để chuyển TT)</span></th>
+                                    <th class="p-3 min-w-[100px]">Tổng Tiền</th>
+                                    <th class="p-3">Tình Trạng</th>
+                                    <th class="p-3 text-right">Thao Tác Link KH</th>
                                 </tr>
                             </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
@@ -1910,7 +1897,7 @@
                 }
                 
                 if (summaryParts.length > 0) {
-                    summaryEl.innerHTML = `<div class="flex items-center gap-1 text-amber-700 uppercase shrink-0"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[10px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-1.5">${summaryParts.join('')}</div>`;
+                    summaryEl.innerHTML = `<div class="flex items-center gap-1 text-amber-700 uppercase shrink-0"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[10px] tracking-wider">Đơn chưa làm:</span></div> <div class="flex flex-wrap gap-1.5">${summaryParts.join('')}</div>`;
                     summaryEl.classList.remove('hidden');
                     summaryEl.classList.add('flex');
                 } else {
