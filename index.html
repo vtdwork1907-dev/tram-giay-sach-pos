@@ -53,7 +53,7 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-slate-800 relative">
+<body class="h-screen flex flex-col overflow-hidden text-slate-800 relative w-full">
 
     <div id="globalLoading">
         <div class="spinner mb-3"></div>
@@ -146,7 +146,7 @@
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden relative">
+    <div class="flex flex-1 overflow-hidden relative w-full min-w-0">
         <nav class="fixed bottom-0 left-0 w-full bg-navy-900 flex flex-row overflow-x-auto hide-scroll z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:relative md:w-20 lg:w-48 md:flex-col md:justify-start md:p-2 lg:p-3 md:space-y-1 md:pb-0 md:shadow-lg md:shrink-0 transition-all">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all bg-sky-600 text-white md:shadow-md"><i class="fa-solid fa-house text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Trang Chủ</span></button>
             <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-cash-register text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Tạo Đơn</span></button>
@@ -159,10 +159,10 @@
             <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-sliders text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Cài Đặt</span></button>
         </nav>
 
-        <main class="flex-1 overflow-y-auto bg-slate-100 p-2 md:p-4 pb-24 md:pb-4 relative w-full hide-scroll">
+        <main class="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-slate-100 p-2 md:p-4 pb-24 md:pb-4 relative w-full hide-scroll">
             
             <!-- TAB: TRANG CHỦ -->
-            <section id="tab-dashboard" class="tab-content flex flex-col space-y-5 pb-8">
+            <section id="tab-dashboard" class="tab-content flex flex-col space-y-5 pb-8 w-full min-w-0">
                 <div>
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-calendar-day text-sky-600"></i> Tổng Quan Hôm Nay</h2>
                     <div class="grid grid-cols-2 gap-3 md:gap-4">
@@ -183,7 +183,7 @@
                 <div class="flex flex-col gap-6 mt-2">
                     <div class="flex flex-col">
                         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Cần Xử Lý Gấp (5 Đơn Tồn Lâu Nhất)</h2>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full min-w-0">
                             <div class="overflow-x-auto w-full">
                                 <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                                     <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-28 md:w-48">Hình Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
@@ -195,7 +195,7 @@
 
                     <div class="flex flex-col">
                         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-comment-dots text-indigo-500"></i> Đơn Có Ghi Chú / Yêu Cầu</h2>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full min-w-0">
                             <div class="overflow-x-auto w-full">
                                 <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                                     <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-36 md:w-48 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
@@ -208,7 +208,7 @@
             </section>
 
             <!-- TAB: TẠO ĐƠN (POS) -->
-            <section id="tab-pos" class="tab-content hidden lg:h-full flex flex-col lg:flex-row-reverse gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden">
+            <section id="tab-pos" class="tab-content hidden lg:h-full flex flex-col lg:flex-row-reverse gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden w-full min-w-0">
                 <div class="w-full lg:w-[380px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col shrink-0 lg:h-full lg:overflow-hidden">
                     <div class="bg-navy-800 text-white px-3 md:px-4 py-3 flex items-center justify-between shrink-0 rounded-t-2xl lg:rounded-none">
                         <span class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-cyanBrand"></i> Thông Tin Đơn</span>
@@ -242,7 +242,7 @@
                         <!-- CHỌN DỊCH VỤ (THU NHỎ LẠI) -->
                         <div id="mobileServicesPlaceholder" class="flex lg:hidden flex-col shrink-0 w-full mb-1">
                             <div id="servicesMainContainer" class="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden shrink-0 w-full lg:flex-1 lg:h-full">
-                                <div class="bg-slate-50 p-1.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto hide-scroll shrink-0" id="categoryFilterContainer"></div>
+                                <div class="bg-slate-50 p-1.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto hide-scroll shrink-0 w-full" id="categoryFilterContainer"></div>
                                 <div class="p-1.5 flex-1 overflow-y-auto max-h-[220px] lg:max-h-none grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-1.5 content-start bg-slate-100" id="servicesGrid"></div>
                             </div>
                         </div>
@@ -271,7 +271,7 @@
                         <div id="singleShoeSection" class="space-y-3">
                             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                                 <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
-                                <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
+                                <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll w-full" id="imagePreviewContainer">
                                     <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Chụp Ảnh</span><input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(event, true)" class="hidden" id="cameraInput"></label>
                                     <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Tải Lên</span><input type="file" accept="image/*" multiple onchange="handleImageUpload(event, false)" class="hidden" id="fileInput"></label>
                                     <div id="renderedImagesBox" class="flex gap-2"></div>
@@ -307,7 +307,7 @@
             </section>
 
             <!-- CÁC TAB CÒN LẠI -->
-            <section id="tab-payment" class="tab-content hidden h-full flex flex-col items-center justify-center py-6">
+            <section id="tab-payment" class="tab-content hidden h-full flex flex-col items-center justify-center py-6 w-full min-w-0">
                 <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
                     <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
                     <h2 class="font-bold text-slate-800 text-2xl mb-1">Mã QR Thanh Toán</h2>
@@ -322,9 +322,9 @@
             </section>
 
             <!-- TAB: KHO ĐƠN -->
-            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-2">
+            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-2 w-full min-w-0">
                 <!-- KHU VỰC BỘ LỌC TỐI ƯU NHỎ GỌN TRÊN ĐIỆN THOẠI -->
-                <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
+                <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full">
                     <div class="flex items-center justify-between gap-2">
                         <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
                         <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
@@ -358,7 +358,7 @@
                 </div>
 
                 <!-- THANH CÔNG CỤ GOM ĐƠN HÀNG LOẠT -->
-                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-2 md:p-2.5 rounded-xl items-center justify-between gap-2 flex-wrap text-xs shadow-sm">
+                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-2 md:p-2.5 rounded-xl items-center justify-between gap-2 flex-wrap text-xs shadow-sm w-full">
                     <div class="font-bold text-sky-900 flex items-center gap-1.5 text-[11px]">
                         <i class="fa-solid fa-layer-group text-sky-600 text-xs"></i>
                         Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2 py-0.5 rounded-full font-extrabold text-[10px]">0</span> đơn
@@ -377,12 +377,12 @@
                 </div>
 
                 <!-- THANH THỐNG KÊ SỐ LƯỢNG DỊCH VỤ CHƯA LÀM -->
-                <div id="pendingServicesSummary" class="text-[11px] bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center"></div>
+                <div id="pendingServicesSummary" class="text-[11px] bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center w-full"></div>
 
                 <!-- BẢNG KHO ĐƠN CÓ TIÊU ĐỀ BẢNG CỐ ĐỊNH (STICKY HEADER) -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col relative">
-                    <div class="overflow-x-auto flex-1 max-h-full">
-                        <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col relative w-full min-w-0">
+                    <div class="overflow-x-auto flex-1 w-full max-h-full">
+                        <table class="w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
                             <thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider shadow-sm text-[10px] md:text-xs">
                                 <tr>
                                     <th class="p-2 md:p-3 w-7 md:w-10 text-center bg-slate-100"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
@@ -401,10 +401,10 @@
                 </div>
             </section>
 
-            <section id="tab-customers" class="tab-content hidden h-full flex flex-col space-y-4">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200"><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-crown text-amber-500"></i> Xếp Hạng Khách Hàng VIP</h2></div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-                    <div class="overflow-x-auto flex-1">
+            <section id="tab-customers" class="tab-content hidden h-full flex flex-col space-y-4 w-full min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 w-full"><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-crown text-amber-500"></i> Xếp Hạng Khách Hàng VIP</h2></div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col w-full min-w-0">
+                    <div class="overflow-x-auto flex-1 w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-12 text-center">Top</th><th class="p-3">Khách Hàng</th><th class="p-3">Số Điện Thoại</th><th class="p-3 text-center">Số Đơn</th><th class="p-3">Tổng Tiền Đã Chi</th><th class="p-3 text-right">Thao Tác</th></tr></thead>
                             <tbody id="customersTableBody" class="divide-y divide-slate-100"></tbody>
@@ -413,12 +413,12 @@
                 </div>
             </section>
 
-            <section id="tab-expenses" class="tab-content hidden h-full flex flex-col space-y-4">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <section id="tab-expenses" class="tab-content hidden h-full flex flex-col space-y-4 w-full min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between w-full">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
                     <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
                 </div>
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
                     <div class="w-full md:w-1/2 flex flex-col items-center">
                         <span class="text-[10px] md:text-xs font-bold text-slate-600 mb-2 uppercase text-center w-full flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-red-500"></i> Cơ Cấu Chi Phí Tháng Hiện Tại</span>
                         <div class="relative w-full h-44 md:h-52 flex items-center justify-center">
@@ -433,8 +433,8 @@
                         <div id="expTabCategoryBreakdown" class="space-y-1.5 pt-1"></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-                    <div class="overflow-x-auto flex-1">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col w-full min-w-0">
+                    <div class="overflow-x-auto flex-1 w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Ngày Chi</th><th class="p-3">Tên Khoản Chi</th><th class="p-3">Danh Mục</th><th class="p-3">Số Tiền</th><th class="p-3 text-right">Thao Tác</th></tr></thead>
                             <tbody id="expensesTableBody" class="divide-y divide-slate-100"></tbody>
@@ -443,20 +443,20 @@
                 </div>
             </section>
 
-            <section id="tab-reports" class="tab-content hidden h-full flex flex-col space-y-4">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <section id="tab-reports" class="tab-content hidden h-full flex flex-col space-y-4 w-full min-w-0">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
                     <div><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-sky-600"></i> Báo Cáo Tài Chính</h2></div>
                     <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 w-full md:w-auto">
                         <div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Từ ngày</label><input type="date" id="reportStartDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><span class="text-slate-400 mt-3">-</span><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Đến ngày</label><input type="date" id="reportEndDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><button onclick="clearDateFilter()" class="mt-3 ml-1 bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 md:py-1.5 rounded text-xs transition"><i class="fa-solid fa-rotate-right"></i></button>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-slate-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-file-invoice"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH SỐ</span><div id="repGrossSales" class="text-lg md:text-2xl font-extrabold text-slate-800 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-emerald-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-money-bill-wave"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH THU</span><div id="repRevenue" class="text-lg md:text-2xl font-extrabold text-emerald-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-red-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG CHI PHÍ</span><div id="repExpenses" class="text-lg md:text-2xl font-extrabold text-red-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-sky-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-coins"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">LỢI NHUẬN RÒNG</span><div id="repNetProfit" class="text-lg md:text-2xl font-extrabold text-sky-700 mt-1 relative truncate">0 đ</div></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 pb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 pb-4 w-full">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Dịch vụ đặt nhiều nhất</span><div class="flex-1 w-full h-full relative"><canvas id="servicesPieChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Phân bổ chi phí</span><div class="flex-1 w-full h-full relative"><canvas id="reportExpensesPieChart"></canvas></div></div>
@@ -464,9 +464,9 @@
             </section>
 
             <!-- TAB: CÀI ĐẶT -->
-            <section id="tab-settings" class="tab-content hidden space-y-4 pb-16">
+            <section id="tab-settings" class="tab-content hidden space-y-4 pb-16 w-full min-w-0">
                 
-                <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="owner-only bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden w-full min-w-0">
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50"><h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Phân Quyền Tài Khoản Nhân Viên</h2><p class="text-[10px] text-sky-700 mt-1">Quản lý có thể xem đơn và nhập chi phí. Nhân viên chỉ được tạo đơn hàng.</p></div>
                     <div class="p-3 md:p-4 flex flex-col md:flex-row flex-wrap gap-2 md:items-end">
                         <div class="w-full md:w-auto md:flex-1"><label class="text-[10px] font-bold text-slate-700">Tên Hiển Thị</label><input type="text" id="addUserName" placeholder="VD: Nam Thu Ngân" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"></div>
@@ -475,7 +475,7 @@
                         <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Phân Vai Trò</label><select id="addUserRole" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"><option value="manager">Quản Lý</option><option value="staff">Nhân Viên</option></select></div>
                         <button onclick="addNewAccount()" class="w-full md:w-auto bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs px-4 py-3 md:py-2 rounded shadow mt-2 md:mt-0">Cấp Tài Khoản</button>
                     </div>
-                    <div class="flex-1 overflow-x-auto">
+                    <div class="flex-1 overflow-x-auto w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Tên Người Dùng</th><th class="p-3">Tài Khoản</th><th class="p-3">Vai Trò</th><th class="p-3 text-right">Khóa/Xóa</th></tr></thead>
                             <tbody id="settingsUsersTable" class="divide-y divide-slate-100"></tbody>
@@ -483,7 +483,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4 w-full">
                     <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 border-b pb-2"><i class="fa-solid fa-image text-navy-800"></i> Ảnh Đại Diện / Logo</h2>
                     <div class="flex items-center gap-4">
                         <div class="w-14 h-14 md:w-16 md:h-16 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0" id="settingLogoPreview"><i class="fa-solid fa-shoe-prints text-slate-400 text-xl md:text-2xl" id="settingLogoDefault"></i><img src="" class="hidden w-full h-full object-cover" id="settingLogoImg"></div>
@@ -494,7 +494,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 md:gap-6">
+                <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 md:gap-6 w-full">
                     <div class="flex-1 space-y-3 md:space-y-4">
                         <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 border-b pb-2"><i class="fa-solid fa-qrcode text-sky-600"></i> Cấu Hình Ngân Hàng (VietQR)</h2>
                         <div class="space-y-3 text-xs">
@@ -508,7 +508,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full min-w-0">
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50 flex items-center justify-between">
                         <h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-tags text-cyanBrand"></i> Quản Lý Dịch Vụ & Mức Giá</h2>
                         <span class="text-[10px] md:text-xs font-semibold bg-white text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200 shadow-sm">Chỉnh sửa trực tiếp trong bảng</span>
@@ -520,7 +520,7 @@
                         <div class="w-full md:w-32"><label class="text-[11px] font-bold text-slate-700 block mb-1">Icon</label><select id="addSvcIcon" class="w-full text-[16px] md:text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white font-mono"><option value="fa-soap">fa-soap</option><option value="fa-brush">fa-brush</option><option value="fa-shoe-prints">fa-shoe-prints</option><option value="fa-spray-can">fa-spray-can</option><option value="fa-droplet">fa-droplet</option><option value="fa-palette">fa-palette</option></select></div>
                         <button onclick="addNewService()" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-5 py-3 md:py-2.5 rounded-lg shadow transition active:scale-95 flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus"></i> Thêm Dịch Vụ</button>
                     </div>
-                    <div class="overflow-x-auto p-2 md:p-3">
+                    <div class="overflow-x-auto p-2 md:p-3 w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3 w-10 text-center">Icon</th><th class="p-3">Tên Dịch Vụ</th><th class="p-3">Danh Mục</th><th class="p-3 w-44">Mức Giá (VNĐ)</th><th class="p-3 text-center w-28">Thứ Tự</th><th class="p-3 text-right w-20">Xóa</th></tr></thead>
                             <tbody id="settingsServicesTable" class="divide-y divide-slate-100"></tbody>
