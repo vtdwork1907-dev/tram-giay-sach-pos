@@ -65,12 +65,10 @@
 
     <!-- MÀN HÌNH XEM ẢNH TO (FULLSCREEN) DÀNH CHO KHÁCH & HỆ THỐNG -->
     <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex flex-col items-center justify-center p-2 opacity-0 transition-opacity duration-300 select-none">
-        <!-- Dải hướng dẫn vuốt trên điện thoại -->
         <div class="absolute top-4 left-1/2 -translate-x-1/2 text-white/80 text-[11px] font-medium bg-black/60 px-3 py-1 rounded-full pointer-events-none md:hidden flex items-center gap-1.5 border border-white/10 z-10 shadow-sm">
             <i class="fa-solid fa-arrow-down text-sky-400 animate-bounce"></i> Vuốt xuống để đóng
         </div>
 
-        <!-- Nút đóng "X" đã được hạ xuống vị trí top-12 dễ chạm -->
         <button onclick="closeImageViewer()" class="absolute top-12 right-4 md:top-6 md:right-6 text-white hover:text-red-400 text-2xl leading-none z-20 w-11 h-11 flex items-center justify-center bg-black/60 rounded-full cursor-pointer border border-white/20 shadow-lg active:scale-95 transition">&times;</button>
         
         <img id="viewerImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg transition-transform duration-300 scale-95 touch-none">
@@ -219,7 +217,7 @@
 
                     <div class="p-3 overflow-visible lg:overflow-y-auto space-y-3 lg:flex-1">
                         
-                        <!-- THỜI GIAN & KHÁCH HÀNG (ĐÃ GỘP GỌN LẠI) -->
+                        <!-- THỜI GIAN & KHÁCH HÀNG (GỘP GỌN) -->
                         <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-2 shadow-sm">
                             <div class="flex items-center gap-2">
                                 <span class="bg-white border border-slate-200 text-sky-600 w-[38px] h-[38px] flex items-center justify-center rounded-lg shrink-0 shadow-sm"><i class="fa-regular fa-clock"></i></span>
@@ -241,16 +239,18 @@
                             </div>
                         </div>
 
+                        <!-- CHỌN DỊCH VỤ (THU NHỎ LẠI) -->
                         <div id="mobileServicesPlaceholder" class="flex lg:hidden flex-col shrink-0 w-full mb-1">
                             <div id="servicesMainContainer" class="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden shrink-0 w-full lg:flex-1 lg:h-full">
-                                <div class="bg-slate-50 p-2 border-b border-slate-200 flex items-center gap-2 overflow-x-auto hide-scroll shrink-0" id="categoryFilterContainer"></div>
-                                <div class="p-2 flex-1 overflow-y-auto max-h-[300px] lg:max-h-none grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2 content-start bg-slate-100" id="servicesGrid"></div>
+                                <div class="bg-slate-50 p-1.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto hide-scroll shrink-0" id="categoryFilterContainer"></div>
+                                <div class="p-1.5 flex-1 overflow-y-auto max-h-[220px] lg:max-h-none grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-1.5 content-start bg-slate-100" id="servicesGrid"></div>
                             </div>
                         </div>
 
-                        <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5">
-                            <label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label>
-                            <select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white">
+                        <!-- TÌNH TRẠNG ĐƠN (GỘP THÀNH 1 HÀNG) -->
+                        <div class="bg-sky-50 p-2 rounded-xl border border-sky-200 flex items-center justify-between gap-2 shadow-sm">
+                            <label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1 shrink-0"><i class="fa-solid fa-bars-progress"></i> Tình Trạng</label>
+                            <select id="cartOrderStatus" class="flex-1 text-[14px] md:text-xs font-bold px-2 py-1 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white">
                                 <option value="RECEIVED">📦 Đã nhận</option>
                                 <option value="PROCESSING">⏳ Đang xử lý</option>
                                 <option value="PROCESSED">✅ Đã xử lý xong</option>
@@ -1293,15 +1293,15 @@
 
         function renderCategoryTabs() {
             const cats = [{k: 'ALL', n: 'Tất Cả'}, {k: 'CLEAN', n: 'Vệ Sinh'}, {k: 'SOLE', n: 'Thay Đế'}, {k: 'STAIN', n: 'Tẩy Ố'}, {k: 'REPAINT', n: 'Repaint'}, {k: 'GLUE', n: 'Dán Đế'}];
-            document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-4 py-1.5 md:px-3.5 rounded-lg text-[12px] md:text-[11px] font-semibold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
+            document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-3 py-1 md:px-3.5 rounded-lg text-[10px] md:text-[11px] font-bold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
         }
         function filterCategory(c) { activeCategory = c; renderCategoryTabs(); renderServicesGrid(); }
 
         function renderServicesGrid() {
             const filtered = activeCategory === 'ALL' ? state.services : state.services.filter(s => s.category === activeCategory);
             document.getElementById('servicesGrid').innerHTML = filtered.map(s => `
-                <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-sky-50 border border-slate-200 rounded-2xl cursor-pointer transition flex flex-col items-center justify-center p-2 md:p-3 text-center shadow-sm hover:shadow group aspect-square relative active:scale-95 shrink-0 min-h-[100px]">
-                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-3xl md:text-4xl mb-2 opacity-90 group-hover:text-sky-600 transition"></i><h4 class="font-bold text-[10px] md:text-xs text-slate-800 leading-tight line-clamp-2">${s.name}</h4><span class="text-[9px] font-semibold text-slate-500 mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
+                <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-sky-50 border border-slate-200 rounded-xl cursor-pointer transition flex flex-col items-center justify-center p-1.5 md:p-3 text-center shadow-sm active:scale-95 shrink-0 min-h-[80px]">
+                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-2xl md:text-3xl mb-1 opacity-90 transition"></i><h4 class="font-bold text-[9px] md:text-xs text-slate-800 leading-tight line-clamp-2">${s.name}</h4><span class="text-[8px] font-semibold text-slate-500 mt-0.5">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
                 </div>`).join('');
         }
 
