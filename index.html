@@ -2509,6 +2509,78 @@
                 expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expReportPieInst.update();
             }
         }
+
+        // =========================================================================
+        // FIX LỖI ĐA NHIỆM: TỰ ĐỘNG CẬP NHẬT DỮ LIỆU KHI MỞ LẠI APP TỪ BACKGROUND
+        // =========================================================================
+        async function fetchLatestDataFromCloud(showLoading = true) {
+            if (showLoading) {
+                const loader = document.getElementById('globalLoading');
+                if (loader) {
+                    loader.style.display = 'flex';
+                    loader.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu mới nhất...';
+                }
+            }
+
+            try {
+                const { data: result, error } = await supabaseClient
+                    .from('app_state')
+                    .select('data')
+                    .eq('id', 'main')
+                    .single();
+
+                if (result && result.data) {
+                    const cloudData = result.data;
+                    state.users = cloudData.users || DEFAULT_USERS; 
+                    state.services = cloudData.services || state.services;
+                    state.orders = cloudData.orders || []; 
+                    state.expenses = cloudData.expenses || [];
+                    state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; 
+                    state.logo = cloudData.logo || null;
+                    
+                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(cloudData));
+                    
+                    renderLogo(); 
+                    renderOrdersTable(); 
+                    renderDashboard(); 
+                    updateReportMetrics(); 
+                    renderCustomersTable();
+                    renderExpensesTable(); 
+                    renderServicesGrid(); 
+                    renderSettingsServicesTable(); 
+                    renderSettingsUsersTable();
+                    
+                    if (window.location.hash.startsWith('#track=')) checkUrlTracking();
+                }
+            } catch (err) {
+                console.error("Lỗi đồng bộ khi mở lại app:", err);
+            } finally {
+                if (showLoading) {
+                    const loader = document.getElementById('globalLoading');
+                    if (loader) {
+                        loader.style.display = 'none';
+                        loader.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (state.currentUser) {
+                    fetchLatestDataFromCloud(true);
+                }
+            }
+        });
+        
+        window.addEventListener('focus', () => {
+            if (document.visibilityState === 'visible' && state.currentUser) {
+                clearTimeout(window.syncTimeout);
+                window.syncTimeout = setTimeout(() => {
+                    fetchLatestDataFromCloud(false);
+                }, 300);
+            }
+        });
     </script>
 </body>
 </html>
