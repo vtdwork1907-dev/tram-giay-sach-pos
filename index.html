@@ -714,7 +714,7 @@
             });
         }
 
-        // HÀM CẬP NHẬT NGÀY BẢO HÀNH TỪ Ô CHỈNH SỬA
+        // HÀM CẬP NGÀY BẢO HÀNH TỪ Ô CHỈNH SỬA
         function updateItemWarrantyDate(orderId, itemIdKey, newDate) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
@@ -754,7 +754,7 @@
             }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
-        // HÀM MỞ ỨNG DỤNG ZALO HOẶC ZALO WEB ĐỂ GỬI LINK CHO KHÁCH
+        // HÀM MỞ ỨNG DỤNG ZALO HOẶC ZALO WEB ĐỂ GỬI LINK CHO KHÁCH (ĐÃ CẬP NHẬT COPY CLIPBOARD)
         function sendZaloTracking(orderId, phone, customerName) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
             const message = `Cảm ơn quý khách đã sử dụng dịch vụ tại Trạm Giày Sạch, quý khách hãy theo dõi quá trình xử lý giày của mình tại đây:\n${trackingUrl}`;
@@ -762,8 +762,18 @@
             let cleanPhone = phone.replace(/\D/g, '');
             if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
             
-            const zaloUrl = `https://zalo.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-            window.open(zaloUrl, '_blank');
+            const zaloUrl = `https://zalo.me/${cleanPhone}`;
+
+            // Tự động Copy Text vào bộ nhớ đệm trước, sau đó mới mở Zalo
+            navigator.clipboard.writeText(message).then(() => {
+                showNotification("🔗 ĐÃ COPY TIN NHẮN", "Bạn chỉ cần ấn 'Dán' (Paste) vào khung chat Zalo để gửi khách nhé!");
+                setTimeout(() => {
+                    window.open(zaloUrl, '_blank');
+                }, 800); // Trì hoãn một chút để người dùng thấy thông báo copy thành công
+            }).catch(err => {
+                // Fallback nếu trình duyệt chặn tự động copy
+                window.open(`https://zalo.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+            });
         }
 
         function openImageViewer(url) {
@@ -855,6 +865,7 @@
                             </div>`;
                     }).join('');
 
+                    // HIỂN THỊ TRẠNG THÁI CHO TỪNG DỊCH VỤ / TỪNG ĐÔI GIÀY CỦA KHÁCH
                     let detailedItemsHtml = order.items.map(item => {
                         let st = item.status || 'RECEIVED';
                         let badge = '';
@@ -867,6 +878,8 @@
                                     ${badge}
                                 </div>`;
                     }).join('');
+
+                    const svcsList = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
 
                     let beforeImgs = (order.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
                     let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
