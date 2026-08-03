@@ -1772,52 +1772,135 @@
             }
         }
 
+        /* =========================================================================
+           HÀM HIỂN THỊ MODAL SO SÁNH TRƯỚC & SAU (CÓ TEXT DỊCH VỤ CHI TIẾT)
+        ========================================================================= */
         function openComparison(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
             
             const container = document.getElementById('comparisonPairsContainer');
-            const maxLen = Math.max((o.images || []).length, (o.imagesAfter || []).length);
-            
-            if (maxLen === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 italic">Chưa có hình ảnh nào được tải lên cho đơn hàng này.</div>`;
-            } else {
+            container.innerHTML = '';
+
+            // 1. TRƯỜNG HỢP ĐƠN NHIỀU ĐÔI GIÀY (CÓ CẤU TRÚC o.shoes)
+            if (o.shoes && o.shoes.length > 0) {
+                let globalImgCounter = 0;
                 let html = '';
-                for (let i = 0; i < maxLen; i++) {
-                    const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null;
-                    const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
-                    
+
+                o.shoes.forEach((shoe, shoeIdx) => {
+                    const shoeTitle = shoe.note ? `${shoe.name} - ${shoe.note}` : shoe.name;
+                    const svcsText = (shoe.services && shoe.services.length > 0)
+                        ? shoe.services.map(s => `${s.name} (x${s.qty})`).join(', ')
+                        : 'Chưa chọn dịch vụ';
+
+                    const beforeList = shoe.images || [];
+                    const numBefore = beforeList.length;
+
                     html += `
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4 relative">
-                        <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-between">
-                            <span>Cặp góc chụp số #${i + 1}</span>
-                            <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
+                    <div class="bg-white rounded-2xl shadow-sm border border-sky-200 overflow-hidden mb-6">
+                        <div class="bg-sky-50 px-4 py-3 border-b border-sky-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span class="font-extrabold text-sm md:text-base text-sky-900 uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-shoe-prints text-sky-600"></i> ${shoeTitle}
+                            </span>
+                            <span class="text-xs font-semibold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-sky-200 shadow-sm inline-flex items-center gap-1.5">
+                                <i class="fa-solid fa-wrench text-sky-600"></i> Dịch vụ: <strong class="text-sky-800">${svcsText}</strong>
+                            </span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
-                            <!-- Trước (Before) -->
-                            <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                                <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
-                                <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">
-                                    ${beforeSrc ? `
-                                        <img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
-                                        <button onclick="deleteOrderImage('${o.id}', 'before', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
-                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh trước</div>`}
+                        <div class="p-3 md:p-4 space-y-4 bg-slate-50/50">
+                    `;
+
+                    if (numBefore === 0) {
+                        html += `<div class="p-4 text-center text-slate-400 text-xs italic bg-white rounded-xl border border-dashed">Chưa có ảnh trước cho đôi này.</div>`;
+                    } else {
+                        for (let k = 0; k < numBefore; k++) {
+                            const currentGlobalIdx = globalImgCounter;
+                            const beforeSrc = typeof beforeList[k] === 'string' ? beforeList[k] : (beforeList[k]?.r2Url || beforeList[k]?.url);
+                            const afterSrc = (o.imagesAfter && o.imagesAfter[currentGlobalIdx]) ? o.imagesAfter[currentGlobalIdx] : null;
+
+                            html += `
+                            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex justify-between items-center flex-wrap gap-1">
+                                    <span>Góc chụp #${k + 1} (${shoeTitle})</span>
+                                    <span class="text-[10px] text-sky-700 bg-sky-100 px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-tag mr-1"></i>${svcsText}</span>
                                 </div>
-                            </div>
-                            <!-- Sau (After) -->
-                            <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
-                                <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
-                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">
-                                    ${afterSrc ? `
-                                        <img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
-                                        <button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
-                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh sau</div>`}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50">
+                                    <!-- Trước (Before) -->
+                                    <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                        <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
+                                        <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">
+                                            ${beforeSrc ? `
+                                                <img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                                                <button onclick="deleteOrderImage('${o.id}', 'before', ${currentGlobalIdx})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                            ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh trước</div>`}
+                                        </div>
+                                    </div>
+                                    <!-- Sau (After) -->
+                                    <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
+                                        <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
+                                        <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">
+                                            ${afterSrc ? `
+                                                <img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                                                <button onclick="deleteOrderImage('${o.id}', 'after', ${currentGlobalIdx})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                            ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh sau</div>`}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>`;
-                }
+                            </div>`;
+
+                            globalImgCounter++;
+                        }
+                    }
+
+                    html += `</div></div>`;
+                });
+
                 container.innerHTML = html;
+            } 
+            // 2. TRƯỜNG HỢP ĐƠN 1 ĐÔI THÔNG THƯỜNG / ĐƠN CŨ
+            else {
+                const maxLen = Math.max((o.images || []).length, (o.imagesAfter || []).length);
+                const allSvcsText = o.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+
+                if (maxLen === 0) {
+                    container.innerHTML = `<div class="text-center py-12 text-slate-400 italic">Chưa có hình ảnh nào được tải lên cho đơn hàng này.</div>`;
+                } else {
+                    let html = '';
+                    for (let i = 0; i < maxLen; i++) {
+                        const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null;
+                        const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
+                        
+                        html += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4 relative">
+                            <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                <span>Cặp góc chụp số #${i + 1}</span>
+                                <span class="text-[11px] font-semibold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200"><i class="fa-solid fa-wrench mr-1 text-sky-600"></i>Dịch vụ: <strong>${allSvcsText}</strong></span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
+                                <!-- Trước (Before) -->
+                                <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                    <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
+                                    <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">
+                                        ${beforeSrc ? `
+                                            <img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                                            <button onclick="deleteOrderImage('${o.id}', 'before', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                        ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh trước</div>`}
+                                    </div>
+                                </div>
+                                <!-- Sau (After) -->
+                                <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
+                                    <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
+                                    <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">
+                                        ${afterSrc ? `
+                                            <img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                                            <button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
+                                        ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh sau</div>`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                    container.innerHTML = html;
+                }
             }
             
             document.getElementById('comparisonModal').classList.remove('hidden');
