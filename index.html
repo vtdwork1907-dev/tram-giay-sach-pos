@@ -687,16 +687,11 @@
         }
 
         function mapOrderDbToJs(db) {
-            let _items = db.items || []; if (typeof _items === 'string') try { _items = JSON.parse(_items); } catch(e) { _items = []; }
-            let _shoes = db.shoes || null; if (typeof _shoes === 'string') try { _shoes = JSON.parse(_shoes); } catch(e) { _shoes = null; }
-            let _images = db.images || []; if (typeof _images === 'string') try { _images = JSON.parse(_images); } catch(e) { _images = []; }
-            let _imagesAfter = db.images_after || []; if (typeof _imagesAfter === 'string') try { _imagesAfter = JSON.parse(_imagesAfter); } catch(e) { _imagesAfter = []; }
-
             return {
                 id: db.id, date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
-                items: _items, shoes: _shoes,
-                images: _images, imagesAfter: _imagesAfter,
+                items: db.items || [], shoes: db.shoes || null,
+                images: db.images || [], imagesAfter: db.images_after || [],
                 subtotalVal: db.subtotal_val || 0, discountVal: db.discount_val || 0, total: db.total || 0,
                 status: db.status || 'RECEIVED'
             };
@@ -804,7 +799,7 @@
                     }).join('');
 
                     let beforeImgs = (order.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
-                    let afterImgs = (order.imagesAfter || []).filter(url => url && url.trim() !== '').map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                    let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
@@ -1187,9 +1182,15 @@
             const file = e.target.files[0]; if(!file) return;
             const btnText = document.getElementById('uploadLogoBtnText'); const oldText = btnText.innerText;
             btnText.innerText = "Đang tải..."; document.getElementById('logoInput').disabled = true;
+            
+            window.isUploadingFile = true; // Khóa đồng bộ ngầm
+            
             try { const imageUrl = await uploadFileToR2(file); state.logo = imageUrl; await saveSettingsToDB(); renderLogo(); } 
             catch(error) { alert("Lỗi khi upload logo: " + error.message); } 
-            finally { btnText.innerText = oldText; document.getElementById('logoInput').disabled = false; e.target.value = ''; }
+            finally { 
+                btnText.innerText = oldText; document.getElementById('logoInput').disabled = false; e.target.value = ''; 
+                window.isUploadingFile = false; // Mở khóa đồng bộ ngầm
+            }
         }
         function removeStoreLogo() { state.logo = null; saveSettingsToDB(); renderLogo(); }
         function renderLogo() {
@@ -1329,6 +1330,8 @@
             const files = Array.from(e.target.files); if (files.length === 0) return;
             const saveBtn = document.getElementById('saveOrderBtn'); saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
+            window.isUploadingFile = true; // Khóa đồng bộ ngầm
+            
             for (const file of files) {
                 const imgId = Date.now() + Math.random().toString(36).substring(7);
                 const tempImg = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
@@ -1343,6 +1346,7 @@
                 }
             }
             saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
+            window.isUploadingFile = false; // Mở khóa đồng bộ ngầm
         }
 
         function removeShoeImage(shoeId, imgIdOrUrl) {
@@ -1430,6 +1434,9 @@
         async function handleImageUpload(e, isCamera) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
             const saveBtn = document.getElementById('saveOrderBtn'); saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            window.isUploadingFile = true; // Khóa đồng bộ ngầm
+            
             for (const file of files) {
                 const imgId = Date.now() + Math.random().toString(36).substring(7);
                 const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
@@ -1440,6 +1447,8 @@
                 } catch (err) { console.error("Lỗi tải ảnh:", err); alert(`Không thể tải ảnh ${file.name} lên server`); state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId); renderPreviewImages(); }
             }
             saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
+            
+            window.isUploadingFile = false; // Mở khóa đồng bộ ngầm
         }
 
         function renderPreviewImages() {
@@ -1716,8 +1725,10 @@
         async function uploadAfterImageSlot(e, orderId, slotIdx) {
             const file = e.target.files[0]; if (!file) return;
             const o = state.orders.find(x => x.id === orderId); if (!o) return;
-            if (!Array.isArray(o.imagesAfter)) o.imagesAfter = [];
+            if (!o.imagesAfter) o.imagesAfter = [];
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ảnh sau...`;
+
+            window.isUploadingFile = true; // Khóa đồng bộ ngầm khi tải ảnh
 
             try {
                 const r2Url = await uploadFileToR2(file); o.imagesAfter[slotIdx] = r2Url;
@@ -1725,7 +1736,10 @@
                 renderOrdersTable(); renderDashboard(); openComparison(orderId);
                 await dbUpdateOrder(orderId);
             } catch (err) { console.error("Lỗi upload ảnh sau vị trí slot:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
+            finally { 
+                loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; 
+                window.isUploadingFile = false; // Mở khóa đồng bộ ngầm
+            }
         }
 
         async function moveAfterImage(orderId, slotIdx, dir) {
@@ -1779,15 +1793,20 @@
 
         async function uploadAfterImage(e, orderId) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
-            const o = state.orders.find(x => x.id === orderId); if (!o) return; 
-            if (!Array.isArray(o.imagesAfter)) o.imagesAfter = [];
+            const o = state.orders.find(x => x.id === orderId); if (!o) return; if (!o.imagesAfter) o.imagesAfter = [];
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
+            
+            window.isUploadingFile = true; // Khóa đồng bộ ngầm khi tải ảnh
+
             try {
                 for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
                 renderOrdersTable(); renderDashboard();
                 await dbUpdateOrder(orderId);
             } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
+            finally { 
+                loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; 
+                window.isUploadingFile = false; // Mở khóa đồng bộ ngầm
+            }
         }
 
         function renderCustomersTable() {
@@ -1944,7 +1963,14 @@
         }
 
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (state.currentUser) fetchLatestDataFromCloud(true); } });
-        window.addEventListener('focus', () => { if (document.visibilityState === 'visible' && state.currentUser) { clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); } });
+        
+        // ĐÃ CẬP NHẬT: Thêm điều kiện !window.isUploadingFile để tránh lỗi Race Condition
+        window.addEventListener('focus', () => { 
+            if (document.visibilityState === 'visible' && state.currentUser && !window.isUploadingFile) { 
+                clearTimeout(window.syncTimeout); 
+                window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); 
+            } 
+        });
     </script>
 </body>
 </html>
