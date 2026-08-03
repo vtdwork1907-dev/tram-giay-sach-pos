@@ -159,10 +159,10 @@
             <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-sliders text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Cài Đặt</span></button>
         </nav>
 
-        <main class="flex-1 overflow-y-auto overflow-x-hidden bg-slate-100 p-2 md:p-4 pb-24 md:pb-4 relative w-full max-w-full hide-scroll">
+        <main class="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-slate-100 p-2 md:p-4 pb-24 md:pb-4 relative w-full hide-scroll">
             
             <!-- TAB: TRANG CHỦ -->
-            <section id="tab-dashboard" class="tab-content flex flex-col space-y-5 pb-8 w-full max-w-full">
+            <section id="tab-dashboard" class="tab-content flex flex-col space-y-5 pb-8 w-full min-w-0">
                 <div>
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-calendar-day text-sky-600"></i> Tổng Quan Hôm Nay</h2>
                     <div class="grid grid-cols-2 gap-3 md:gap-4 w-full">
@@ -208,7 +208,7 @@
             </section>
 
             <!-- TAB: TẠO ĐƠN (POS) -->
-            <section id="tab-pos" class="tab-content hidden lg:h-full flex flex-col lg:flex-row-reverse gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden w-full max-w-full">
+            <section id="tab-pos" class="tab-content hidden lg:h-full flex flex-col lg:flex-row-reverse gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden w-full min-w-0">
                 <div class="w-full lg:w-[380px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col shrink-0 lg:h-full lg:overflow-hidden">
                     <div class="bg-navy-800 text-white px-3 md:px-4 py-3 flex items-center justify-between shrink-0 rounded-t-2xl lg:rounded-none">
                         <span class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-cyanBrand"></i> Thông Tin Đơn</span>
@@ -433,8 +433,8 @@
                         <div id="expTabCategoryBreakdown" class="space-y-1.5 pt-1"></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
-                    <div class="overflow-x-auto w-full max-w-full">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col w-full min-w-0">
+                    <div class="overflow-x-auto flex-1 w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
                             <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Ngày Chi</th><th class="p-3">Tên Khoản Chi</th><th class="p-3">Danh Mục</th><th class="p-3">Số Tiền</th><th class="p-3 text-right">Thao Tác</th></tr></thead>
                             <tbody id="expensesTableBody" class="divide-y divide-slate-100"></tbody>
@@ -508,7 +508,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full min-w-0">
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50 flex items-center justify-between">
                         <h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-tags text-cyanBrand"></i> Quản Lý Dịch Vụ & Mức Giá</h2>
                         <span class="text-[10px] md:text-xs font-semibold bg-white text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200 shadow-sm">Chỉnh sửa trực tiếp trong bảng</span>
@@ -757,7 +757,7 @@
         // HÀM MỞ ỨNG DỤNG ZALO HOẶC ZALO WEB ĐỂ GỬI LINK CHO KHÁCH
         function sendZaloTracking(orderId, phone, customerName) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
-            const message = `Dạ, Trạm Giày Sạch xin gửi quý khách ${customerName} link tra cứu tiến độ chăm sóc giày:\n${trackingUrl}\nCảm ơn quý khách đã tin tưởng ủng hộ cửa hàng ạ! ❤️`;
+            const message = `Cảm ơn quý khách đã sử dụng dịch vụ tại Trạm Giày Sạch, quý khách hãy theo dõi quá trình xử lý giày của mình tại đây:\n${trackingUrl}`;
             
             let cleanPhone = phone.replace(/\D/g, '');
             if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
@@ -855,7 +855,18 @@
                             </div>`;
                     }).join('');
 
-                    const svcsList = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                    let detailedItemsHtml = order.items.map(item => {
+                        let st = item.status || 'RECEIVED';
+                        let badge = '';
+                        if (st === 'RECEIVED') badge = '<span class="text-[10px] bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-bold whitespace-nowrap shadow-sm"><i class="fa-solid fa-box mr-1"></i> Đã nhận</span>';
+                        if (st === 'PROCESSING') badge = '<span class="text-[10px] bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg font-bold whitespace-nowrap shadow-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Đang làm</span>';
+                        if (st === 'PROCESSED') badge = '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg font-bold whitespace-nowrap shadow-sm"><i class="fa-solid fa-circle-check mr-1"></i> Đã xong</span>';
+                        
+                        return `<div class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 mb-2 shadow-sm">
+                                    <span class="text-[11px] font-bold text-slate-700 leading-tight pr-2">${item.name} <span class="text-sky-600 ml-0.5">(x${item.qty})</span></span>
+                                    ${badge}
+                                </div>`;
+                    }).join('');
 
                     let beforeImgs = (order.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
                     let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
@@ -864,15 +875,21 @@
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${order.customer.name}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${order.customer.phone}</span></div>
-                            <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Dịch vụ:</span><span class="font-semibold text-slate-700 text-right">${svcsList}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Ngày gửi:</span><span class="font-mono text-right">${order.date}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền:</span><span class="font-extrabold text-emerald-600 text-sm">${order.total.toLocaleString()} đ</span></div>
                         </div>
 
                         <div class="space-y-3">
-                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Tiến Độ Xử Lý</h3>
+                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Tiến Độ Chung</h3>
                             <div class="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                                 ${stepsHtml}
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Trạng Thái Từng Đôi / Dịch Vụ</h3>
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 shadow-inner">
+                                ${detailedItemsHtml}
                             </div>
                         </div>
 
