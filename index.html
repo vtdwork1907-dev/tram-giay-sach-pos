@@ -1156,13 +1156,22 @@
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
                 const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
 
+                let hasBefore = false; let hasAfter = false;
+                if (o.shoes && o.shoes.length > 0) {
+                    hasBefore = o.shoes.some(s => s.images && s.images.length > 0);
+                    hasAfter = o.shoes.some(s => s.imagesAfter && s.imagesAfter.length > 0);
+                } else {
+                    hasBefore = o.images && o.images.length > 0;
+                    hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
+                }
+
                 let actionHtml = `
-                <div class="flex items-center gap-1.5 w-full mt-1">
-                    <button onclick="openComparison('${o.id}')" class="bg-slate-700 hover:bg-slate-800 text-white w-1/2 py-1 md:py-1.5 rounded flex flex-col items-center justify-center shadow-sm active:scale-95 transition" title="Quản lý ảnh Trước & Sau">
-                        <i class="fa-solid fa-image text-[10px] md:text-xs"></i><span class="text-[7px] md:text-[8px] font-bold mt-0.5">TRƯỚC</span>
+                <div class="flex items-center gap-1 w-full justify-center mt-1">
+                    <button onclick="openComparison('${o.id}')" class="${hasBefore ? 'bg-slate-700 text-white shadow-sm' : 'bg-slate-100 text-slate-500 border border-slate-200'} hover:bg-slate-600 hover:text-white py-1 rounded flex items-center justify-center gap-1 active:scale-95 transition w-1/2" title="Ảnh Trước">
+                        <i class="fa-solid fa-image text-[9px]"></i><span class="text-[8px] font-bold">TRƯỚC</span>${hasBefore ? '<i class="fa-solid fa-circle-check text-green-400 text-[8px] ml-0.5"></i>' : ''}
                     </button>
-                    <button onclick="openComparison('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white w-1/2 py-1 md:py-1.5 rounded flex flex-col items-center justify-center shadow-sm active:scale-95 transition" title="Quản lý ảnh Trước & Sau">
-                        <i class="fa-solid fa-camera-retro text-[10px] md:text-xs"></i><span class="text-[7px] md:text-[8px] font-bold mt-0.5">SAU</span>
+                    <button onclick="openComparison('${o.id}')" class="${hasAfter ? 'bg-emerald-600 text-white shadow-sm' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'} hover:bg-emerald-500 hover:text-white py-1 rounded flex items-center justify-center gap-1 active:scale-95 transition w-1/2" title="Ảnh Sau">
+                        <i class="fa-solid fa-camera-retro text-[9px]"></i><span class="text-[8px] font-bold">SAU</span>${hasAfter ? '<i class="fa-solid fa-circle-check text-white text-[8px] ml-0.5"></i>' : ''}
                     </button>
                 </div>`;
 
@@ -1607,13 +1616,22 @@
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status); 
                 const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
                 
+                let hasBefore = false; let hasAfter = false;
+                if (o.shoes && o.shoes.length > 0) {
+                    hasBefore = o.shoes.some(s => s.images && s.images.length > 0);
+                    hasAfter = o.shoes.some(s => s.imagesAfter && s.imagesAfter.length > 0);
+                } else {
+                    hasBefore = o.images && o.images.length > 0;
+                    hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
+                }
+
                 let actionHtml = `
-                <div class="flex items-center gap-1.5 w-full justify-center">
-                    <button onclick="openComparison('${o.id}')" class="bg-slate-700 hover:bg-slate-800 text-white w-1/2 py-1 md:py-1.5 rounded-md flex flex-col items-center justify-center shadow-sm active:scale-95 transition" title="Quản lý ảnh Trước">
-                        <i class="fa-solid fa-image text-[10px] md:text-xs"></i><span class="text-[7px] md:text-[8px] font-bold mt-0.5 uppercase">Trước</span>
+                <div class="flex items-center gap-1 w-full justify-center mt-1">
+                    <button onclick="openComparison('${o.id}')" class="${hasBefore ? 'bg-slate-700 text-white shadow-sm' : 'bg-slate-100 text-slate-500 border border-slate-200'} hover:bg-slate-600 hover:text-white py-1 rounded flex items-center justify-center gap-1 active:scale-95 transition w-1/2" title="Ảnh Trước">
+                        <i class="fa-solid fa-image text-[9px]"></i><span class="text-[8px] font-bold uppercase">Trước</span>${hasBefore ? '<i class="fa-solid fa-circle-check text-green-400 text-[8px] ml-0.5"></i>' : ''}
                     </button>
-                    <button onclick="openComparison('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white w-1/2 py-1 md:py-1.5 rounded-md flex flex-col items-center justify-center shadow-sm active:scale-95 transition" title="Quản lý ảnh Sau">
-                        <i class="fa-solid fa-camera-retro text-[10px] md:text-xs"></i><span class="text-[7px] md:text-[8px] font-bold mt-0.5 uppercase">Sau</span>
+                    <button onclick="openComparison('${o.id}')" class="${hasAfter ? 'bg-emerald-600 text-white shadow-sm' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'} hover:bg-emerald-500 hover:text-white py-1 rounded flex items-center justify-center gap-1 active:scale-95 transition w-1/2" title="Ảnh Sau">
+                        <i class="fa-solid fa-camera-retro text-[9px]"></i><span class="text-[8px] font-bold uppercase">Sau</span>${hasAfter ? '<i class="fa-solid fa-circle-check text-white text-[8px] ml-0.5"></i>' : ''}
                     </button>
                 </div>`;
                 
@@ -1728,6 +1746,7 @@
                 showNotification("✅ Đã tải ảnh xong", "Ảnh Sau (After) đã được lưu thành công.");
                 openComparison(orderId);
                 renderOrdersTable();
+                renderDashboard();
             } catch (err) {
                 console.error("Lỗi tải ảnh sau:", err);
                 alert("Lỗi tải ảnh: " + err.message);
@@ -1789,7 +1808,7 @@
                     <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm relative">
                         <div class="bg-slate-100 text-slate-600 font-bold text-[10px] md:text-xs text-center py-1 md:py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock mr-1"></i> Lúc Nhận (Before)</div>
                         <div class="p-1 md:p-2 flex items-center justify-center bg-slate-900/5 h-40 md:h-[350px] relative">
-                            ${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                            ${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition">
                             ${beforeImageIndex >= 0 ? `<button onclick="deleteOrderImage('${orderId}', 'before', ${beforeImageIndex}, ${isMultiShoe}, '${shoeId}')" class="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times text-xs md:text-sm"></i></button>` : ''}` 
                             : `<div class="text-slate-400 italic text-[10px] md:text-xs h-full flex flex-col items-center justify-center gap-1.5"><i class="fa-solid fa-camera-slash text-xl md:text-3xl text-slate-300"></i><span>Không có ảnh</span></div>`}
                         </div>
@@ -1799,7 +1818,7 @@
                     <div class="flex flex-col bg-white rounded-xl border border-emerald-200 overflow-hidden shadow-sm relative">
                         <div class="bg-emerald-50 text-emerald-700 font-bold text-[10px] md:text-xs text-center py-1 md:py-1.5 uppercase tracking-wide border-b border-emerald-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Đã Xong (After)</div>
                         <div class="p-1 md:p-2 flex items-center justify-center bg-emerald-900/5 h-40 md:h-[350px] relative">
-                            ${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
+                            ${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition">
                             <button onclick="deleteOrderImage('${orderId}', 'after', ${afterImageIndex}, ${isMultiShoe}, '${shoeId}')" class="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times text-xs md:text-sm"></i></button>` 
                             : `
                             <div class="flex flex-col gap-2 md:gap-3 w-full px-2 md:px-6">
