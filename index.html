@@ -309,64 +309,77 @@
             </section>
 
             <!-- TAB: KHO ĐƠN -->
-            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
-                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-1 flex-1 lg:flex-none">
-                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
-                            <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
+            <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-2">
+                <!-- KHU VỰC BỘ LỌC TỐI ƯU NHỎ GỌN TRÊN ĐIỆN THOẠI -->
+                <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
+                        <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
+                            <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none">
-                            <option value="ACTIVE" selected>⚡ Đơn đang làm (Mặc định)</option>
-                            <option value="ALL">📋 Tất cả đơn (Cả đơn đã thu)</option>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px]">
+                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
+                            <span class="text-[8px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[10px] py-0.5 px-0.5 bg-transparent outline-none w-full">
+                            <span class="text-[8px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[10px] py-0.5 px-0.5 bg-transparent outline-none w-full">
+                        </div>
+                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[11px] py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                            <option value="ACTIVE" selected>⚡ Đơn đang làm</option>
+                            <option value="ALL">📋 Tất cả đơn</option>
                             <option value="RECEIVED">📦 Đã nhận</option>
                             <option value="PROCESSING">⏳ Đang xử lý</option>
                             <option value="PROCESSED">✅ Đã xử lý xong</option>
                             <option value="PAID">💰 Đã thanh toán</option>
-                            <option value="DELIVERED">🤝 Đã trả khách / Đã thu tiền</option>
+                            <option value="DELIVERED">🤝 Đã trả khách</option>
                         </select>
-                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">🛠️ Tất cả dịch vụ</option><option value="CLEAN">🧼 Vệ sinh</option><option value="SOLE">👟 Thay đế</option><option value="STAIN">💧 Tẩy ố</option><option value="REPAINT">🎨 Repaint</option><option value="GLUE">🖌️ Dán đế</option></select>
-                        <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
+                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[11px] py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                            <option value="ALL">🛠️ Tất cả dịch vụ</option>
+                            <option value="CLEAN">🧼 Vệ sinh</option>
+                            <option value="SOLE">👟 Thay đế</option>
+                            <option value="STAIN">💧 Tẩy ố</option>
+                            <option value="REPAINT">🎨 Repaint</option>
+                            <option value="GLUE">🖌️ Dán đế</option>
+                        </select>
                     </div>
                 </div>
 
                 <!-- THANH CÔNG CỤ GOM ĐƠN HÀNG LOẠT -->
-                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-3 rounded-2xl items-center justify-between gap-3 flex-wrap text-xs shadow-sm">
-                    <div class="font-bold text-sky-900 flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-sky-600 text-sm"></i>
-                        Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2.5 py-0.5 rounded-full font-extrabold text-xs">0</span> đơn hàng
+                <div id="bulkActionToolbar" class="hidden bg-sky-50 border border-sky-200 p-2 md:p-2.5 rounded-xl items-center justify-between gap-2 flex-wrap text-xs shadow-sm">
+                    <div class="font-bold text-sky-900 flex items-center gap-1.5 text-[11px]">
+                        <i class="fa-solid fa-layer-group text-sky-600 text-xs"></i>
+                        Đã chọn <span id="selectedOrdersCount" class="bg-sky-600 text-white px-2 py-0.5 rounded-full font-extrabold text-[10px]">0</span> đơn
                     </div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-slate-500 font-semibold text-[11px]">Đổi trạng thái hàng loạt:</span>
-                        <button onclick="bulkUpdateSelectedOrders('PROCESSING')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
-                            <i class="fa-solid fa-clock-rotate-left"></i> ⏳ Đang làm
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSING')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg shadow-sm transition flex items-center gap-1 text-[10px] active:scale-95">
+                            ⏳ Đang làm
                         </button>
-                        <button onclick="bulkUpdateSelectedOrders('PROCESSED')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1 active:scale-95 text-xs">
-                            <i class="fa-solid fa-circle-check"></i> ✅ Đã xong
+                        <button onclick="bulkUpdateSelectedOrders('PROCESSED')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg shadow-sm transition flex items-center gap-1 text-[10px] active:scale-95">
+                            ✅ Đã xong
                         </button>
-                        <button onclick="clearSelectedOrders()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2.5 py-1.5 rounded-xl transition text-xs">
+                        <button onclick="clearSelectedOrders()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2 py-1 rounded-lg transition text-[10px]">
                             Bỏ chọn
                         </button>
                     </div>
                 </div>
 
                 <!-- THANH THỐNG KÊ SỐ LƯỢNG DỊCH VỤ CHƯA LÀM -->
-                <div id="pendingServicesSummary" class="text-xs bg-amber-50 text-amber-800 p-2 md:p-3 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-2 items-center"></div>
+                <div id="pendingServicesSummary" class="text-[11px] bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center"></div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-                    <div class="overflow-x-auto flex-1">
+                <!-- BẢNG KHO ĐƠN CÓ TIÊU ĐỀ BẢNG CỐ ĐỊNH (STICKY HEADER) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col relative">
+                    <div class="overflow-x-auto flex-1 max-h-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider">
-                                    <th class="p-3 w-8 text-center"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
-                                    <th class="p-3">Mã & Ngày Đơn</th>
-                                    <th class="p-3">Khách Hàng</th>
-                                    <th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th>
-                                    <th class="p-3 whitespace-normal">Dịch Vụ (SL) <span class="text-[10px] text-slate-400 font-normal lowercase block">(Bấm để chuyển TT)</span></th>
-                                    <th class="p-3 min-w-[100px]">Tổng Tiền</th>
-                                    <th class="p-3">Tình Trạng</th>
-                                    <th class="p-3 text-right">Thao Tác Link KH</th>
+                            <thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider shadow-sm">
+                                <tr>
+                                    <th class="p-2 w-7 text-center bg-slate-100"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
+                                    <th class="p-2 min-w-[85px] max-w-[95px] bg-slate-100">Mã & Ngày</th>
+                                    <th class="p-2 min-w-[85px] max-w-[100px] bg-slate-100">Khách Hàng</th>
+                                    <th class="p-2 min-w-[110px] bg-slate-100">Ghi Chú & Ảnh</th>
+                                    <th class="p-2 min-w-[130px] whitespace-normal bg-slate-100">Dịch Vụ (SL)</th>
+                                    <th class="p-2 min-w-[80px] bg-slate-100">Tổng Tiền</th>
+                                    <th class="p-2 min-w-[85px] bg-slate-100">Tình Trạng</th>
+                                    <th class="p-2 text-right min-w-[80px] bg-slate-100">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
@@ -1892,12 +1905,12 @@
                 const summaryParts = [];
                 for (const cat in catMap) {
                     if (pendingCounts[cat] > 0) {
-                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2.5 py-1 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[13px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`);
+                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2 py-0.5 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[12px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`);
                     }
                 }
                 
                 if (summaryParts.length > 0) {
-                    summaryEl.innerHTML = `<div class="flex items-center gap-1.5 text-amber-700 uppercase"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[11px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-2">${summaryParts.join('')}</div>`;
+                    summaryEl.innerHTML = `<div class="flex items-center gap-1 text-amber-700 uppercase shrink-0"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[10px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-1.5">${summaryParts.join('')}</div>`;
                     summaryEl.classList.remove('hidden');
                     summaryEl.classList.add('flex');
                 } else {
@@ -1940,26 +1953,26 @@
                 const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
                 
                 let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
+                if (hasBefore) imgHtml += `<span class="text-[9px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[9px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${o.imagesAfter.length}</span>`;
                 
                 let actionHtml = '';
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
-                else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`;
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] font-bold bg-navy-800 text-white px-1.5 py-1 rounded-lg shadow-sm active:scale-95 flex items-center gap-0.5"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-1 rounded-lg shadow-sm active:scale-95 flex items-center gap-0.5"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`;
                 
-                actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition mt-1 w-max"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                actionHtml += `<label class="text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 py-1 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-0.5 transition mt-0.5 w-max"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
-                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-xs">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) {
-                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1 w-full text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
                 }
 
-                let actionColumn = `<div class="flex flex-col gap-1.5 items-end mt-1">`;
+                let actionColumn = `<div class="flex flex-col gap-1 items-end mt-0.5">`;
                 if (o.customer.phone && o.customer.phone.trim() !== '') {
-                    actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-comment-sms"></i> Gửi Zalo</button>`;
+                    actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-2 py-1 rounded-lg transition active:scale-95 text-[10px] flex items-center gap-1 w-[80px] justify-center"><i class="fa-solid fa-comment-sms"></i> Zalo</button>`;
                 }
-                actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-link"></i> Link KH</button>`;
-                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button>`;
+                actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-2 py-1 rounded-lg transition active:scale-95 text-[10px] flex items-center gap-1 w-[80px] justify-center"><i class="fa-solid fa-link"></i> Link KH</button>`;
+                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs p-0.5 mt-0.5 transition w-full text-right"><i class="fa-solid fa-trash"></i></button>`;
                 actionColumn += `</div>`;
 
                 // LỌC CÁC MỤC DỊCH VỤ CẦN HIỂN THỊ
@@ -1990,7 +2003,6 @@
                     const isWarrantyEligible = (cat === 'SOLE' || cat === 'GLUE');
 
                     let warrantyHtml = '';
-                    // CHỈ HIỂN THỊ KHUNG BẢO HÀNH KHI Ở BỘ LỌC "ĐÃ TRẢ KHÁCH / ĐÃ THU TIỀN" HOẶC ĐƠN ĐÃ THU TIỀN
                     if (isWarrantyEligible && isPaidOrDeliveredFilter) {
                         if (!i.warrantyDate) {
                             i.warrantyDate = calculate3MonthsLater(o.date);
@@ -1999,15 +2011,15 @@
                         const isExpired = i.warrantyDate < todayStr;
                         const warrantyBoxClass = isExpired ? 'bg-red-50 border-red-200 text-red-700' : 'bg-purple-50 border-purple-200 text-purple-800';
 
-                        warrantyHtml = `<div class="mt-1 p-1 rounded border ${warrantyBoxClass} text-[10px] inline-flex items-center gap-1 shadow-sm">
+                        warrantyHtml = `<div class="mt-1 p-0.5 rounded border ${warrantyBoxClass} text-[9px] inline-flex items-center gap-0.5 shadow-sm">
                             <span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span>
-                            <input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent border-b border-purple-300 font-mono font-bold outline-none text-[10px] cursor-pointer">
+                            <input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent border-b border-purple-300 font-mono font-bold outline-none text-[9px] cursor-pointer">
                         </div>`;
                     }
 
-                    return `<div class="mb-1.5">
+                    return `<div class="mb-1">
                                 <span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')"
-                                      class="${badgeClass} border px-2 py-1 rounded-md mr-1 inline-block cursor-pointer transition hover:scale-105 select-none"
+                                      class="${badgeClass} border px-1.5 py-0.5 rounded mr-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[10px]"
                                       title="Bấm để chuyển: Mới nhận -> Đang làm (Màu Vàng) -> Đã xong (Màu Xanh)">
                                     ${iconHtml}${i.name} (x${i.qty})
                                 </span>
@@ -2017,14 +2029,14 @@
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3 text-center align-top pt-3.5"><input type="checkbox" class="order-select-cb w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
-                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
-                    <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
-                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${servicesBadgeHtml}</td>
-                    <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
-                    <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
-                    <td class="p-3 text-right align-top">${actionColumn}</td>
+                    <td class="p-2 text-center align-top pt-2.5"><input type="checkbox" class="order-select-cb w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
+                    <td class="p-2 align-top min-w-[85px] max-w-[95px]"><span class="font-mono text-sky-700 font-bold text-[11px]">${o.id}</span><br><span class="text-[8px] text-slate-400 font-mono">${o.date}</span></td>
+                    <td class="p-2 align-top min-w-[85px] max-w-[100px]"><div class="font-bold text-[11px] truncate max-w-[90px]" title="${o.customer.name}">${o.customer.name}</div><div class="text-[9px] text-slate-500 font-mono">${o.customer.phone}</div></td>
+                    <td class="p-2 align-top min-w-[110px]"><div class="text-[10px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[150px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
+                    <td class="p-2 text-[10px] whitespace-normal align-top min-w-[130px]">${servicesBadgeHtml}</td>
+                    <td class="p-2 align-top min-w-[80px]">${totalCellHtml}</td>
+                    <td class="p-2 align-top min-w-[85px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] font-bold p-1 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
+                    <td class="p-2 text-right align-top min-w-[80px]">${actionColumn}</td>
                 </tr>`;
             }).join('');
 
