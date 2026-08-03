@@ -714,7 +714,7 @@
             });
         }
 
-        // HÀM CẬP NGÀY BẢO HÀNH TỪ Ô CHỈNH SỬA
+        // HÀM CẬP NHẬT NGÀY BẢO HÀNH TỪ Ô CHỈNH SỬA
         function updateItemWarrantyDate(orderId, itemIdKey, newDate) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o) return;
@@ -809,6 +809,137 @@
                 prompt("Sao chép đường link tra cứu cho khách:", trackingUrl);
             });
         }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
+
+            // KÍCH HOẠT THAO TÁC VUỐT XUỐNG ĐỂ ĐÓNG ẢNH XEM TO
+            const modalView = document.getElementById('imageViewerModal');
+            const imgView = document.getElementById('viewerImage');
+
+            if (modalView && imgView) {
+                modalView.addEventListener('touchstart', (e) => {
+                    imgTouchStartY = e.touches[0].clientY;
+                    imgTouchMoveY = 0;
+                    imgView.style.transition = 'none';
+                }, { passive: true });
+
+                modalView.addEventListener('touchmove', (e) => {
+                    const currentY = e.touches[0].clientY;
+                    const diffY = currentY - imgTouchStartY;
+                    if (diffY > 0) { // Đang vuốt xuống
+                        imgTouchMoveY = diffY;
+                        const scale = Math.max(0.7, 1 - diffY / 800);
+                        imgView.style.transform = `translateY(${diffY}px) scale(${scale})`;
+                    }
+                }, { passive: true });
+
+                modalView.addEventListener('touchend', () => {
+                    imgView.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                    if (imgTouchMoveY > 90) { // Vuốt xuống hơn 90px là đóng modal
+                        closeImageViewer();
+                    } else {
+                        imgView.style.transform = 'translateY(0px) scale(1)';
+                    }
+                }, { passive: true });
+            }
+            
+            try {
+                const localData = localStorage.getItem('TRAM_LOCAL_STATE');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    state.users = parsed.users || DEFAULT_USERS;
+                    state.services = parsed.services || state.services;
+                    state.orders = parsed.orders || [];
+                    state.expenses = parsed.expenses || [];
+                    state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
+                    state.logo = parsed.logo || null;
+                }
+            } catch (e) {}
+
+            try {
+                const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
+                if (result && result.data) {
+                    const cloudData = result.data;
+                    state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
+                    state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
+                    state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
+                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
+                } else if (error && error.code === 'PGRST116') { await saveState(); }
+            } catch(err) {}
+
+            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
+            renderSettingsServicesTable(); renderSettingsUsersTable();
+            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
+            updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
+            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
+            document.getElementById('globalLoading').style.display = 'none';
+
+            supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
+                const newData = payload.new.data;
+                if (newData && newData.orders) {
+                    if (newData.orders.length > state.orders.length) {
+                        const newO = newData.orders[0];
+                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                        if (document.visibilityState === 'visible') {
+                            showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                        }
+                    } else {
+                        for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
+                            const newOrd = newData.orders[i];
+                            const oldOrd = state.orders.find(o => o.id === newOrd.id);
+                            if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
+                                if (document.visibilityState === 'visible') {
+                                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
+                                }
+                            }
+                        }
+                    }
+
+                    state.orders = newData.orders || []; state.expenses = newData.expenses || [];
+                    state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
+                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(newData));
+                    renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                    renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+                    
+                    if (window.location.hash.startsWith('#track=')) checkUrlTracking();
+                }
+            }).subscribe();
+
+            // ==========================================
+            // FIX: ĐỒNG BỘ DỮ LIỆU KHI MỞ LẠI APP (MULTITASKING / BACKGROUND SYNC)
+            // ==========================================
+            document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'visible') {
+                    try {
+                        const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
+                        if (result && result.data && result.data.orders) {
+                            const cloudData = result.data;
+                            state.users = cloudData.users || state.users;
+                            state.services = cloudData.services || state.services;
+                            state.orders = cloudData.orders || [];
+                            state.expenses = cloudData.expenses || [];
+                            state.qrConfig = cloudData.qrConfig || state.qrConfig;
+                            state.logo = cloudData.logo || null;
+                            localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(cloudData));
+                            
+                            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
+                            renderSettingsServicesTable(); renderSettingsUsersTable();
+                            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
+                            updateReportMetrics(); renderDashboard();
+                            
+                            if (window.location.hash.startsWith('#track=')) checkUrlTracking();
+                        }
+                    } catch(err) { console.error("Lỗi đồng bộ ngầm khi mở app:", err); }
+                }
+            });
+
+            // TỰ ĐỘNG RELOAD KHI KẾT NỐI MẠNG LẠI (TRÁNH LỖI MẤT WEBSOCKET REALTIME)
+            window.addEventListener('online', () => {
+                showNotification("🌐 KẾT NỐI LẠI MẠNG", "Đang tự động tải lại dữ liệu mới nhất...");
+                setTimeout(() => window.location.reload(), 1500);
+            });
+        });
 
         async function checkUrlTracking() {
             const hash = window.location.hash;
@@ -931,282 +1062,6 @@
                 if (screen) screen.classList.add('hidden');
             }
         }
-
-        window.addEventListener('hashchange', checkUrlTracking);
-
-        function restoreLastTab() {
-            const lastTab = localStorage.getItem('TRAM_LAST_TAB');
-            if (lastTab && document.getElementById('nav-' + lastTab)) {
-                if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) {
-                    switchTab('pos');
-                } else {
-                    switchTab(lastTab);
-                }
-            } else {
-                if (state.role === 'staff') switchTab('pos');
-                else switchTab('dashboard');
-            }
-        }
-        
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
-                if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); else b.classList.add('text-slate-300');
-            });
-            const activeBtn = document.getElementById('nav-' + id);
-            if(activeBtn) { activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); }
-            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
-            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
-            if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
-            localStorage.setItem('TRAM_LAST_TAB', id);
-        }
-
-        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
-
-        let state = {
-            users: DEFAULT_USERS, currentUser: null, logo: null,
-            services: [
-                { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
-                { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
-                { id: 's1', name: 'Thay đế giày thể thao', category: 'SOLE', defaultPrice: 350000, icon: 'fa-shoe-prints' },
-                { id: 'r1', name: 'Repaint thân/đế', category: 'REPAINT', defaultPrice: 200000, icon: 'fa-palette' },
-                { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
-                { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
-            ],
-            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, 
-            cart: [], uploadedImages: [], role: null,
-            
-            // BIẾN CHO CHẾ ĐỘ NHIỀU ĐÔI GIÀY
-            multiShoeMode: false,
-            shoes: [],
-            activeShoeId: null
-        };
-
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
-
-        async function saveState() {
-            const payload = {
-                users: state.users, logo: state.logo || '', services: state.services,
-                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
-            };
-            try { localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(payload)); } catch (e) {}
-            try {
-                const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
-                if (error) {
-                    if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
-                       await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
-                    }
-                }
-            } catch (err) {}
-        }
-
-        // TÍNH NĂNG VUỐT XUỐNG ĐỂ ĐÓNG XEM ẢNH FULLSCREEN
-        let imgTouchStartY = 0;
-        let imgTouchMoveY = 0;
-        
-        function uploadFileToR2(file) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const compressedFile = await compressImage(file, 500, 1920);
-                    const s3 = getS3Client();
-                    const reader = new FileReader();
-                    reader.readAsArrayBuffer(compressedFile);
-                    reader.onload = (e) => {
-                        const fileBuffer = e.target.result;
-                        const fileExtension = compressedFile.name.split('.').pop();
-                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: compressedFile.type };
-                        s3.upload(params, function(err, data) {
-                            if (err) reject(err); else resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`);
-                        });
-                    };
-                    reader.onerror = (err) => reject(err);
-                } catch(err) { reject(err); }
-            });
-        }
-        
-        function checkAutoLogin() {
-            const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
-            const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
-            if (savedUserId && loginTime) {
-                const now = new Date().getTime();
-                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
-                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
-                }
-                const foundUser = state.users.find(u => u.id === savedUserId);
-                if (foundUser) {
-                    state.currentUser = foundUser;
-                    const authScreen = document.getElementById('authScreen');
-                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-                    document.getElementById('currentUserDisplay').innerText = foundUser.name;
-                    changeRole(foundUser.role);
-                } else {
-                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME');
-                }
-            }
-        }
-
-        function handleLogin() {
-            const user = document.getElementById('loginUsername').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
-            const remember = document.getElementById('rememberLogin').checked;
-            if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
-            const foundUser = state.users.find(u => u.username === user && u.password === pass);
-            if(foundUser) {
-                state.currentUser = foundUser;
-                localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
-                if (remember) { localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); } 
-                else { localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString()); }
-                document.getElementById('authScreen').classList.add('opacity-0');
-                setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
-                document.getElementById('currentUserDisplay').innerText = foundUser.name;
-                changeRole(foundUser.role);
-                document.getElementById('loginPassword').value = '';
-            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
-        }
-
-        function handleLogout() {
-            if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
-                state.currentUser = null;
-                localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
-                document.getElementById('authScreen').style.display = 'flex';
-                setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
-            }
-        }
-
-        function changeRole(r) {
-            state.role = r; 
-            document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
-            document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
-            restoreLastTab();
-        }
-
-        function renderSettingsUsersTable() {
-            document.getElementById('settingsUsersTable').innerHTML = state.users.map(u => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
-                    <td class="p-3 text-sky-700 font-mono">${u.username}</td>
-                    <td class="p-3 font-mono text-slate-500">***</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td>
-                    <td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
-                </tr>`).join('');
-        }
-
-        function addNewAccount() {
-            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim();
-            const pass = document.getElementById('addUserPass').value.trim(); const role = document.getElementById('addUserRole').value;
-            if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-            if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
-            state.users.push({ id: 'U-' + Date.now(), username, password: pass, role, name });
-            saveState(); renderSettingsUsersTable();
-            document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
-            alert("Tạo tài khoản thành công!");
-        }
-
-        function deleteAccount(id) {
-            if(confirm("Hủy tài khoản này? Người này sẽ không thể đăng nhập được nữa.")) {
-                state.users = state.users.filter(u => u.id !== id);
-                saveState(); renderSettingsUsersTable();
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
-
-            // KÍCH HOẠT THAO TÁC VUỐT XUỐNG ĐỂ ĐÓNG ẢNH XEM TO
-            const modalView = document.getElementById('imageViewerModal');
-            const imgView = document.getElementById('viewerImage');
-
-            if (modalView && imgView) {
-                modalView.addEventListener('touchstart', (e) => {
-                    imgTouchStartY = e.touches[0].clientY;
-                    imgTouchMoveY = 0;
-                    imgView.style.transition = 'none';
-                }, { passive: true });
-
-                modalView.addEventListener('touchmove', (e) => {
-                    const currentY = e.touches[0].clientY;
-                    const diffY = currentY - imgTouchStartY;
-                    if (diffY > 0) { // Đang vuốt xuống
-                        imgTouchMoveY = diffY;
-                        const scale = Math.max(0.7, 1 - diffY / 800);
-                        imgView.style.transform = `translateY(${diffY}px) scale(${scale})`;
-                    }
-                }, { passive: true });
-
-                modalView.addEventListener('touchend', () => {
-                    imgView.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-                    if (imgTouchMoveY > 90) { // Vuốt xuống hơn 90px là đóng modal
-                        closeImageViewer();
-                    } else {
-                        imgView.style.transform = 'translateY(0px) scale(1)';
-                    }
-                }, { passive: true });
-            }
-            
-            try {
-                const localData = localStorage.getItem('TRAM_LOCAL_STATE');
-                if (localData) {
-                    const parsed = JSON.parse(localData);
-                    state.users = parsed.users || DEFAULT_USERS;
-                    state.services = parsed.services || state.services;
-                    state.orders = parsed.orders || [];
-                    state.expenses = parsed.expenses || [];
-                    state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
-                    state.logo = parsed.logo || null;
-                }
-            } catch (e) {}
-
-            try {
-                const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
-                if (result && result.data) {
-                    const cloudData = result.data;
-                    state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
-                    state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
-                    state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
-                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
-                } else if (error && error.code === 'PGRST116') { await saveState(); }
-            } catch(err) {}
-
-            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
-            renderSettingsServicesTable(); renderSettingsUsersTable();
-            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
-            updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
-            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
-            document.getElementById('globalLoading').style.display = 'none';
-
-            supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
-                const newData = payload.new.data;
-                if (newData && newData.orders) {
-                    if (newData.orders.length > state.orders.length) {
-                        const newO = newData.orders[0];
-                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        if (document.visibilityState === 'visible') {
-                            showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
-                        }
-                    } else {
-                        for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
-                            const newOrd = newData.orders[i];
-                            const oldOrd = state.orders.find(o => o.id === newOrd.id);
-                            if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
-                                if (document.visibilityState === 'visible') {
-                                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
-                                }
-                            }
-                        }
-                    }
-
-                    state.orders = newData.orders || []; state.expenses = newData.expenses || [];
-                    state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
-                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(newData));
-                    renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                    renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
-                    
-                    if (window.location.hash.startsWith('#track=')) checkUrlTracking();
-                }
-            }).subscribe();
-        });
 
         function adjustPOSLayout() {
             const container = document.getElementById('servicesMainContainer'); if (!container) return;
