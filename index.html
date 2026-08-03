@@ -1068,33 +1068,75 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // KÊNH REAL-TIME RIÊNG CHO BẢNG ORDERS CHỐNG LAG
+            // KÊNH REAL-TIME RIÊNG CHO BẢNG ORDERS (ĐÃ TỐI ƯU 100% REALTIME & POPUP)
             supabaseClient.channel('public:orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
                 const { eventType, new: newRec, old: oldRec } = payload;
+                
+                // 1. KHI CÓ ĐƠN HÀNG MỚI (Từ thiết bị khác tạo)
                 if (eventType === 'INSERT') {
                     const newO = mapOrderDbToJs(newRec);
+                    // Kiểm tra nếu thiết bị hiện tại chưa có đơn này (tránh lặp thông báo ở máy người vừa tự tạo đơn)
                     if (!state.orders.find(o => o.id === newO.id)) {
                         state.orders.unshift(newO);
                         const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                        
+                        // Hiển thị Pop-up thông báo Realtime cho thiết bị đang trực
+                        if (document.visibilityState === 'visible') {
+                            showNotification("📦 CÓ ĐƠN MỚI TẠO", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
+                        }
                     }
-                } else if (eventType === 'UPDATE') {
+                } 
+                // 2. KHI TRẠNG THÁI ĐƠN HÀNG THAY ĐỔI
+                else if (eventType === 'UPDATE') {
                     const updatedO = mapOrderDbToJs(newRec);
                     const idx = state.orders.findIndex(o => o.id === updatedO.id);
+                    
                     if (idx !== -1) {
                         const oldO = state.orders[idx];
                         state.orders[idx] = updatedO;
+                        // Pop-up cho nội bộ nếu đơn được thanh toán từ thiết bị khác
                         if (oldO.status !== 'DELIVERED' && updatedO.status === 'DELIVERED') {
-                            if (document.visibilityState === 'visible') showNotification("✅ ĐÃ THU TIỀN", `Khách: ${updatedO.customer.name} - ${updatedO.total.toLocaleString()}đ`);
+                            if (document.visibilityState === 'visible') {
+                                showNotification("✅ ĐÃ THU TIỀN", `Khách: ${updatedO.customer.name} - ${updatedO.total.toLocaleString()}đ`);
+                            }
+                        }
+                    } else {
+                        state.orders.unshift(updatedO);
+                    }
+
+                    // TÍNH NĂNG 3: REALTIME CHO KHÁCH HÀNG (Không cần F5)
+                    // Kiểm tra xem trình duyệt có đang mở URL tra cứu của đúng đơn hàng này không
+                    const currentHash = window.location.hash;
+                    if (currentHash === `#track=${updatedO.id}`) {
+                        // Tự động load lại giao diện tra cứu
+                        checkUrlTracking();
+                        // Pop-up báo cho khách hàng biết
+                        if (document.visibilityState === 'visible') {
+                            showNotification("🔔 CẬP NHẬT MỚI", "Trạng thái giày của bạn vừa được cập nhật!");
                         }
                     }
-                } else if (eventType === 'DELETE') {
+                } 
+                // 3. KHI XÓA ĐƠN HÀNG
+                else if (eventType === 'DELETE') {
                     state.orders = state.orders.filter(o => o.id !== oldRec.id);
                 }
 
-                saveLocalState(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                if (window.location.hash.startsWith('#track=')) checkUrlTracking();
-            }).subscribe();
+                // Lưu lại dữ liệu nội bộ
+                saveLocalState(); 
+
+                // Chỉ render lại UI quản lý nếu user KHÔNG phải là khách hàng đang xem tracking
+                if (!window.location.hash.startsWith('#track=')) {
+                    renderOrdersTable(); 
+                    renderDashboard(); 
+                    updateReportMetrics(); 
+                    renderCustomersTable();
+                }
+
+            }).subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log("⚡ Đã kết nối hệ thống Realtime Supabase thành công!");
+                }
+            });
         });
 
         function adjustPOSLayout() {
