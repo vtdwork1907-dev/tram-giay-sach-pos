@@ -42,15 +42,6 @@
         #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); pointer-events: none; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
-        .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-        .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
-        .image-preview-item .upload-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; }
-        .image-preview-item .upload-spinner { width: 1.25rem; height: 1.25rem; border: 2px solid #cbd5e1; border-top-color: #0284c7; border-radius: 50%; animation: spin 1s linear infinite; }
-        @media (min-width: 768px) {
-            .image-preview-item { width: 4.5rem; height: 6rem; }
-        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800 relative">
@@ -181,7 +172,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
                             <div class="overflow-x-auto w-full">
                                 <table class="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48">Hình Ảnh (Before/After)</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
+                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48">Hình Ảnh Từng Đôi</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
                                     <tbody id="dashPendingOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -193,7 +184,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full">
                             <div class="overflow-x-auto w-full">
                                 <table class="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
+                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày</th><th class="p-3">Khách Hàng</th><th class="p-3 w-48 whitespace-normal">Hình Ảnh Từng Đôi</th><th class="p-3">Dịch Vụ</th><th class="p-3">Tổng Tiền</th><th class="p-3">Tình Trạng</th></tr></thead>
                                     <tbody id="dashNotedOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -230,16 +221,11 @@
 
                         <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 space-y-1.5"><label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1"><i class="fa-solid fa-bars-progress"></i> Tình Trạng Đơn</label><select id="cartOrderStatus" class="w-full text-[16px] md:text-xs font-semibold px-2 py-2 md:py-1.5 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white"><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán (Tính DS)</option><option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option></select></div>
 
-                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
-                            <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
-                            <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll" id="imagePreviewContainer">
-                                <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Chụp Ảnh</span><input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(event, true)" class="hidden" id="cameraInput"></label>
-                                <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Tải Lên</span><input type="file" accept="image/*" multiple onchange="handleImageUpload(event, false)" class="hidden" id="fileInput"></label>
-                                <div id="renderedImagesBox" class="flex gap-2"></div>
-                            </div>
+                        <!-- CẤU TRÚC MỚI: DANH SÁCH GIÀY ĐƯỢC CHỌN VÀ CHỤP ẢNH TẠI ĐÂY -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span><i class="fa-solid fa-list-check text-sky-600"></i> Các Đôi Giày Đã Chọn</span><span id="cartCountBadge" class="bg-sky-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0</span></label>
+                            <div id="cartItemsList" class="space-y-3 lg:max-h-[350px] overflow-y-auto pr-1"></div>
                         </div>
-
-                        <div class="space-y-1.5"><label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span><i class="fa-solid fa-list-check text-sky-600"></i> Dịch Vụ Đã Chọn</span><span id="cartCountBadge" class="bg-sky-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0</span></label><div id="cartItemsList" class="space-y-2 lg:max-h-32 overflow-y-auto pr-1"></div></div>
                     </div>
 
                     <div class="p-3 md:p-4 bg-slate-50 border-t border-slate-200 space-y-2.5 shrink-0 rounded-b-2xl lg:rounded-none">
@@ -253,21 +239,6 @@
                 </div>
 
                 <div id="pcServicesPlaceholder" class="hidden lg:flex flex-1 flex-col overflow-hidden shrink-0 h-full"></div>
-            </section>
-
-            <!-- CÁC TAB CÒN LẠI -->
-            <section id="tab-payment" class="tab-content hidden h-full flex flex-col items-center justify-center py-6">
-                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
-                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
-                    <h2 class="font-bold text-slate-800 text-2xl mb-1">Mã QR Thanh Toán</h2>
-                    <p class="text-xs text-slate-500 mb-6">Đưa mã này cho khách hàng quét để tự động điền STK</p>
-                    <div class="p-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl shadow-sm mb-6 w-full flex justify-center bg-white"><img id="paymentTabQR" src="" class="w-56 h-56 object-contain rounded-xl"></div>
-                    <div class="w-full space-y-2.5">
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Ngân hàng:</span><span id="paymentTabBank" class="font-bold text-navy-800"></span></div>
-                        <div class="flex items-center justify-between bg-sky-50 p-3 rounded-xl text-sm border border-sky-100"><span class="text-sky-800 font-medium">Số tài khoản:</span><span id="paymentTabAcc" class="font-mono font-bold text-sky-700 text-base"></span></div>
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Chủ tài khoản:</span><span id="paymentTabName" class="font-bold text-slate-800 uppercase"></span></div>
-                    </div>
-                </div>
             </section>
 
             <!-- TAB: KHO ĐƠN -->
@@ -291,7 +262,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-56 whitespace-normal">Ghi Chú & Hình Ảnh</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Thao Tác Link KH</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Mã & Ngày Đơn</th><th class="p-3">Khách Hàng</th><th class="p-3 w-64 whitespace-normal">Chi Tiết Hình Ảnh Từng Đôi</th><th class="p-3 whitespace-normal">Dịch Vụ (SL)</th><th class="p-3 min-w-[100px]">Tổng Tiền</th><th class="p-3">Tình Trạng</th><th class="p-3 text-right">Thao Tác Link KH</th></tr></thead>
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -487,42 +458,25 @@
         let s3Instance = null;
         let activeCollectingOrderId = null;
         
-        // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
 
         function getS3Client() {
             if (!s3Instance) {
-                if (typeof AWS === 'undefined') {
-                    throw new Error("Thư viện AWS SDK chưa tải xong.");
-                }
-                AWS.config.update({
-                    accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
-                    secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
-                    region: "auto"
-                });
-                s3Instance = new AWS.S3({
-                    endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
-                    s3ForcePathStyle: true,
-                    signatureVersion: 'v4'
-                });
+                if (typeof AWS === 'undefined') throw new Error("Thư viện AWS SDK chưa tải xong.");
+                AWS.config.update({ accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c", secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944", region: "auto" });
+                s3Instance = new AWS.S3({ endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com", s3ForcePathStyle: true, signatureVersion: 'v4' });
             }
             return s3Instance;
         }
 
         function deleteFileFromR2(fileUrl) {
             try {
-                const urlObj = new URL(fileUrl);
-                const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
-                const s3 = getS3Client();
-                s3.deleteObject({ Bucket: R2_BUCKET_NAME, Key: key }, function(err, data) {
-                    if (err) console.error("Lỗi xóa file trên R2:", err);
-                    else console.log("Đã xóa file R2 thành công:", key);
-                });
+                const urlObj = new URL(fileUrl); const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
+                const s3 = getS3Client(); s3.deleteObject({ Bucket: R2_BUCKET_NAME, Key: key }, function(err, data) { if (err) console.error("Lỗi xóa file trên R2:", err); });
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // HÀM HIỂN THỊ THÔNG BÁO NỔI TRONG WEB APP (TOAST)
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -530,89 +484,43 @@
                 toast.className = 'bg-white border-l-4 border-sky-500 shadow-2xl rounded-2xl p-3.5 md:p-4 flex flex-col gap-1 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-auto border border-slate-100';
                 toast.innerHTML = `<strong class="text-xs md:text-sm text-slate-800 flex items-center gap-2"><i class="fa-solid fa-bell text-amber-500"></i> ${title}</strong><span class="text-[11px] md:text-xs text-slate-600 whitespace-pre-line">${body}</span>`;
                 container.appendChild(toast);
-                
                 setTimeout(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'), 50);
-                setTimeout(() => {
-                    toast.classList.add('translate-y-[-20px]', 'opacity-0');
-                    setTimeout(() => toast.remove(), 300);
-                }, 5000);
+                setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 5000);
             }
         }
 
-        // HÀM GỬI LỆNH ĐẾN MÁY CHỦ NTFY
-        function sendNtfyAlert(title, message) {
-            const topicName = 'Tramgiaysach_news'; 
-            const fullMessage = `${title}\n${message}`;
-            
-            fetch(`https://ntfy.sh/${topicName}`, {
-                method: 'POST',
-                body: fullMessage
-            }).catch(err => console.error("Lỗi gửi ntfy:", err));
-        }
+        function sendNtfyAlert(title, message) { fetch(`https://ntfy.sh/Tramgiaysach_news`, { method: 'POST', body: `${title}\n${message}` }).catch(e=>{}); }
 
-        // HÀM MỞ ỨNG DỤNG ZALO HOẶC ZALO WEB ĐỂ GỬI LINK CHO KHÁCH
         function sendZaloTracking(orderId, phone, customerName) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
-            const message = `Dạ, Trạm Giày Sạch xin gửi quý khách ${customerName} link tra cứu tiến độ chăm sóc giày:\n${trackingUrl}\nCảm ơn quý khách đã tin tưởng ủng hộ cửa hàng ạ! ❤️`;
-            
-            // Lấy riêng số điện thoại
-            let cleanPhone = phone.replace(/\D/g, '');
-            if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
-            
-            const zaloUrl = `https://zalo.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-            window.open(zaloUrl, '_blank');
+            let cleanPhone = phone.replace(/\D/g, ''); if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
+            window.open(`https://zalo.me/${cleanPhone}?text=${encodeURIComponent(`Dạ, Trạm Giày Sạch xin gửi quý khách ${customerName} link tra cứu tiến độ chăm sóc giày:\n${trackingUrl}\nCảm ơn quý khách đã tin tưởng ủng hộ cửa hàng ạ! ❤️`)}`, '_blank');
         }
 
-        // TÍNH NĂNG XEM ẢNH FULL MÀN HÌNH CHO KHÁCH
         function openImageViewer(url) {
-            const modal = document.getElementById('imageViewerModal');
-            const img = document.getElementById('viewerImage');
-            img.src = url;
-            modal.classList.remove('hidden');
-            void modal.offsetWidth;
-            modal.classList.remove('opacity-0');
-            img.classList.remove('scale-95');
+            const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage');
+            img.src = url; modal.classList.remove('hidden'); void modal.offsetWidth; modal.classList.remove('opacity-0'); img.classList.remove('scale-95');
         }
 
         function closeImageViewer() {
-            const modal = document.getElementById('imageViewerModal');
-            const img = document.getElementById('viewerImage');
-            modal.classList.add('opacity-0');
-            img.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                img.src = '';
-            }, 300);
+            const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage');
+            modal.classList.add('opacity-0'); img.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); img.src = ''; }, 300);
         }
 
-        // TÍNH NĂNG XUẤT VÀ HIỂN THỊ LINK TRA CỨU CHO KHÁCH HÀNG
         function copyTrackingLink(orderId) {
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
-            navigator.clipboard.writeText(trackingUrl).then(() => {
-                showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn ${orderId} đã được sao chép vào bộ nhớ tạm! Bạn có thể dán gửi Zalo cho khách.`);
-            }).catch(err => {
-                prompt("Sao chép đường link tra cứu cho khách:", trackingUrl);
-            });
+            navigator.clipboard.writeText(trackingUrl).then(() => showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn ${orderId} đã được sao chép!`)).catch(() => prompt("Copy link:", trackingUrl));
         }
 
         async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
                 const orderId = hash.replace('#track=', '');
-                
                 if (state.orders.length === 0) {
                     try {
                         const localData = localStorage.getItem('TRAM_LOCAL_STATE');
-                        if (localData) {
-                            const parsed = JSON.parse(localData);
-                            state.orders = parsed.orders || [];
-                        }
-                        if (supabaseClient) {
-                            const { data: result } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
-                            if (result && result.data && result.data.orders) {
-                                state.orders = result.data.orders;
-                            }
-                        }
+                        if (localData) state.orders = JSON.parse(localData).orders || [];
+                        if (supabaseClient) { const { data: result } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single(); if (result && result.data && result.data.orders) state.orders = result.data.orders; }
                     } catch(e) {}
                 }
 
@@ -621,96 +529,73 @@
                 const box = document.getElementById('trackingContentBox');
                 
                 if (order && screen && box) {
-                    screen.classList.remove('hidden');
-                    renderLogo();
+                    screen.classList.remove('hidden'); renderLogo();
                     
-                    const statusList = [
-                        { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' },
-                        { key: 'PROCESSING', label: 'Đang xử lý', icon: 'fa-clock-rotate-left', desc: 'Đang tiến hành Spa giày' },
-                        { key: 'PROCESSED', label: 'Đã làm xong', icon: 'fa-check-circle', desc: 'Đã hoàn thành dịch vụ' }
-                    ];
-
-                    let currentStepIdx = 0;
-                    if (['PROCESSING'].includes(order.status)) currentStepIdx = 1;
-                    else if (['PROCESSED', 'PAID', 'DELIVERED'].includes(order.status)) currentStepIdx = 2;
-
-                    const isCompleted = currentStepIdx === 2;
-
-                    let stepsHtml = statusList.map((st, idx) => {
+                    const isCompleted = ['PROCESSED', 'PAID', 'DELIVERED'].includes(order.status);
+                    let currentStepIdx = 0; if (order.status === 'PROCESSING') currentStepIdx = 1; else if (isCompleted) currentStepIdx = 2;
+                    let stepsHtml = [ { key: 'RECEIVED', label: 'Đã nhận', icon: 'fa-box', desc: 'Đã nhận giày từ khách' }, { key: 'PROCESSING', label: 'Đang xử lý', icon: 'fa-clock-rotate-left', desc: 'Đang tiến hành Spa giày' }, { key: 'PROCESSED', label: 'Đã làm xong', icon: 'fa-check-circle', desc: 'Đã hoàn thành dịch vụ' } ].map((st, idx) => {
                         const isDone = idx <= currentStepIdx;
-                        return `
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isDone ? 'bg-emerald-500 text-white shadow' : 'bg-slate-200 text-slate-500'}">
-                                    <i class="fa-solid ${st.icon}"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="font-bold text-sm ${isDone ? 'text-slate-800' : 'text-slate-400'}">${st.label}</div>
-                                    <div class="text-[11px] text-slate-500">${st.desc}</div>
-                                </div>
-                            </div>`;
+                        return `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isDone ? 'bg-emerald-500 text-white shadow' : 'bg-slate-200 text-slate-500'}"><i class="fa-solid ${st.icon}"></i></div><div class="flex-1"><div class="font-bold text-sm ${isDone ? 'text-slate-800' : 'text-slate-400'}">${st.label}</div><div class="text-[11px] text-slate-500">${st.desc}</div></div></div>`;
                     }).join('');
 
-                    const svcsList = order.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                    let imagesHtml = '';
+                    
+                    // Xử lý ảnh dạng chung (đơn cũ)
+                    if (order.images && order.images.length > 0) {
+                        let bImgs = order.images.map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-32 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                        let aImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-32 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                        imagesHtml += `
+                        <div class="mb-4">
+                            <h4 class="font-bold text-[11px] bg-slate-200 text-slate-700 p-1.5 rounded uppercase mb-2">Ảnh Tình Trạng Chung</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1.5"><div class="text-[11px] font-bold text-slate-600 flex items-center gap-1"><i class="fa-solid fa-camera text-slate-400"></i> Lúc Nhận</div><div class="grid grid-cols-2 gap-2">${bImgs}</div></div>
+                                <div class="space-y-1.5"><div class="text-[11px] font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-check text-emerald-600"></i> Hoàn Thành</div><div class="grid grid-cols-2 gap-2">${aImgs || '<div class="col-span-2 text-slate-400 italic text-[10px] py-4 text-center bg-slate-50 rounded-xl border">Chưa có ảnh hoàn thiện</div>'}</div></div>
+                            </div>
+                        </div>`;
+                    }
 
-                    let beforeImgs = (order.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
-                    let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                    // Xử lý ảnh chia theo từng mục dịch vụ (đơn mới)
+                    if (order.items && order.items.length > 0) {
+                        order.items.forEach(item => {
+                            if ((item.images && item.images.length > 0) || (item.imagesAfter && item.imagesAfter.length > 0)) {
+                                let bImgs = (item.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-32 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                                let aImgs = (item.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-32 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                                imagesHtml += `
+                                <div class="mb-4">
+                                    <h4 class="font-bold text-[11px] bg-sky-100 text-sky-800 p-1.5 rounded uppercase mb-2"><i class="fa-solid fa-shoe-prints mr-1"></i> Đôi/Mục: ${item.name} (x${item.qty})</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="space-y-1.5"><div class="text-[11px] font-bold text-slate-600 flex items-center gap-1"><i class="fa-solid fa-camera text-slate-400"></i> Lúc Nhận</div><div class="grid grid-cols-2 gap-2">${bImgs || '<div class="col-span-2 text-slate-400 italic text-[10px] py-4 text-center bg-slate-50 rounded-xl border">Chưa có ảnh</div>'}</div></div>
+                                        <div class="space-y-1.5"><div class="text-[11px] font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-check text-emerald-600"></i> Hoàn Thành</div><div class="grid grid-cols-2 gap-2">${aImgs || '<div class="col-span-2 text-slate-400 italic text-[10px] py-4 text-center bg-slate-50 rounded-xl border">Chưa có ảnh hoàn thiện</div>'}</div></div>
+                                    </div>
+                                </div>`;
+                            }
+                        });
+                    }
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${order.customer.name}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${order.customer.phone}</span></div>
-                            <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Dịch vụ:</span><span class="font-semibold text-slate-700 text-right">${svcsList}</span></div>
+                            <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Dịch vụ:</span><span class="font-semibold text-slate-700 text-right">${order.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500 whitespace-nowrap">Ngày gửi:</span><span class="font-mono text-right">${order.date}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền:</span><span class="font-extrabold text-emerald-600 text-sm">${order.total.toLocaleString()} đ</span></div>
                         </div>
-
-                        <div class="space-y-3">
-                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Tiến Độ Xử Lý</h3>
-                            <div class="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                ${stepsHtml}
-                            </div>
-                        </div>
-
-                        ${isCompleted ? `
-                        <div class="bg-emerald-50 border-2 border-emerald-300 p-4 rounded-2xl text-center shadow-sm animate-bounce">
-                            <p class="font-extrabold text-emerald-800 text-sm md:text-base">🎉 Mời quý khách đến lấy giày! Xin cảm ơn.</p>
-                        </div>` : ''}
-
-                        <div class="space-y-4 pt-2">
-                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Hình Ảnh Giày (Trước & Sau)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-1.5">
-                                    <div class="text-[11px] font-bold text-slate-600 flex items-center gap-1"><i class="fa-solid fa-camera text-slate-400"></i> Lúc Nhận (Before)</div>
-                                    <div class="grid grid-cols-2 gap-2">${beforeImgs || '<div class="col-span-2 text-slate-400 italic text-xs py-4 text-center bg-slate-50 rounded-xl border">Chưa có ảnh trước</div>'}</div>
-                                </div>
-                                <div class="space-y-1.5">
-                                    <div class="text-[11px] font-bold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-check text-emerald-600"></i> Hoàn Thành (After)</div>
-                                    <div class="grid grid-cols-2 gap-2">${afterImgs || '<div class="col-span-2 text-slate-400 italic text-xs py-4 text-center bg-slate-50 rounded-xl border">Chưa có ảnh hoàn thiện</div>'}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                        <div class="space-y-3"><h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Tiến Độ Xử Lý</h3><div class="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">${stepsHtml}</div></div>
+                        ${isCompleted ? `<div class="bg-emerald-50 border-2 border-emerald-300 p-4 rounded-2xl text-center shadow-sm animate-bounce"><p class="font-extrabold text-emerald-800 text-sm md:text-base">🎉 Mời quý khách đến lấy giày! Xin cảm ơn.</p></div>` : ''}
+                        <div class="space-y-4 pt-2"><h3 class="font-bold text-xs uppercase text-slate-500 tracking-wider">Hình Ảnh Giày (Trước & Sau)</h3>${imagesHtml || '<p class="text-slate-400 italic text-xs">Chưa có hình ảnh nào được tải lên.</p>'}</div>`;
                 }
             } else {
-                const screen = document.getElementById('customerTrackingScreen');
-                if (screen) screen.classList.add('hidden');
+                const screen = document.getElementById('customerTrackingScreen'); if (screen) screen.classList.add('hidden');
             }
         }
-
         window.addEventListener('hashchange', checkUrlTracking);
 
         function restoreLastTab() {
             const lastTab = localStorage.getItem('TRAM_LAST_TAB');
             if (lastTab && document.getElementById('nav-' + lastTab)) {
-                if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) {
-                    switchTab('pos');
-                } else {
-                    switchTab(lastTab);
-                }
-            } else {
-                if (state.role === 'staff') switchTab('pos');
-                else switchTab('dashboard');
-            }
+                if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) switchTab('pos');
+                else switchTab(lastTab);
+            } else { if (state.role === 'staff') switchTab('pos'); else switchTab('dashboard'); }
         }
         
         function switchTab(id) {
@@ -728,7 +613,6 @@
         }
 
         const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
-
         let state = {
             users: DEFAULT_USERS, currentUser: null, logo: null,
             services: [
@@ -739,41 +623,26 @@
                 { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
                 { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
             ],
-            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, cart: [], uploadedImages: [], role: null
+            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, cart: [], role: null
         };
-
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
 
         async function saveState() {
-            const payload = {
-                users: state.users, logo: state.logo || '', services: state.services,
-                orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
-            };
+            const payload = { users: state.users, logo: state.logo || '', services: state.services, orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig };
             try { localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(payload)); } catch (e) {}
             try {
                 const { error } = await supabaseClient.from('app_state').update({ data: payload }).eq('id', 'main');
-                if (error) {
-                    if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
-                       await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
-                    }
-                }
+                if (error && (error.code === 'PGRST116' || error.message.includes('0 rows'))) await supabaseClient.from('app_state').insert([{ id: 'main', data: payload }]);
             } catch (err) {}
         }
         
         function uploadFileToR2(file) {
             return new Promise((resolve, reject) => {
                 try {
-                    const s3 = getS3Client();
-                    const reader = new FileReader();
-                    reader.readAsArrayBuffer(file);
+                    const s3 = getS3Client(); const reader = new FileReader(); reader.readAsArrayBuffer(file);
                     reader.onload = (e) => {
-                        const fileBuffer = e.target.result;
-                        const fileExtension = file.name.split('.').pop();
-                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: file.type };
-                        s3.upload(params, function(err, data) {
-                            if (err) reject(err); else resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`);
-                        });
+                        const fileExt = file.name.split('.').pop(); const key = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+                        s3.upload({ Bucket: R2_BUCKET_NAME, Key: key, Body: e.target.result, ContentType: file.type }, (err) => { if (err) reject(err); else resolve(`${R2_PUBLIC_DOMAIN}/${key}`); });
                     };
                     reader.onerror = (err) => reject(err);
                 } catch(err) { reject(err); }
@@ -781,89 +650,52 @@
         }
         
         function checkAutoLogin() {
-            const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
-            const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
+            const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER'); const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
             if (savedUserId && loginTime) {
-                const now = new Date().getTime();
-                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
-                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
-                }
+                if (new Date().getTime() - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) { localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return; }
                 const foundUser = state.users.find(u => u.id === savedUserId);
                 if (foundUser) {
                     state.currentUser = foundUser;
-                    const authScreen = document.getElementById('authScreen');
-                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-                    document.getElementById('currentUserDisplay').innerText = foundUser.name;
-                    changeRole(foundUser.role);
-                } else {
-                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME');
-                }
+                    document.getElementById('authScreen').style.display = 'none'; document.getElementById('authScreen').classList.add('opacity-0');
+                    document.getElementById('currentUserDisplay').innerText = foundUser.name; changeRole(foundUser.role);
+                } else { localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); }
             }
         }
 
         function handleLogin() {
-            const user = document.getElementById('loginUsername').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
-            const remember = document.getElementById('rememberLogin').checked;
+            const user = document.getElementById('loginUsername').value.trim(); const pass = document.getElementById('loginPassword').value.trim();
             if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
             const foundUser = state.users.find(u => u.username === user && u.password === pass);
             if(foundUser) {
-                state.currentUser = foundUser;
-                localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
-                if (remember) { localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); } 
-                else { localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString()); }
-                document.getElementById('authScreen').classList.add('opacity-0');
-                setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
-                document.getElementById('currentUserDisplay').innerText = foundUser.name;
-                changeRole(foundUser.role);
-                document.getElementById('loginPassword').value = '';
-            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
+                state.currentUser = foundUser; localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
+                localStorage.setItem('TRAM_LOGIN_TIME', document.getElementById('rememberLogin').checked ? new Date().getTime().toString() : (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
+                document.getElementById('authScreen').classList.add('opacity-0'); setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
+                document.getElementById('currentUserDisplay').innerText = foundUser.name; changeRole(foundUser.role); document.getElementById('loginPassword').value = '';
+            } else alert("Tài khoản hoặc mật khẩu không chính xác!");
         }
 
         function handleLogout() {
             if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
-                state.currentUser = null;
-                localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
-                document.getElementById('authScreen').style.display = 'flex';
-                setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+                state.currentUser = null; localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
+                document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
             }
         }
 
-        function changeRole(r) {
-            state.role = r; 
-            document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
-            document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
-            restoreLastTab();
-        }
+        function changeRole(r) { state.role = r; document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex'); document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex'); restoreLastTab(); }
 
         function renderSettingsUsersTable() {
             document.getElementById('settingsUsersTable').innerHTML = state.users.map(u => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
-                    <td class="p-3 text-sky-700 font-mono">${u.username}</td>
-                    <td class="p-3 font-mono text-slate-500">***</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td>
-                    <td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
-                </tr>`).join('');
+                <tr class="border-b hover:bg-slate-50"><td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td><td class="p-3 text-sky-700 font-mono">${u.username}</td><td class="p-3 font-mono text-slate-500">***</td><td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td><td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td></tr>`).join('');
         }
 
         function addNewAccount() {
-            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim();
-            const pass = document.getElementById('addUserPass').value.trim(); const role = document.getElementById('addUserRole').value;
-            if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-            if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
-            state.users.push({ id: 'U-' + Date.now(), username, password: pass, role, name });
-            saveState(); renderSettingsUsersTable();
-            document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
-            alert("Tạo tài khoản thành công!");
+            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim(); const pass = document.getElementById('addUserPass').value.trim();
+            if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin!"); if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
+            state.users.push({ id: 'U-' + Date.now(), username, password: pass, role: document.getElementById('addUserRole').value, name });
+            saveState(); renderSettingsUsersTable(); document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value=''; alert("Tạo tài khoản thành công!");
         }
 
-        function deleteAccount(id) {
-            if(confirm("Hủy tài khoản này? Người này sẽ không thể đăng nhập được nữa.")) {
-                state.users = state.users.filter(u => u.id !== id);
-                saveState(); renderSettingsUsersTable();
-            }
-        }
+        function deleteAccount(id) { if(confirm("Hủy tài khoản này? Người này sẽ không thể đăng nhập được nữa.")) { state.users = state.users.filter(u => u.id !== id); saveState(); renderSettingsUsersTable(); } }
 
         window.addEventListener('DOMContentLoaded', async () => {
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
@@ -871,63 +703,37 @@
             try {
                 const localData = localStorage.getItem('TRAM_LOCAL_STATE');
                 if (localData) {
-                    const parsed = JSON.parse(localData);
-                    state.users = parsed.users || DEFAULT_USERS;
-                    state.services = parsed.services || state.services;
-                    state.orders = parsed.orders || [];
-                    state.expenses = parsed.expenses || [];
-                    state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' };
-                    state.logo = parsed.logo || null;
+                    const parsed = JSON.parse(localData); state.users = parsed.users || DEFAULT_USERS; state.services = parsed.services || state.services;
+                    state.orders = parsed.orders || []; state.expenses = parsed.expenses || []; state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = parsed.logo || null;
                 }
             } catch (e) {}
 
             try {
                 const { data: result, error } = await supabaseClient.from('app_state').select('data').eq('id', 'main').single();
                 if (result && result.data) {
-                    const cloudData = result.data;
-                    state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
-                    state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || [];
-                    state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
+                    const cloudData = result.data; state.users = cloudData.users || DEFAULT_USERS; state.services = cloudData.services || state.services;
+                    state.orders = cloudData.orders || []; state.expenses = cloudData.expenses || []; state.qrConfig = cloudData.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = cloudData.logo || null;
                     localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(result.data));
-                } else if (error && error.code === 'PGRST116') { await saveState(); }
+                } else if (error && error.code === 'PGRST116') await saveState();
             } catch(err) {}
 
-            renderLogo(); renderCategoryTabs(); renderServicesGrid(); 
-            renderSettingsServicesTable(); renderSettingsUsersTable();
-            renderOrdersTable(); renderExpensesTable(); renderCustomersTable();
-            updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
-            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
-            document.getElementById('globalLoading').style.display = 'none';
+            renderLogo(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+            renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderCart();
+            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking(); document.getElementById('globalLoading').style.display = 'none';
 
-            // SUPABASE REALTIME LISTENER - ĐÃ KHÓA LỆNH GỌI NTFY Ở ĐÂY HOÀN TOÀN ĐỂ CHỐNG LẶP
             supabaseClient.channel('public:app_state').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
                 const newData = payload.new.data;
                 if (newData && newData.orders) {
-                    
                     if (newData.orders.length > state.orders.length) {
-                        const newO = newData.orders[0];
-                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        if (document.visibilityState === 'visible') {
-                            showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
-                        }
+                        if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newData.orders[0].customer.name} - ${newData.orders[0].total.toLocaleString()}đ\nDịch vụ: ${newData.orders[0].items.map(i => `${i.name} (x${i.qty})`).join(', ')}`);
                     } else {
                         for (let i = 0; i < Math.min(10, newData.orders.length); i++) {
-                            const newOrd = newData.orders[i];
-                            const oldOrd = state.orders.find(o => o.id === newOrd.id);
-                            if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') {
-                                if (document.visibilityState === 'visible') {
-                                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
-                                }
-                            }
+                            const newOrd = newData.orders[i]; const oldOrd = state.orders.find(o => o.id === newOrd.id);
+                            if (oldOrd && oldOrd.status !== 'DELIVERED' && newOrd.status === 'DELIVERED') if (document.visibilityState === 'visible') showNotification("✅ ĐÃ THU TIỀN", `Khách: ${newOrd.customer.name} - ${newOrd.total.toLocaleString()}đ`);
                         }
                     }
-
-                    state.orders = newData.orders || []; state.expenses = newData.expenses || [];
-                    state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
-                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(newData));
-                    renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                    renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
-                    
+                    state.orders = newData.orders || []; state.expenses = newData.expenses || []; state.users = newData.users || state.users; state.services = newData.services || state.services; state.logo = newData.logo || null;
+                    localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(newData)); renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable(); renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                     if (window.location.hash.startsWith('#track=')) checkUrlTracking();
                 }
             }).subscribe();
@@ -940,12 +746,7 @@
         }
         window.addEventListener('resize', adjustPOSLayout);
 
-        function initClock() {
-            setInterval(() => { 
-                const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN');
-                document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`;
-            }, 1000);
-        }
+        function initClock() { setInterval(() => { const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN'); document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`; }, 1000); }
 
         function renderDashboard() {
             const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -967,32 +768,32 @@
 
             const generateDashRow = (o, showNote = false) => {
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
-                const hasBefore = o.images && o.images.length > 0;
-                const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
+                let noteHtml = showNote ? `<div class="text-[11px] text-red-600 font-bold italic mb-1.5 whitespace-normal leading-tight max-w-[180px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
                 
-                let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 mb-1 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 mb-1 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
-                
-                let actionHtml = '';
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 w-full"><i class="fa-solid fa-eye"></i> Xem Ảnh</button>`;
-                else actionHtml += `<div class="text-[9px] text-slate-400 mb-1 text-center">Không ảnh</div>`;
-                
-                actionHtml += `<label class="text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition mt-1 w-full"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
-                
-                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm">${o.total.toLocaleString()} đ</div>`;
-                if (isUnpaid) {
-                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                // Logic cho ảnh chung cũ (nếu có)
+                let legacyHtml = '';
+                if (o.images && o.images.length > 0) {
+                    legacyHtml = `<div class="mb-1.5 pb-1.5 border-b border-slate-100 last:border-0"><div class="font-bold text-[9px] text-slate-500 mb-0.5">Ảnh Chung Cũ</div><div class="flex flex-wrap gap-1 items-center"><span class="text-[9px] bg-slate-100 px-1 py-0.5 rounded border border-slate-200"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span><button onclick="openComparison('${o.id}')" class="text-[9px] bg-navy-800 text-white px-1.5 py-0.5 rounded shadow-sm">Xem</button></div></div>`;
                 }
 
-                let noteHtml = showNote ? `<div class="text-[11px] text-red-600 font-bold italic mb-1.5 whitespace-normal leading-tight max-w-[180px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
+                // Logic cho ảnh chia theo từng mục (mới)
+                let itemsImgHtml = o.items.map(i => {
+                    let bImgs = i.images && i.images.length > 0 ? `<span class="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${i.images.length}</span>` : '';
+                    let aImgs = i.imagesAfter && i.imagesAfter.length > 0 ? `<span class="text-[9px] bg-sky-100 text-sky-700 px-1 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${i.imagesAfter.length}</span>` : '';
+                    let actionBtn = (bImgs || aImgs) ? `<button onclick="openComparison('${o.id}')" class="text-[9px] font-bold bg-navy-800 text-white px-1.5 py-1 rounded shadow-sm active:scale-95"><i class="fa-solid fa-eye"></i> Xem</button>` : `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
+                    let uploadBtn = `<label class="text-[9px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 py-1 rounded shadow-sm cursor-pointer whitespace-nowrap"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}', ${i.cartId})" class="hidden"></label>`;
+                    return `<div class="mb-2 pb-2 border-b border-slate-100 last:mb-0 last:pb-0 last:border-0"><div class="font-bold text-[10px] text-sky-800 mb-1">${i.name} (x${i.qty})</div><div class="flex items-center gap-1.5 flex-wrap">${bImgs} ${aImgs} ${actionBtn} ${uploadBtn}</div></div>`;
+                }).join('');
+
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm">${o.total.toLocaleString()} đ</div>`;
+                if (isUnpaid) totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg shadow-sm flex justify-center gap-1"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date.split(' ')[0]}</span></td>
-                    <td class="p-3"><div class="font-bold text-sm">${o.customer.name}</div><div class="text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3 align-top whitespace-normal min-w-[140px]">${noteHtml}<div>${imgHtml}</div>${actionHtml}</td>
-                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
+                    <td class="p-3 font-mono text-sky-700 font-bold align-top">${o.id}<br><span class="text-[9px] text-slate-400">${o.date.split(' ')[0]}</span></td>
+                    <td class="p-3 align-top"><div class="font-bold text-sm">${o.customer.name}</div><div class="text-[10px] text-slate-500">${o.customer.phone}</div></td>
+                    <td class="p-3 align-top whitespace-normal min-w-[200px]">${noteHtml}<div class="flex flex-col">${legacyHtml}${itemsImgHtml}</div></td>
+                    <td class="p-3 text-[10px] whitespace-normal align-top min-w-[120px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
                     <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
                     <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
                 </tr>`;
@@ -1024,12 +825,8 @@
             if(has) document.getElementById('customLogoImg').src = state.logo;
             document.getElementById('settingLogoDefault').style.display = has ? 'none' : 'block'; document.getElementById('settingLogoImg').style.display = has ? 'block' : 'none';
             if(has) document.getElementById('settingLogoImg').src = state.logo;
-            const trackDefault = document.getElementById('trackingDefaultLogo');
-            const trackCustom = document.getElementById('trackingCustomLogo');
-            if (trackDefault && trackCustom) {
-                trackDefault.style.display = has ? 'none' : 'flex'; trackCustom.style.display = has ? 'block' : 'none';
-                if (has) trackCustom.src = state.logo;
-            }
+            const trackDefault = document.getElementById('trackingDefaultLogo'); const trackCustom = document.getElementById('trackingCustomLogo');
+            if (trackDefault && trackCustom) { trackDefault.style.display = has ? 'none' : 'flex'; trackCustom.style.display = has ? 'block' : 'none'; if (has) trackCustom.src = state.logo; }
         }
 
         function loadQRConfig() {
@@ -1042,13 +839,13 @@
         }
         function updateQRView() {
             const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000'; const nameStr = state.qrConfig.accountName || 'TRAM GIAY SACH';
-            const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=0`;
-            document.getElementById('paymentTabQR').src = qrUrl; document.getElementById('paymentTabBank').innerText = {'ICB':'VietinBank','MB':'MBBank','VCB':'Vietcombank','TCB':'Techcombank','VPB':'VPBank','ACB':'ACB','BIDV':'BIDV'}[bank] || bank; document.getElementById('paymentTabAcc').innerText = acc; document.getElementById('paymentTabName').innerText = nameStr;
+            document.getElementById('paymentTabQR').src = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=0`;
+            document.getElementById('paymentTabBank').innerText = {'ICB':'VietinBank','MB':'MBBank','VCB':'Vietcombank','TCB':'Techcombank','VPB':'VPBank','ACB':'ACB','BIDV':'BIDV'}[bank] || bank; document.getElementById('paymentTabAcc').innerText = acc; document.getElementById('paymentTabName').innerText = nameStr;
         }
 
         function renderCategoryTabs() {
             const cats = [{k: 'ALL', n: 'Tất Cả'}, {k: 'CLEAN', n: 'Vệ Sinh'}, {k: 'SOLE', n: 'Thay Đế'}, {k: 'STAIN', n: 'Tẩy Ố'}, {k: 'REPAINT', n: 'Repaint'}, {k: 'GLUE', n: 'Dán Đế'}];
-            document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-4 py-1.5 md:px-3.5 rounded-lg text-[12px] md:text-[11px] font-semibold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
+            document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-4 py-1.5 rounded-lg text-[12px] font-semibold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
         }
         function filterCategory(c) { activeCategory = c; renderCategoryTabs(); renderServicesGrid(); }
 
@@ -1056,66 +853,37 @@
             const filtered = activeCategory === 'ALL' ? state.services : state.services.filter(s => s.category === activeCategory);
             document.getElementById('servicesGrid').innerHTML = filtered.map(s => `
                 <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-sky-50 border border-slate-200 rounded-2xl cursor-pointer transition flex flex-col items-center justify-center p-2 md:p-3 text-center shadow-sm hover:shadow group aspect-square relative active:scale-95 shrink-0 min-h-[100px]">
-                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-3xl md:text-4xl mb-2 opacity-90 group-hover:text-sky-600 transition"></i><h4 class="font-bold text-[10px] md:text-xs text-slate-800 leading-tight line-clamp-2">${s.name}</h4><span class="text-[9px] font-semibold text-slate-500 mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
+                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-3xl mb-2 opacity-90 group-hover:text-sky-600 transition"></i><h4 class="font-bold text-[10px] md:text-xs text-slate-800 leading-tight line-clamp-2">${s.name}</h4><span class="text-[9px] font-semibold text-slate-500 mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
                 </div>`).join('');
         }
 
         function renderSettingsServicesTable() {
             const catMap = { 'CLEAN': '🧼 Vệ Sinh', 'SOLE': '👟 Thay Đế', 'GLUE': '🖌️ Dán Đế', 'REPAINT': '🎨 Repaint', 'STAIN': '💧 Tẩy Ố' };
-            const total = state.services.length;
             document.getElementById('settingsServicesTable').innerHTML = state.services.map((s, idx) => `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td>
-                    <td class="p-3"><input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ"></td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">${catMap[s.category] || s.category}</span></td>
-                    <td class="p-3"><div class="flex items-center gap-1"><input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition" title="Thay đổi giá và bấm ra ngoài để lưu"><span class="text-slate-400 text-[10px]">đ</span></div></td>
-                    <td class="p-3 text-center"><div class="flex items-center justify-center gap-1"><button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển lên trên"><i class="fa-solid fa-arrow-up text-xs"></i></button><button onclick="moveServiceDown(${idx})" ${idx === total - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition active:scale-95"'} title="Di chuyển xuống dưới"><i class="fa-solid fa-arrow-down text-xs"></i></button></div></td>
-                    <td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa dịch vụ này"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`).join('');
+                <tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center text-base text-navy-800"><i class="fa-solid ${s.icon || 'fa-tag'}"></i></td><td class="p-3"><input type="text" value="${s.name}" onchange="updateServiceName('${s.id}', this.value)" class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-slate-300 focus:border-sky-500 outline-none bg-transparent focus:bg-white transition" title="Bấm vào để đổi tên dịch vụ"></td><td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold bg-sky-100 text-sky-800">${catMap[s.category] || s.category}</span></td><td class="p-3"><div class="flex items-center gap-1"><input type="number" value="${s.defaultPrice}" onchange="updateServicePrice('${s.id}', this.value)" class="w-28 font-bold text-sky-700 text-xs p-1.5 rounded border border-slate-200 focus:border-sky-500 outline-none bg-white shadow-sm transition"><span class="text-slate-400 text-[10px]">đ</span></div></td><td class="p-3 text-center"><div class="flex items-center justify-center gap-1"><button onclick="moveServiceUp(${idx})" ${idx === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition"'}><i class="fa-solid fa-arrow-up text-xs"></i></button><button onclick="moveServiceDown(${idx})" ${idx === state.services.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700 rounded-lg transition"'}><i class="fa-solid fa-arrow-down text-xs"></i></button></div></td><td class="p-3 text-right"><button onclick="deleteService('${s.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
         }
 
-        function moveServiceUp(idx) {
-            if (idx <= 0) return;
-            const temp = state.services[idx]; state.services[idx] = state.services[idx - 1]; state.services[idx - 1] = temp;
-            saveState(); renderSettingsServicesTable(); renderServicesGrid();
-        }
-
-        function moveServiceDown(idx) {
-            if (idx >= state.services.length - 1) return;
-            const temp = state.services[idx]; state.services[idx] = state.services[idx + 1]; state.services[idx + 1] = temp;
-            saveState(); renderSettingsServicesTable(); renderServicesGrid();
-        }
-
-        function updateServicePrice(id, newPrice) {
-            const val = parseInt(newPrice);
-            if(isNaN(val) || val < 0) return alert("Vui lòng nhập giá tiền hợp lệ!");
-            const svc = state.services.find(s => s.id === id);
-            if(svc) { svc.defaultPrice = val; saveState(); renderServicesGrid(); }
-        }
-
-        function updateServiceName(id, newName) {
-            const val = newName.trim();
-            if(!val) return alert("Tên dịch vụ không được để trống!");
-            const svc = state.services.find(s => s.id === id);
-            if(svc) { svc.name = val; saveState(); renderServicesGrid(); }
-        }
-
+        function moveServiceUp(idx) { if (idx <= 0) return; const temp = state.services[idx]; state.services[idx] = state.services[idx - 1]; state.services[idx - 1] = temp; saveState(); renderSettingsServicesTable(); renderServicesGrid(); }
+        function moveServiceDown(idx) { if (idx >= state.services.length - 1) return; const temp = state.services[idx]; state.services[idx] = state.services[idx + 1]; state.services[idx + 1] = temp; saveState(); renderSettingsServicesTable(); renderServicesGrid(); }
+        function updateServicePrice(id, newPrice) { const val = parseInt(newPrice); if(isNaN(val) || val < 0) return alert("Giá không hợp lệ!"); const svc = state.services.find(s => s.id === id); if(svc) { svc.defaultPrice = val; saveState(); renderServicesGrid(); } }
+        function updateServiceName(id, newName) { const val = newName.trim(); if(!val) return alert("Tên không được để trống!"); const svc = state.services.find(s => s.id === id); if(svc) { svc.name = val; saveState(); renderServicesGrid(); } }
         function addNewService() {
             const name = document.getElementById('addSvcName').value.trim(); const price = parseInt(document.getElementById('addSvcPrice').value) || 0;
             if(!name) return alert("Nhập tên dịch vụ!");
             state.services.push({ id: 'SVC-' + Date.now(), name, category: document.getElementById('addSvcCat').value, defaultPrice: price, icon: document.getElementById('addSvcIcon').value });
             saveState(); renderSettingsServicesTable(); renderServicesGrid(); document.getElementById('addSvcName').value = ''; document.getElementById('addSvcPrice').value = '';
         }
-
         function deleteService(id) { if(confirm("Xóa dịch vụ?")) { state.services = state.services.filter(s => s.id !== id); saveState(); renderSettingsServicesTable(); renderServicesGrid(); } }
 
         function setCurrentDateTimeForOrder() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById('orderDateInput').value = now.toISOString().slice(0,16); }
-        
         function autoFillCustomer(phone) { const cust = state.orders.find(o => o.customer.phone === phone); if(cust) document.getElementById('custName').value = cust.customer.name; }
 
         function addToCart(svcId) {
-            const svc = state.services.find(s => s.id === svcId); const exist = state.cart.find(c => c.id === svc.id);
-            if(exist) exist.qty += 1; else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1 });
+            const svc = state.services.find(s => s.id === svcId);
+            // Gộp dịch vụ giống nhau lại thành 1 cục, để họ tự chỉnh Qty và chụp chung.
+            const exist = state.cart.find(c => c.id === svc.id);
+            if(exist) exist.qty += 1; 
+            else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, images: [], imagesAfter: [] });
             recalculateSubtotalInput(); renderCart();
         }
 
@@ -1123,7 +891,6 @@
         function removeCartItem(id) { state.cart = state.cart.filter(c => c.cartId !== id); recalculateSubtotalInput(); renderCart(); }
         
         function recalculateSubtotalInput() { document.getElementById('subtotalInput').value = state.cart.reduce((s, c) => s + (c.price * c.qty), 0); calculateFinalTotal(); }
-        
         function calculateFinalTotal() {
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0;
             document.getElementById('totalDisplay').innerText = Math.max(0, sub - disc).toLocaleString('vi-VN') + ' đ';
@@ -1131,204 +898,167 @@
 
         function renderCart() {
             const lst = document.getElementById('cartItemsList'); document.getElementById('cartCountBadge').innerText = state.cart.reduce((s, c) => s + c.qty, 0);
-            if(state.cart.length === 0) lst.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border rounded">Chưa chọn dịch vụ</div>`;
-            else lst.innerHTML = state.cart.map(c => `
-                <div class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">
-                    <div class="flex justify-between font-bold text-slate-800 mb-2 text-sm md:text-xs"><span>${c.name}</span><button onclick="removeCartItem(${c.cartId})" class="text-slate-300 hover:text-red-500 text-base md:text-xs"><i class="fa-solid fa-times"></i></button></div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3 md:gap-2 bg-slate-100 rounded p-1 md:p-0.5">
-                            <button onclick="updateCartItemQty(${c.cartId}, -1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">-</button><span class="w-6 md:w-4 text-center font-bold text-sm md:text-xs">${c.qty}</span><button onclick="updateCartItemQty(${c.cartId}, 1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">+</button>
+            if(state.cart.length === 0) lst.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border border-dashed rounded-lg">Chưa có đôi giày nào. Hãy chọn dịch vụ ở bên.</div>`;
+            else lst.innerHTML = state.cart.map(c => {
+                // Hiển thị ảnh upload riêng cho từng khối (từng đôi/từng dịch vụ)
+                const imgHtml = (c.images || []).map(imgObj => {
+                    const isUploading = imgObj.status === 'uploading'; const src = imgObj.url || imgObj.r2Url || imgObj;
+                    return `<div class="relative w-14 h-16 rounded-lg border border-slate-200 overflow-hidden shrink-0 shadow-sm"><img src="${src}" class="w-full h-full object-cover">${isUploading ? `<div class="absolute inset-0 bg-white/70 flex items-center justify-center"><div class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>` : `<button onclick="removeUploadedImage('${imgObj.id || imgObj}', ${c.cartId})" class="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-[10px]"><i class="fa-solid fa-times"></i></button>`}</div>`;
+                }).join('');
+
+                return `
+                <div class="p-3 bg-white border-2 border-slate-100 rounded-xl shadow-sm text-xs relative transition hover:border-sky-200">
+                    <button onclick="removeCartItem(${c.cartId})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 text-sm md:text-xs bg-slate-50 w-6 h-6 rounded flex items-center justify-center transition"><i class="fa-solid fa-times"></i></button>
+                    <div class="font-bold text-sky-800 mb-2.5 text-sm md:text-xs pr-8"><i class="fa-solid fa-shoe-prints mr-1 opacity-50"></i> Dịch vụ: ${c.name}</div>
+                    <div class="flex justify-between items-center mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <div class="flex items-center gap-3 md:gap-2">
+                            <button onclick="updateCartItemQty(${c.cartId}, -1)" class="w-8 h-8 md:w-7 md:h-7 bg-white border border-slate-200 rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200 transition">-</button><span class="w-6 md:w-5 text-center font-bold text-sm md:text-sm text-slate-700">${c.qty}</span><button onclick="updateCartItemQty(${c.cartId}, 1)" class="w-8 h-8 md:w-7 md:h-7 bg-white border border-slate-200 rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200 transition">+</button>
                         </div>
-                        <div class="text-[11px] md:text-[10px] text-slate-500 text-right">${c.price.toLocaleString()}đ x ${c.qty}<br><span class="text-sky-700 font-bold text-xs md:text-xs">${(c.price * c.qty).toLocaleString()}đ</span></div>
+                        <div class="text-[11px] md:text-[10px] text-slate-500 text-right font-medium">${c.price.toLocaleString()}đ x ${c.qty}<br><span class="text-sky-700 font-extrabold text-xs md:text-xs">${(c.price * c.qty).toLocaleString()}đ</span></div>
                     </div>
-                </div>`).join('');
+                    <div class="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto hide-scroll">
+                        <label class="w-14 h-16 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition shadow-sm"><i class="fa-solid fa-camera text-base"></i><span class="text-[9px] font-bold mt-1 text-center leading-tight">Chụp<br>Ảnh</span><input type="file" accept="image/*" multiple onchange="handleImageUpload(event, ${c.cartId})" class="hidden"></label>
+                        ${imgHtml}
+                    </div>
+                </div>`;
+            }).join('');
             calculateFinalTotal();
         }
 
         function clearCart() {
-            state.cart = []; state.uploadedImages = [];
-            ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('cartOrderStatus').value = 'RECEIVED';
-            setCurrentDateTimeForOrder(); renderCart(); renderPreviewImages();
+            state.cart = []; ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('cartOrderStatus').value = 'RECEIVED'; setCurrentDateTimeForOrder(); renderCart();
         }
         
-        async function handleImageUpload(e, isCamera) {
+        async function handleImageUpload(e, cartId) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
             
             const saveBtn = document.getElementById('saveOrderBtn');
             saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
+            const cartItem = state.cart.find(c => c.cartId === cartId);
+            if (!cartItem) return;
+
             for (const file of files) {
                 const imgId = Date.now() + Math.random().toString(36).substring(7);
                 const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
-                state.uploadedImages.push(tempImage); renderPreviewImages();
+                cartItem.images.push(tempImage); renderCart();
                 
                 try {
                     const r2Url = await uploadFileToR2(file);
-                    const targetImg = state.uploadedImages.find(img => img.id === imgId);
-                    if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderPreviewImages(); }
+                    const targetImg = cartItem.images.find(img => img.id === imgId);
+                    if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderCart(); }
                 } catch (err) {
                     console.error("Lỗi tải ảnh:", err); alert(`Không thể tải ảnh ${file.name} lên server`);
-                    state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId); renderPreviewImages();
+                    cartItem.images = cartItem.images.filter(img => img.id !== imgId); renderCart();
                 }
             }
-            saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
-        }
-
-        function renderPreviewImages() {
-            const c = document.getElementById('renderedImagesBox'); c.innerHTML = '';
-            state.uploadedImages.forEach((imgObj) => { 
-                const isUploading = imgObj.status === 'uploading';
-                c.innerHTML += `<div class="image-preview-item"><img src="${imgObj.url || imgObj.r2Url || imgObj}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeUploadedImage('${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`; 
-            });
+            const isUploading = state.cart.some(c => c.images.some(img => img.status === 'uploading'));
+            if (!isUploading) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            e.target.value = '';
         }
         
-        function removeUploadedImage(idOrUrl) {
-            state.uploadedImages = state.uploadedImages.filter(img => {
-                if(typeof img === 'string') return img !== idOrUrl;
-                return img.id !== idOrUrl && img.r2Url !== idOrUrl;
-            });
-            renderPreviewImages();
+        function removeUploadedImage(idOrUrl, cartId) {
+            const cartItem = state.cart.find(c => c.cartId === cartId);
+            if (cartItem) {
+                cartItem.images = cartItem.images.filter(img => {
+                    if(typeof img === 'string') return img !== idOrUrl;
+                    return img.id !== idOrUrl && img.r2Url !== idOrUrl;
+                });
+                renderCart();
+            }
         }
 
         function processOrder() {
-            const isUploading = state.uploadedImages.some(img => img.status && img.status === 'uploading');
+            const isUploading = state.cart.some(c => c.images.some(img => img.status === 'uploading'));
             if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
             
-            const name = document.getElementById('custName').value.trim();
-            const phone = document.getElementById('custPhone').value.trim();
-            const dateStr = document.getElementById('orderDateInput').value;
+            const name = document.getElementById('custName').value.trim(); const phone = document.getElementById('custPhone').value.trim(); const dateStr = document.getElementById('orderDateInput').value;
             if(!phone || !name || state.cart.length === 0) return alert("Vui lòng nhập tên, SĐT và chọn dịch vụ!");
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0;
             
-            const finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : img.r2Url; }).filter(url => url !== null);
+            // Lọc ra các URL cuối cùng từ mỗi mục giày
+            const finalItems = state.cart.map(c => {
+                const finalImageUrls = c.images.map(img => typeof img === 'string' ? img : img.r2Url).filter(url => url !== null);
+                return { ...c, images: finalImageUrls, imagesAfter: [] };
+            });
             
             const newOrder = {
                 id: 'DON-' + Math.floor(1000 + Math.random() * 9000), date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
-                customer: {name, phone, note: document.getElementById('custNote').value}, items: JSON.parse(JSON.stringify(state.cart)), 
-                images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: document.getElementById('cartOrderStatus').value
+                customer: {name, phone, note: document.getElementById('custNote').value}, items: finalItems, 
+                images: [], imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: document.getElementById('cartOrderStatus').value
             };
             state.orders.unshift(newOrder);
             
-            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
-            
-            // Đánh dấu để tránh Realtime gọi lại NTFY
             lastNotifiedOrderId = newOrder.id;
-            
-            // Hiện thông báo trong app
+            const svcsStr = state.cart.map(i => `${i.name} (x${i.qty})`).join(', ');
             showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${name} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
-            
-            // GỬI LỆNH ĐẾN NTFY (1 LẦN DUY NHẤT TỪ MÁY NÀY)
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
-
-            saveState().then(() => { 
-                clearCart(); 
-                renderOrdersTable(); 
-                renderCustomersTable(); 
-                updateReportMetrics(); 
-                renderDashboard(); 
-            });
+            saveState().then(() => { clearCart(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); });
         }
 
         function renderOrdersTable() {
-            const search = document.getElementById('searchOrderInput').value.toLowerCase(); 
-            const statusFilter = document.getElementById('filterOrderStatus').value;
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
             const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
-            const sDate = document.getElementById('filterOrderStart').value; 
-            const eDate = document.getElementById('filterOrderEnd').value;
+            const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
             
-            // THỐNG KÊ SỐ LƯỢNG DỊCH VỤ "ĐÃ NHẬN NHƯNG CHƯA LÀM"
             const catMap = { 'CLEAN': 'Vệ sinh', 'SOLE': 'Thay đế', 'STAIN': 'Tẩy ố', 'REPAINT': 'Repaint', 'GLUE': 'Dán đế' };
             const pendingCounts = {};
-            
-            state.orders.forEach(o => {
-                if (o.status === 'RECEIVED') {
-                    o.items.forEach(item => {
-                        const svcInfo = state.services.find(s => s.id === item.id);
-                        const cat = svcInfo ? svcInfo.category : 'KHÁC';
-                        if (!pendingCounts[cat]) pendingCounts[cat] = 0;
-                        pendingCounts[cat] += item.qty;
-                    });
-                }
-            });
+            state.orders.forEach(o => { if (o.status === 'RECEIVED') { o.items.forEach(item => { const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC'; if (!pendingCounts[cat]) pendingCounts[cat] = 0; pendingCounts[cat] += item.qty; }); } });
 
             const summaryEl = document.getElementById('pendingServicesSummary');
             if (summaryEl) {
                 const summaryParts = [];
-                for (const cat in catMap) {
-                    if (pendingCounts[cat] > 0) {
-                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2.5 py-1 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[13px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`);
-                    }
-                }
-                
-                if (summaryParts.length > 0) {
-                    summaryEl.innerHTML = `<div class="flex items-center gap-1.5 text-amber-700 uppercase"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[11px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-2">${summaryParts.join('')}</div>`;
-                    summaryEl.classList.remove('hidden');
-                    summaryEl.classList.add('flex');
-                } else {
-                    summaryEl.classList.add('hidden');
-                    summaryEl.classList.remove('flex');
-                    summaryEl.innerHTML = '';
-                }
+                for (const cat in catMap) { if (pendingCounts[cat] > 0) summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2.5 py-1 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[13px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`); }
+                if (summaryParts.length > 0) { summaryEl.innerHTML = `<div class="flex items-center gap-1.5 text-amber-700 uppercase"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[11px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-2">${summaryParts.join('')}</div>`; summaryEl.classList.remove('hidden'); summaryEl.classList.add('flex'); } 
+                else { summaryEl.classList.add('hidden'); summaryEl.classList.remove('flex'); summaryEl.innerHTML = ''; }
             }
 
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
             
             const filtered = state.orders.filter(o => {
                 const dateOnly = o.date.split(' ')[0];
-                if(sDate && dateOnly < sDate) return false; 
-                if(eDate && dateOnly > eDate) return false;
+                if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
                 if(statusFilter !== 'ALL' && o.status !== statusFilter) return false;
-                
-                if(serviceFilter !== 'ALL') {
-                    const hasService = o.items.some(item => {
-                        const svcInfo = state.services.find(s => s.id === item.id);
-                        return svcInfo && svcInfo.category === serviceFilter;
-                    });
-                    if (!hasService) return false;
-                }
-
+                if(serviceFilter !== 'ALL') { const hasService = o.items.some(item => { const svcInfo = state.services.find(s => s.id === item.id); return svcInfo && svcInfo.category === serviceFilter; }); if (!hasService) return false; }
                 if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
                 return true;
             });
 
             document.getElementById('ordersTableBody').innerHTML = filtered.map(o => {
-                const showAfterUpload = ['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status);
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
-                const hasBefore = o.images && o.images.length > 0;
-                const hasAfter = o.imagesAfter && o.imagesAfter.length > 0;
+                let noteHtml = `<div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div>`;
                 
-                let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-1"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-1"></i>${o.imagesAfter.length}</span>`;
-                
-                let actionHtml = '';
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[11px] md:text-[10px] font-bold bg-navy-800 text-white px-2 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
-                else actionHtml += `<span class="text-[9px] text-slate-400 block mb-1">Không ảnh</span>`;
-                
-                actionHtml += `<label class="text-[11px] md:text-[10px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center gap-1 transition mt-1 w-max"><i class="fa-solid fa-camera-rotate"></i> Chụp Sau<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
-                
-                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
-                if (isUnpaid) {
-                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+                let legacyHtml = '';
+                if (o.images && o.images.length > 0) {
+                    let lImgHtml = `<span class="text-[9px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
+                    let lImgAfter = (o.imagesAfter && o.imagesAfter.length > 0) ? `<span class="text-[9px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${o.imagesAfter.length}</span>` : '';
+                    legacyHtml = `<div class="mb-2 pb-2 border-b border-slate-100"><div class="font-bold text-[10px] text-slate-700 mb-1">Ảnh Chung (Cũ)</div><div class="flex items-center gap-1.5 flex-wrap">${lImgHtml} ${lImgAfter} <button onclick="openComparison('${o.id}')" class="text-[9px] font-bold bg-navy-800 text-white px-1.5 py-1 rounded shadow-sm active:scale-95"><i class="fa-solid fa-eye"></i> Xem</button> <label class="text-[9px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 py-1 rounded shadow-sm cursor-pointer whitespace-nowrap"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label></div></div>`;
                 }
 
-                // Cột Thao Tác (Zalo + Link)
+                let itemsImgHtml = o.items.map(i => {
+                    let bImgs = i.images && i.images.length > 0 ? `<span class="text-[9px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${i.images.length}</span>` : '';
+                    let aImgs = i.imagesAfter && i.imagesAfter.length > 0 ? `<span class="text-[9px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 rounded border border-sky-200" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${i.imagesAfter.length}</span>` : '';
+                    let actionBtn = (bImgs || aImgs) ? `<button onclick="openComparison('${o.id}')" class="text-[9px] font-bold bg-navy-800 text-white px-1.5 py-1 rounded shadow-sm active:scale-95"><i class="fa-solid fa-eye"></i> Xem</button>` : `<span class="text-[9px] text-slate-400">Không ảnh</span>`;
+                    let uploadBtn = `<label class="text-[9px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 py-1 rounded shadow-sm cursor-pointer whitespace-nowrap"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}', ${i.cartId})" class="hidden"></label>`;
+                    return `<div class="mb-2 pb-2 border-b border-slate-100 last:mb-0 last:pb-0 last:border-0"><div class="font-bold text-[10px] text-sky-800 mb-1">${i.name} (x${i.qty})</div><div class="flex items-center gap-1.5 flex-wrap">${bImgs} ${aImgs} ${actionBtn} ${uploadBtn}</div></div>`;
+                }).join('');
+
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-sm md:text-xs">${o.total.toLocaleString()} đ</div>`;
+                if (isUnpaid) totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1.5 w-full text-[11px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
+
                 let actionColumn = `<div class="flex flex-col gap-1.5 items-end mt-1">`;
-                if (o.customer.phone && o.customer.phone.trim() !== '') {
-                    actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-comment-sms"></i> Gửi Zalo</button>`;
-                }
+                if (o.customer.phone && o.customer.phone.trim() !== '') actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-comment-sms"></i> Gửi Zalo</button>`;
                 actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded-lg transition active:scale-95 text-[11px] flex items-center gap-1.5 w-[95px] justify-center"><i class="fa-solid fa-link"></i> Link KH</button>`;
-                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button>`;
-                actionColumn += `</div>`;
+                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button></div>`;
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3 font-mono text-sky-700 font-bold">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
-                    <td class="p-3"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
-                    <td class="p-3"><div class="text-[11px] text-slate-600 italic mb-1 whitespace-normal leading-tight max-w-[200px]" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1.5 mt-1 flex-wrap">${imgHtml}${actionHtml}</div></td>
-                    <td class="p-3 text-[10px] whitespace-normal min-w-[150px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
+                    <td class="p-3 font-mono text-sky-700 font-bold align-top">${o.id}<br><span class="text-[9px] text-slate-400">${o.date}</span></td>
+                    <td class="p-3 align-top"><div class="font-bold text-sm md:text-xs">${o.customer.name}</div><div class="text-[11px] md:text-[10px] text-slate-500">${o.customer.phone}</div></td>
+                    <td class="p-3 align-top"><div class="flex flex-col">${noteHtml}${legacyHtml}${itemsImgHtml}</div></td>
+                    <td class="p-3 text-[10px] whitespace-normal align-top min-w-[120px]">${o.items.map(i => `<span class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mr-1 inline-block mb-1 font-medium">${i.name} (x${i.qty})</span>`).join('')}</td>
                     <td class="p-3 align-top min-w-[100px]">${totalCellHtml}</td>
                     <td class="p-3 align-top"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[16px] md:text-[11px] font-bold p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select></td>
                     <td class="p-3 text-right align-top">${actionColumn}</td>
@@ -1337,101 +1067,57 @@
         }
 
         function openCollectPaymentModal(orderId) {
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return;
-            
-            activeCollectingOrderId = orderId;
-            const bank = state.qrConfig.bank || 'ICB';
-            const acc = state.qrConfig.accountNo || '000000000';
-            const amount = o.total || 0;
-            
-            const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${amount}`;
-            
-            document.getElementById('collectOrderCode').innerText = `Đơn hàng: ${o.id} - KH: ${o.customer.name}`;
-            document.getElementById('collectAmountDisplay').innerText = amount.toLocaleString('vi-VN') + ' đ';
-            document.getElementById('collectQRImg').src = qrUrl;
-            
+            const o = state.orders.find(x => x.id === orderId); if (!o) return; activeCollectingOrderId = orderId;
+            document.getElementById('collectOrderCode').innerText = `Đơn hàng: ${o.id} - KH: ${o.customer.name}`; document.getElementById('collectAmountDisplay').innerText = (o.total || 0).toLocaleString('vi-VN') + ' đ';
+            document.getElementById('collectQRImg').src = `https://api.vietqr.io/image/${state.qrConfig.bank || 'ICB'}-${state.qrConfig.accountNo || '000000000'}-compact2.png?amount=${o.total || 0}`;
             document.getElementById('collectPaymentModal').classList.remove('hidden');
         }
 
-        function closeCollectPaymentModal() {
-            activeCollectingOrderId = null;
-            document.getElementById('collectPaymentModal').classList.add('hidden');
-        }
+        function closeCollectPaymentModal() { activeCollectingOrderId = null; document.getElementById('collectPaymentModal').classList.add('hidden'); }
 
         function confirmCollectedPayment() {
-            if (!activeCollectingOrderId) return;
-            const o = state.orders.find(x => x.id === activeCollectingOrderId);
+            if (!activeCollectingOrderId) return; const o = state.orders.find(x => x.id === activeCollectingOrderId);
             if (o) {
-                o.status = 'DELIVERED'; 
-                
-                // Gắn khóa chống lặp
-                lastPaidNotifiedId = o.id;
-                
+                o.status = 'DELIVERED'; lastPaidNotifiedId = o.id;
                 showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
                 sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
-                
-                closeCollectPaymentModal();
-                renderOrdersTable();
-                renderCustomersTable();
-                updateReportMetrics();
-                renderDashboard();
-                
-                saveState();
+                closeCollectPaymentModal(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); saveState();
             }
         }
 
         function updateOrderStatus(id, st) { 
             const o = state.orders.find(x => x.id === id); 
             if(o) { 
-                const oldStatus = o.status;
-                o.status = st; 
-                
-                if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') {
-                    // Gắn khóa chống lặp
-                    lastPaidNotifiedId = o.id;
-                    showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`);
-                    sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
-                }
-                
-                saveState(); 
-                renderOrdersTable(); 
-                renderCustomersTable(); 
-                updateReportMetrics(); 
-                renderDashboard(); 
+                const oldStatus = o.status; o.status = st; 
+                if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') { lastPaidNotifiedId = o.id; showNotification("✅ ĐÃ THU TIỀN", `Khách hàng: ${o.customer.name} - ${o.total.toLocaleString()}đ`); sendNtfyAlert(`✅ Thu tiền: ${o.customer.name} - ${o.total.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`); }
+                saveState(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); 
             } 
         }
 
-        function deleteOrderImage(orderId, type, index) {
+        function deleteOrderImage(orderId, type, index, cartId = null) {
             if (!confirm("Bạn có chắc chắn muốn xóa bức ảnh này khỏi đơn hàng không?")) return;
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return;
-            
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
             let imgUrl = null;
-            if (type === 'before' && o.images && o.images[index]) {
-                imgUrl = o.images[index];
-                o.images.splice(index, 1);
-            } else if (type === 'after' && o.imagesAfter && o.imagesAfter[index]) {
-                imgUrl = o.imagesAfter[index];
-                o.imagesAfter.splice(index, 1);
+            if (cartId) {
+                const item = o.items.find(i => i.cartId === cartId);
+                if (item) {
+                    if (type === 'before' && item.images && item.images[index]) { imgUrl = item.images[index]; item.images.splice(index, 1); } 
+                    else if (type === 'after' && item.imagesAfter && item.imagesAfter[index]) { imgUrl = item.imagesAfter[index]; item.imagesAfter.splice(index, 1); }
+                }
+            } else {
+                if (type === 'before' && o.images && o.images[index]) { imgUrl = o.images[index]; o.images.splice(index, 1); } 
+                else if (type === 'after' && o.imagesAfter && o.imagesAfter[index]) { imgUrl = o.imagesAfter[index]; o.imagesAfter.splice(index, 1); }
             }
-            
-            if (imgUrl && imgUrl.startsWith('http')) {
-                deleteFileFromR2(imgUrl);
-            }
-            
-            saveState().then(() => {
-                renderOrdersTable();
-                renderDashboard();
-                openComparison(orderId);
-            });
+            if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl);
+            saveState().then(() => { renderOrdersTable(); renderDashboard(); openComparison(orderId); });
         }
         
         function deleteOrder(id) {
             if(confirm("Xóa vĩnh viễn đơn hàng này và toàn bộ ảnh liên quan trên Cloudflare?")) {
                 const orderToDelete = state.orders.find(x => x.id === id);
                 if (orderToDelete) {
-                    const allImages = [...(orderToDelete.images || []), ...(orderToDelete.imagesAfter || [])];
+                    let allImages = [...(orderToDelete.images || []), ...(orderToDelete.imagesAfter || [])];
+                    if (orderToDelete.items) orderToDelete.items.forEach(i => { allImages = allImages.concat(i.images || [], i.imagesAfter || []); });
                     allImages.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); });
                 }
                 state.orders = state.orders.filter(x => x.id !== id);
@@ -1440,85 +1126,70 @@
         }
 
         function openComparison(orderId) {
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return;
-            
-            const container = document.getElementById('comparisonPairsContainer');
-            const maxLen = Math.max((o.images || []).length, (o.imagesAfter || []).length);
-            
-            if (maxLen === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 italic">Chưa có hình ảnh nào được tải lên cho đơn hàng này.</div>`;
-            } else {
-                let html = '';
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
+            const container = document.getElementById('comparisonPairsContainer'); let html = '';
+
+            // Hỗ trợ ảnh cũ
+            if (o.images && o.images.length > 0) {
+                html += `<h4 class="font-bold text-sm text-slate-800 mt-2 mb-2 border-b border-slate-200 pb-1">Ảnh Chung (Đơn cũ)</h4>`;
+                const maxLen = Math.max((o.images || []).length, (o.imagesAfter || []).length);
                 for (let i = 0; i < maxLen; i++) {
-                    const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null;
-                    const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
-                    
+                    const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null; const afterSrc = (o.imagesAfter && o.imagesAfter[i]) ? o.imagesAfter[i] : null;
                     html += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4 relative">
-                        <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-between">
-                            <span>Cặp góc chụp số #${i + 1}</span>
-                            <span class="text-[10px] text-slate-400 font-normal">Trạm Giày Sạch</span>
-                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
-                            <!-- Trước (Before) -->
-                            <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                                <div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div>
-                                <div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">
-                                    ${beforeSrc ? `
-                                        <img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
-                                        <button onclick="deleteOrderImage('${o.id}', 'before', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
-                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh trước</div>`}
-                                </div>
-                            </div>
-                            <!-- Sau (After) -->
-                            <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm">
-                                <div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100"><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</div>
-                                <div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">
-                                    ${afterSrc ? `
-                                        <img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">
-                                        <button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>
-                                    ` : `<div class="text-slate-400 italic text-xs h-full flex items-center justify-center">Chưa có ảnh sau</div>`}
-                                </div>
-                            </div>
+                            <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase border-b"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước</div><div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition"><button onclick="deleteOrderImage('${o.id}', 'before', ${i})" class="absolute top-4 right-4 bg-red-500/80 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 backdrop-blur-sm"><i class="fa-solid fa-times"></i></button>` : `<div class="text-slate-400 italic text-xs">Chưa có ảnh trước</div>`}</div></div>
+                            <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm"><div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase border-b"><i class="fa-solid fa-check-circle mr-1"></i> Sau</div><div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition"><button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-4 right-4 bg-red-500/80 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 backdrop-blur-sm"><i class="fa-solid fa-times"></i></button>` : `<div class="text-slate-400 italic text-xs">Chưa có ảnh sau</div>`}</div></div>
                         </div>
                     </div>`;
                 }
-                container.innerHTML = html;
+            }
+
+            // Hỗ trợ ảnh chia theo giày
+            if (o.items && o.items.length > 0) {
+                o.items.forEach((item, idx) => {
+                    const maxLen = Math.max((item.images || []).length, (item.imagesAfter || []).length);
+                    if (maxLen > 0) {
+                        html += `<h4 class="font-bold text-sm text-sky-800 mt-4 mb-2 border-b border-sky-100 pb-1"><i class="fa-solid fa-shoe-prints mr-1"></i> Đôi/Mục: ${item.name} (x${item.qty})</h4>`;
+                        for (let i = 0; i < maxLen; i++) {
+                            const beforeSrc = (item.images && item.images[i]) ? item.images[i] : null; const afterSrc = (item.imagesAfter && item.imagesAfter[i]) ? item.imagesAfter[i] : null;
+                            html += `
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4 relative">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 md:p-4 bg-slate-50">
+                                    <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase border-b"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước</div><div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[450px] relative">${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition"><button onclick="deleteOrderImage('${o.id}', 'before', ${i}, ${item.cartId})" class="absolute top-4 right-4 bg-red-500/80 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 backdrop-blur-sm"><i class="fa-solid fa-times"></i></button>` : `<div class="text-slate-400 italic text-xs">Chưa có ảnh trước</div>`}</div></div>
+                                    <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm"><div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase border-b"><i class="fa-solid fa-check-circle mr-1"></i> Sau</div><div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[450px] relative">${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition"><button onclick="deleteOrderImage('${o.id}', 'after', ${i}, ${item.cartId})" class="absolute top-4 right-4 bg-red-500/80 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 backdrop-blur-sm"><i class="fa-solid fa-times"></i></button>` : `<div class="text-slate-400 italic text-xs">Chưa có ảnh sau</div>`}</div></div>
+                                </div>
+                            </div>`;
+                        }
+                    }
+                });
             }
             
-            document.getElementById('comparisonModal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
+            if (!html) container.innerHTML = `<div class="text-center py-12 text-slate-400 italic">Chưa có hình ảnh nào được tải lên cho đơn hàng này.</div>`;
+            else container.innerHTML = html;
+            
+            document.getElementById('comparisonModal').classList.remove('hidden'); setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
         }
 
-        function closeComparisonModal() {
-            document.getElementById('comparisonBox').classList.add('scale-95');
-            setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200);
-        }
+        function closeComparisonModal() { document.getElementById('comparisonBox').classList.add('scale-95'); setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200); }
 
-        async function uploadAfterImage(e, orderId) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-            const o = state.orders.find(x => x.id === orderId);
-            if (!o) return;
-            if (!o.imagesAfter) o.imagesAfter = [];
+        async function uploadAfterImage(e, orderId, cartId = null) {
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
+            
+            let targetArray;
+            if (cartId) { const item = o.items.find(i => i.cartId === cartId); if (!item) return; if (!item.imagesAfter) item.imagesAfter = []; targetArray = item.imagesAfter; } 
+            else { if (!o.imagesAfter) o.imagesAfter = []; targetArray = o.imagesAfter; }
+
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
-            try {
-                for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
-                await saveState(); renderOrdersTable(); renderDashboard();
-            } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
+            try { for (const file of files) { const r2Url = await uploadFileToR2(file); targetArray.push(r2Url); } await saveState(); renderOrdersTable(); renderDashboard(); } 
+            catch (err) { alert("Có lỗi xảy ra khi tải ảnh."); } finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
         }
 
         function renderCustomersTable() {
             const map = {};
-            state.orders.forEach(o => {
-                const phone = o.customer.phone; if(!map[phone]) map[phone] = { phone, name: o.customer.name, count: 0, total: 0 };
-                map[phone].count += 1; if(o.status === 'PAID' || o.status === 'DELIVERED') map[phone].total += o.total;
-            });
-            document.getElementById('customersTableBody').innerHTML = Object.values(map).sort((a,b) => b.total - a.total).map((c, idx) => `
-                <tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${c.name}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>
-            `).join('');
+            state.orders.forEach(o => { const phone = o.customer.phone; if(!map[phone]) map[phone] = { phone, name: o.customer.name, count: 0, total: 0 }; map[phone].count += 1; if(o.status === 'PAID' || o.status === 'DELIVERED') map[phone].total += o.total; });
+            document.getElementById('customersTableBody').innerHTML = Object.values(map).sort((a,b) => b.total - a.total).map((c, idx) => `<tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${c.name}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>`).join('');
         }
 
         function openAddExpenseModal() { document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; document.getElementById('addExpenseModal').classList.remove('hidden'); }
@@ -1541,27 +1212,18 @@
 
         function clearDateFilter() { document.getElementById('reportStartDate').value = ''; document.getElementById('reportEndDate').value = ''; updateReportMetrics(); }
         function updateReportMetrics() {
-            updateExpenseCharts();
-            const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
+            updateExpenseCharts(); const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if(start && d < start) return false; if(end && d > end) return false; return true; };
             let grossSales = 0, rev = 0, exp = 0; const svcCounts = {};
-            state.orders.forEach(o => {
-                if(inRange(o.date)) {
-                    grossSales += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') rev += o.total;
-                    o.items.forEach(item => { const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC'; if(!svcCounts[cat]) svcCounts[cat] = 0; svcCounts[cat] += item.qty; });
-                }
-            });
+            state.orders.forEach(o => { if(inRange(o.date)) { grossSales += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') rev += o.total; o.items.forEach(item => { const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC'; if(!svcCounts[cat]) svcCounts[cat] = 0; svcCounts[cat] += item.qty; }); } });
             state.expenses.forEach(e => { if(inRange(e.date)) exp += e.amount; });
             
-            document.getElementById('repGrossSales').innerText = grossSales.toLocaleString() + ' đ'; document.getElementById('repRevenue').innerText = rev.toLocaleString() + ' đ';
-            document.getElementById('repExpenses').innerText = exp.toLocaleString() + ' đ'; document.getElementById('repNetProfit').innerText = (rev - exp).toLocaleString() + ' đ';
+            document.getElementById('repGrossSales').innerText = grossSales.toLocaleString() + ' đ'; document.getElementById('repRevenue').innerText = rev.toLocaleString() + ' đ'; document.getElementById('repExpenses').innerText = exp.toLocaleString() + ' đ'; document.getElementById('repNetProfit').innerText = (rev - exp).toLocaleString() + ' đ';
             
             if(barChartInst) { barChartInst.data.labels = [(start || end) ? `Từ ${start||'...'} đến ${end||'...'}` : `Tổng thời gian`]; barChartInst.data.datasets[0].data[0] = rev; barChartInst.data.datasets[1].data[0] = exp; barChartInst.update(); }
             if(pieChartInst) {
-                const labelsMap = { 'CLEAN': 'Vệ Sinh', 'SOLE': 'Thay Đế', 'GLUE': 'Dán Đế', 'REPAINT': 'Repaint', 'STAIN': 'Tẩy Ố', 'KHÁC': 'Khác' };
-                const labels = Object.keys(svcCounts).map(k => labelsMap[k] || 'Khác'); const data = Object.values(svcCounts);
-                pieChartInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; pieChartInst.data.datasets[0].data = data.length > 0 ? data : [1];
-                pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']; pieChartInst.update();
+                const labelsMap = { 'CLEAN': 'Vệ Sinh', 'SOLE': 'Thay Đế', 'GLUE': 'Dán Đế', 'REPAINT': 'Repaint', 'STAIN': 'Tẩy Ố', 'KHÁC': 'Khác' }; const labels = Object.keys(svcCounts).map(k => labelsMap[k] || 'Khác'); const data = Object.values(svcCounts);
+                pieChartInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; pieChartInst.data.datasets[0].data = data.length > 0 ? data : [1]; pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']; pieChartInst.update();
             }
         }
 
@@ -1570,46 +1232,22 @@
             const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(currentMonthPrefix));
             const expTabCounts = {}; let monthTotal = 0;
             
-            monthExpenses.forEach(e => {
-                const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
-                if (!expTabCounts[catName]) expTabCounts[catName] = 0;
-                expTabCounts[catName] += e.amount; monthTotal += e.amount;
-            });
+            monthExpenses.forEach(e => { const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác'); if (!expTabCounts[catName]) expTabCounts[catName] = 0; expTabCounts[catName] += e.amount; monthTotal += e.amount; });
 
             const totalEl = document.getElementById('expTabMonthTotal'); if (totalEl) totalEl.innerText = monthTotal.toLocaleString('vi-VN') + ' đ';
             const catListEl = document.getElementById('expTabCategoryBreakdown');
             if (catListEl) {
-                if (monthExpenses.length === 0) { catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`; } 
-                else {
-                    const catColors = {'Vật Tư': '#ef4444', 'Vận Hành': '#f59e0b', 'Khác': '#3b82f6'};
-                    catListEl.innerHTML = Object.keys(expTabCounts).map(cat => {
-                        const amt = expTabCounts[cat]; const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0;
-                        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100"><span class="flex items-center gap-1.5 font-semibold text-slate-700"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>${cat}</span><div class="text-right"><span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span><span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span></div></div>`;
-                    }).join('');
-                }
+                if (monthExpenses.length === 0) catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`;
+                else { const catColors = {'Vật Tư': '#ef4444', 'Vận Hành': '#f59e0b', 'Khác': '#3b82f6'}; catListEl.innerHTML = Object.keys(expTabCounts).map(cat => { const amt = expTabCounts[cat]; const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0; return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100"><span class="flex items-center gap-1.5 font-semibold text-slate-700"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>${cat}</span><div class="text-right"><span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span><span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span></div></div>`; }).join(''); }
             }
 
-            if (expTabPieInst) {
-                const labels = Object.keys(expTabCounts); const data = Object.values(expTabCounts);
-                expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expTabPieInst.update();
-            }
+            if (expTabPieInst) { const labels = Object.keys(expTabCounts); const data = Object.values(expTabCounts); expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expTabPieInst.update(); }
 
-            const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
-            const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
+            const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : ''; const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if (start && d < start) return false; if (end && d > end) return false; return true; };
 
-            const reportExpCounts = {};
-            state.expenses.forEach(e => {
-                if (inRange(e.date)) {
-                    const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác');
-                    if (!reportExpCounts[catName]) reportExpCounts[catName] = 0; reportExpCounts[catName] += e.amount;
-                }
-            });
-
-            if (expReportPieInst) {
-                const labels = Object.keys(reportExpCounts); const data = Object.values(reportExpCounts);
-                expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expReportPieInst.update();
-            }
+            const reportExpCounts = {}; state.expenses.forEach(e => { if (inRange(e.date)) { const catName = e.cat === 'SUPPLY' ? 'Vật Tư' : (e.cat === 'OPERATIONAL' ? 'Vận Hành' : 'Khác'); if (!reportExpCounts[catName]) reportExpCounts[catName] = 0; reportExpCounts[catName] += e.amount; } });
+            if (expReportPieInst) { const labels = Object.keys(reportExpCounts); const data = Object.values(reportExpCounts); expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expReportPieInst.update(); }
         }
     </script>
 </body>
