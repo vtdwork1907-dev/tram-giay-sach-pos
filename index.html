@@ -270,6 +270,7 @@
                 </div>
             </section>
 
+            <!-- TAB: KHO ĐƠN -->
             <section id="tab-orders" class="tab-content hidden h-full flex flex-col space-y-3">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Quản Lý & Kho Đơn</h2>
@@ -279,9 +280,14 @@
                             <span class="text-[9px] text-slate-500 font-bold px-1 md:px-2">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-1 px-1 bg-transparent outline-none w-full">
                         </div>
                         <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">📋 Tất cả trạng thái</option><option value="RECEIVED">📦 Đã nhận</option><option value="PROCESSING">⏳ Đang xử lý</option><option value="PROCESSED">✅ Đã xử lý xong</option><option value="PAID">💰 Đã thanh toán</option><option value="DELIVERED">🤝 Đã trả khách</option></select>
+                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[16px] md:text-xs py-2 md:py-1.5 px-2 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 flex-1 lg:flex-none"><option value="ALL">🛠️ Tất cả dịch vụ</option><option value="CLEAN">🧼 Vệ sinh</option><option value="SOLE">👟 Thay đế</option><option value="STAIN">💧 Tẩy ố</option><option value="REPAINT">🎨 Repaint</option><option value="GLUE">🖌️ Dán đế</option></select>
                         <div class="relative flex-1 lg:flex-none"><i class="fa-solid fa-search absolute left-2.5 top-2.5 md:top-2 text-slate-400 text-xs"></i><input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-2 md:py-1.5 text-[16px] md:text-xs rounded-lg border border-slate-300 outline-none w-full lg:w-40"></div>
                     </div>
                 </div>
+
+                <!-- THANH THỐNG KÊ SỐ LƯỢNG DỊCH VỤ CHƯA LÀM -->
+                <div id="pendingServicesSummary" class="text-xs bg-amber-50 text-amber-800 p-2 md:p-3 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-2 items-center"></div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
                     <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
@@ -1226,15 +1232,67 @@
         }
 
         function renderOrdersTable() {
-            const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
-            const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); 
+            const statusFilter = document.getElementById('filterOrderStatus').value;
+            const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
+            const sDate = document.getElementById('filterOrderStart').value; 
+            const eDate = document.getElementById('filterOrderEnd').value;
+            
+            // THỐNG KÊ SỐ LƯỢNG DỊCH VỤ "ĐÃ NHẬN NHƯNG CHƯA LÀM"
+            const catMap = { 'CLEAN': 'Vệ sinh', 'SOLE': 'Thay đế', 'STAIN': 'Tẩy ố', 'REPAINT': 'Repaint', 'GLUE': 'Dán đế' };
+            const pendingCounts = {};
+            
+            state.orders.forEach(o => {
+                if (o.status === 'RECEIVED') {
+                    o.items.forEach(item => {
+                        const svcInfo = state.services.find(s => s.id === item.id);
+                        const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                        if (!pendingCounts[cat]) pendingCounts[cat] = 0;
+                        pendingCounts[cat] += item.qty;
+                    });
+                }
+            });
+
+            const summaryEl = document.getElementById('pendingServicesSummary');
+            if (summaryEl) {
+                const summaryParts = [];
+                for (const cat in catMap) {
+                    if (pendingCounts[cat] > 0) {
+                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2.5 py-1 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[13px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`);
+                    }
+                }
+                
+                if (summaryParts.length > 0) {
+                    summaryEl.innerHTML = `<div class="flex items-center gap-1.5 text-amber-700 uppercase"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[11px] tracking-wider">Cần làm gấp:</span></div> <div class="flex flex-wrap gap-2">${summaryParts.join('')}</div>`;
+                    summaryEl.classList.remove('hidden');
+                    summaryEl.classList.add('flex');
+                } else {
+                    summaryEl.classList.add('hidden');
+                    summaryEl.classList.remove('flex');
+                    summaryEl.innerHTML = '';
+                }
+            }
+
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
+            
             const filtered = state.orders.filter(o => {
                 const dateOnly = o.date.split(' ')[0];
-                if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
+                if(sDate && dateOnly < sDate) return false; 
+                if(eDate && dateOnly > eDate) return false;
                 if(statusFilter !== 'ALL' && o.status !== statusFilter) return false;
-                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; return true;
+                
+                if(serviceFilter !== 'ALL') {
+                    const hasService = o.items.some(item => {
+                        const svcInfo = state.services.find(s => s.id === item.id);
+                        return svcInfo && svcInfo.category === serviceFilter;
+                    });
+                    if (!hasService) return false;
+                }
+
+                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
+                return true;
             });
+
             document.getElementById('ordersTableBody').innerHTML = filtered.map(o => {
                 const showAfterUpload = ['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status);
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
