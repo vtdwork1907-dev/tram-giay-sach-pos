@@ -687,11 +687,16 @@
         }
 
         function mapOrderDbToJs(db) {
+            let _items = db.items || []; if (typeof _items === 'string') try { _items = JSON.parse(_items); } catch(e) { _items = []; }
+            let _shoes = db.shoes || null; if (typeof _shoes === 'string') try { _shoes = JSON.parse(_shoes); } catch(e) { _shoes = null; }
+            let _images = db.images || []; if (typeof _images === 'string') try { _images = JSON.parse(_images); } catch(e) { _images = []; }
+            let _imagesAfter = db.images_after || []; if (typeof _imagesAfter === 'string') try { _imagesAfter = JSON.parse(_imagesAfter); } catch(e) { _imagesAfter = []; }
+
             return {
                 id: db.id, date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
-                items: db.items || [], shoes: db.shoes || null,
-                images: db.images || [], imagesAfter: db.images_after || [],
+                items: _items, shoes: _shoes,
+                images: _images, imagesAfter: _imagesAfter,
                 subtotalVal: db.subtotal_val || 0, discountVal: db.discount_val || 0, total: db.total || 0,
                 status: db.status || 'RECEIVED'
             };
@@ -799,7 +804,7 @@
                     }).join('');
 
                     let beforeImgs = (order.images || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
-                    let afterImgs = (order.imagesAfter || []).map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
+                    let afterImgs = (order.imagesAfter || []).filter(url => url && url.trim() !== '').map(url => `<img src="${url}" onclick="openImageViewer('${url}')" class="w-full h-36 object-cover rounded-xl border border-emerald-200 shadow-sm cursor-pointer hover:opacity-80 transition">`).join('');
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
@@ -1142,7 +1147,7 @@
                 let actionHtml = '';
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[9px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
                 else actionHtml += `<div class="text-[9px] md:text-xs text-slate-400 italic text-center w-full py-1">Không ảnh</div>`;
-                actionHtml += `<label class="text-[9px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                actionHtml += `<label class="text-[9px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" capture="environment" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
 
                 const servicesBadgeHtml = o.items.map(i => {
                     const st = i.status || 'RECEIVED'; let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700'; let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
@@ -1592,7 +1597,7 @@
                 let actionHtml = '';
                 if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
                 else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`;
-                actionHtml += `<label class="text-[10px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-0.5 md:gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp <span class="hidden md:inline">Sau</span><input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                actionHtml += `<label class="text-[10px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-0.5 md:gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp <span class="hidden md:inline">Sau</span><input type="file" accept="image/*" capture="environment" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-xs md:text-sm">${o.total.toLocaleString()} đ</div>`;
                 if (isUnpaid) totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1 w-full text-[10px] md:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-hand-holding-dollar"></i> Nhận Tiền</button>`;
@@ -1711,7 +1716,7 @@
         async function uploadAfterImageSlot(e, orderId, slotIdx) {
             const file = e.target.files[0]; if (!file) return;
             const o = state.orders.find(x => x.id === orderId); if (!o) return;
-            if (!o.imagesAfter) o.imagesAfter = [];
+            if (!Array.isArray(o.imagesAfter)) o.imagesAfter = [];
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ảnh sau...`;
 
             try {
@@ -1738,7 +1743,7 @@
                 <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex justify-between items-center flex-wrap gap-1"><span>Góc chụp #${displayNum} (${shoeTitle})</span><span class="text-[10px] text-sky-700 bg-sky-100 px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-tag mr-1"></i>${svcsText}</span></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50">
                     <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div><div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[400px] relative">${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy">${beforeImageIndex >= 0 ? `<button onclick="deleteOrderImage('${orderId}', 'before', ${beforeImageIndex})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>` : ''}` : `<div class="text-slate-400 italic text-xs h-full flex flex-col items-center justify-center gap-1.5"><i class="fa-solid fa-camera-slash text-2xl text-slate-300"></i><span>Không có ảnh trước</span></div>`}</div></div>
-                    <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm"><div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100 flex items-center justify-between px-3"><span><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</span>${afterSrc ? `<div class="flex items-center gap-1"><button onclick="moveAfterImage('${orderId}', ${slotIdx}, -1)" ${!canMoveUp ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển lên trên/trước"><i class="fa-solid fa-arrow-up text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button><button onclick="moveAfterImage('${orderId}', ${slotIdx}, 1)" ${!canMoveDown ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển xuống dưới/sau"><i class="fa-solid fa-arrow-down text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button></div>` : ''}</div><div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[400px] relative">${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy"><button onclick="deleteOrderImage('${orderId}', 'after', ${slotIdx})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>` : `<div class="flex flex-col items-center justify-center gap-2 text-center p-4"><span class="text-slate-400 italic text-xs">Chưa có ảnh sau</span><label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow cursor-pointer transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-camera"></i> Tải/Chụp Ảnh Sau Góc Này<input type="file" accept="image/*" onchange="uploadAfterImageSlot(event, '${orderId}', ${slotIdx})" class="hidden"></label></div>`}</div></div>
+                    <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm"><div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100 flex items-center justify-between px-3"><span><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</span>${afterSrc ? `<div class="flex items-center gap-1"><button onclick="moveAfterImage('${orderId}', ${slotIdx}, -1)" ${!canMoveUp ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển lên trên/trước"><i class="fa-solid fa-arrow-up text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button><button onclick="moveAfterImage('${orderId}', ${slotIdx}, 1)" ${!canMoveDown ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển xuống dưới/sau"><i class="fa-solid fa-arrow-down text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button></div>` : ''}</div><div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[400px] relative">${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition" loading="lazy"><button onclick="deleteOrderImage('${orderId}', 'after', ${slotIdx})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>` : `<div class="flex flex-col items-center justify-center gap-2 text-center p-4"><span class="text-slate-400 italic text-xs">Chưa có ảnh sau</span><label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow cursor-pointer transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-camera"></i> Tải/Chụp Ảnh Sau Góc Này<input type="file" accept="image/*" capture="environment" onchange="uploadAfterImageSlot(event, '${orderId}', ${slotIdx})" class="hidden"></label></div>`}</div></div>
                 </div>
             </div>`;
         }
@@ -1774,7 +1779,8 @@
 
         async function uploadAfterImage(e, orderId) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
-            const o = state.orders.find(x => x.id === orderId); if (!o) return; if (!o.imagesAfter) o.imagesAfter = [];
+            const o = state.orders.find(x => x.id === orderId); if (!o) return; 
+            if (!Array.isArray(o.imagesAfter)) o.imagesAfter = [];
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
             try {
                 for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
