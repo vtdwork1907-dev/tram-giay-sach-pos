@@ -63,10 +63,17 @@
     <!-- KHUNG CHỨA THÔNG BÁO NỔI TRONG APP -->
     <div id="toastContainer" class="fixed top-16 right-4 left-4 md:left-auto md:w-80 z-[99999] flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- MÀN HÌNH XEM ẢNH TO (FULLSCREEN) CHO KHÁCH HÀNG -->
-    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex items-center justify-center p-2 opacity-0 transition-opacity duration-300">
-        <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-white hover:text-red-500 text-3xl leading-none z-10 w-12 h-12 flex items-center justify-center bg-black/50 rounded-full cursor-pointer">&times;</button>
-        <img id="viewerImage" src="" class="max-w-full max-h-[95vh] object-contain rounded-lg transition-transform duration-300 scale-95">
+    <!-- MÀN HÌNH XEM ẢNH TO (FULLSCREEN) DÀNH CHO KHÁCH & HỆ THỐNG -->
+    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex flex-col items-center justify-center p-2 opacity-0 transition-opacity duration-300 select-none">
+        <!-- Dải hướng dẫn vuốt trên điện thoại -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 text-white/80 text-[11px] font-medium bg-black/60 px-3 py-1 rounded-full pointer-events-none md:hidden flex items-center gap-1.5 border border-white/10 z-10 shadow-sm">
+            <i class="fa-solid fa-arrow-down text-sky-400 animate-bounce"></i> Vuốt xuống để đóng
+        </div>
+
+        <!-- Nút đóng "X" đã được hạ xuống vị trí top-12 dễ chạm -->
+        <button onclick="closeImageViewer()" class="absolute top-12 right-4 md:top-6 md:right-6 text-white hover:text-red-400 text-2xl leading-none z-20 w-11 h-11 flex items-center justify-center bg-black/60 rounded-full cursor-pointer border border-white/20 shadow-lg active:scale-95 transition">&times;</button>
+        
+        <img id="viewerImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg transition-transform duration-300 scale-95 touch-none">
     </div>
 
     <!-- GIAO DIỆN TRA CỨU DÀNH RIÊNG CHO KHÁCH HÀNG -->
@@ -592,7 +599,7 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // HÀM NÉN ẢNH CLIENT-SIDE TRƯỚC KHI TẢI LÊN R2 (TỰ ĐỘNG NÉN DƯỚI 500KB - RẮC NÉT FULL HD)
+        // HÀM NÉN ẢNH CLIENT-SIDE TRƯỚC KHI TẢI LÊN R2 (TỰ ĐỘNG NÉN DƯỚI 500KB - SẮC NÉT FULL HD)
         function compressImage(file, maxSizeKB = 500, maxWidth = 1920) {
             return new Promise((resolve) => {
                 if (!file || !file.type.startsWith('image/') || file.size <= maxSizeKB * 1024) {
@@ -737,6 +744,8 @@
             const modal = document.getElementById('imageViewerModal');
             const img = document.getElementById('viewerImage');
             img.src = url;
+            img.style.transform = 'translateY(0px) scale(0.95)';
+            img.style.transition = 'transform 0.3s ease';
             modal.classList.remove('hidden');
             void modal.offsetWidth;
             modal.classList.remove('opacity-0');
@@ -747,10 +756,12 @@
             const modal = document.getElementById('imageViewerModal');
             const img = document.getElementById('viewerImage');
             modal.classList.add('opacity-0');
-            img.classList.add('scale-95');
+            img.style.transform = 'translateY(100px) scale(0.8)';
+            img.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
             setTimeout(() => {
                 modal.classList.add('hidden');
                 img.src = '';
+                img.style.transform = '';
             }, 300);
         }
 
@@ -933,11 +944,15 @@
                 }
             } catch (err) {}
         }
+
+        // TÍNH NĂNG VUỐT XUỐNG ĐỂ ĐÓNG XEM ẢNH FULLSCREEN
+        let imgTouchStartY = 0;
+        let imgTouchMoveY = 0;
         
-        async function uploadFileToR2(file) {
-            const compressedFile = await compressImage(file, 500, 1920);
-            return new Promise((resolve, reject) => {
+        function uploadFileToR2(file) {
+            return new Promise(async (resolve, reject) => {
                 try {
+                    const compressedFile = await compressImage(file, 500, 1920);
                     const s3 = getS3Client();
                     const reader = new FileReader();
                     reader.readAsArrayBuffer(compressedFile);
@@ -1042,6 +1057,37 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
+
+            // KÍCH HOẠT THAO TÁC VUỐT XUỐNG ĐỂ ĐÓNG ẢNH XEM TO
+            const modalView = document.getElementById('imageViewerModal');
+            const imgView = document.getElementById('viewerImage');
+
+            if (modalView && imgView) {
+                modalView.addEventListener('touchstart', (e) => {
+                    imgTouchStartY = e.touches[0].clientY;
+                    imgTouchMoveY = 0;
+                    imgView.style.transition = 'none';
+                }, { passive: true });
+
+                modalView.addEventListener('touchmove', (e) => {
+                    const currentY = e.touches[0].clientY;
+                    const diffY = currentY - imgTouchStartY;
+                    if (diffY > 0) { // Đang vuốt xuống
+                        imgTouchMoveY = diffY;
+                        const scale = Math.max(0.7, 1 - diffY / 800);
+                        imgView.style.transform = `translateY(${diffY}px) scale(${scale})`;
+                    }
+                }, { passive: true });
+
+                modalView.addEventListener('touchend', () => {
+                    imgView.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                    if (imgTouchMoveY > 90) { // Vuốt xuống hơn 90px là đóng modal
+                        closeImageViewer();
+                    } else {
+                        imgView.style.transform = 'translateY(0px) scale(1)';
+                    }
+                }, { passive: true });
+            }
             
             try {
                 const localData = localStorage.getItem('TRAM_LOCAL_STATE');
