@@ -95,7 +95,7 @@
         </div>
     </div>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP (ĐÃ CẬP NHẬT BẢO MẬT SUPABASE) -->
     <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -108,16 +108,12 @@
             </div>
             <div class="p-6 space-y-4">
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-600">Tài khoản</label>
-                    <div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i><input type="text" id="loginUsername" placeholder="Nhập tài khoản..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" value="admin"></div>
+                    <label class="text-xs font-bold text-slate-600">Email đăng nhập</label>
+                    <div class="relative"><i class="fa-solid fa-envelope absolute left-3 top-3 text-slate-400"></i><input type="email" id="loginUsername" placeholder="Nhập email..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" value=""></div>
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
-                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()" value="123"></div>
-                </div>
-                <div class="flex items-center space-x-2 pt-1">
-                    <input type="checkbox" id="rememberLogin" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500" checked>
-                    <label for="rememberLogin" class="text-xs text-slate-600 cursor-pointer">Ghi nhớ đăng nhập (30 ngày)</label>
+                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()" value=""></div>
                 </div>
                 <button onclick="handleLogin()" type="button" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-sky-600/30 transition active:scale-95 mt-2 relative z-20 cursor-pointer">ĐĂNG NHẬP <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i></button>
             </div>
@@ -155,7 +151,6 @@
             <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-chart-line text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Báo Cáo</span></button>
             <button onclick="switchTab('payment')" id="nav-payment" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-emerald-400 md:text-emerald-400"><i class="fa-solid fa-qrcode text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Mã QR</span></button>
             
-            <!-- NÚT KHÁCH HÀNG CHUYỂN VỊ TRÍ VỀ ĐÂY -->
             <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-users text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Khách Hàng</span></button>
 
             <div class="hidden md:block pt-4 border-t border-slate-700/60 w-full mt-2"></div>
@@ -496,7 +491,7 @@
                     <div class="p-3 md:p-4 border-b border-slate-200 bg-sky-50"><h2 class="font-bold text-sky-800 text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-users-gear"></i> Phân Quyền Tài Khoản Nhân Viên</h2><p class="text-[10px] text-sky-700 mt-1">Quản lý có thể xem đơn và nhập chi phí. Nhân viên chỉ được tạo đơn hàng.</p></div>
                     <div class="p-3 md:p-4 flex flex-col md:flex-row flex-wrap gap-2 md:items-end">
                         <div class="w-full md:w-auto md:flex-1"><label class="text-[10px] font-bold text-slate-700">Tên Hiển Thị</label><input type="text" id="addUserName" placeholder="VD: Nam Thu Ngân" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"></div>
-                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Tên Đăng Nhập</label><input type="text" id="addUserLogin" placeholder="VD: nam123" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"></div>
+                        <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Email Đăng Nhập</label><input type="email" id="addUserLogin" placeholder="VD: nam@gmail.com" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"></div>
                         <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Mật khẩu</label><input type="password" id="addUserPass" placeholder="••••" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none font-mono"></div>
                         <div class="w-full md:w-32"><label class="text-[10px] font-bold text-slate-700">Phân Vai Trò</label><select id="addUserRole" class="w-full text-[16px] md:text-xs p-2 rounded border border-slate-300 outline-none"><option value="manager">Quản Lý</option><option value="staff">Nhân Viên</option></select></div>
                         <button onclick="addNewAccount()" class="w-full md:w-auto bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs px-4 py-3 md:py-2 rounded shadow mt-2 md:mt-0">Cấp Tài Khoản</button>
@@ -630,7 +625,7 @@
             </div>
         </div>
     </div>
-    <!-- SCRIPT CHÍNH -->
+    <!-- SCRIPT CHÍNH (ĐÃ NÂNG CẤP BẢO MẬT SUPABASE AUTH) -->
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
@@ -660,13 +655,11 @@
         const ORDERS_PER_PAGE = 50;
         let searchTimeout = null;
 
-        // BẢN NÂNG CẤP: TÌM KIẾM TRÊN SERVER (SERVER-SIDE SEARCH)
         function debouncedSearchOrder() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(async () => {
                 const searchVal = document.getElementById('searchOrderInput').value.trim();
                 
-                // Nếu người dùng có gõ từ khóa -> Gọi Supabase tìm đơn cũ
                 if (searchVal.length > 0) {
                     const loading = document.getElementById('globalLoading');
                     loading.style.display = 'flex';
@@ -782,9 +775,6 @@
             });
         }
 
-        // =========================================================================
-        // BẢN CẬP NHẬT: Thêm mapping cột payment_method, extra_fee_val, extra_fee_reason
-        // =========================================================================
         function mapOrderJsToDb(o) {
             return {
                 id: o.id, date: o.date,
@@ -860,9 +850,6 @@
             .catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
         }
 
-        // =========================================================================
-        // CẬP NHẬT HIỂN THỊ PHÁT SINH TRONG MÀN HÌNH KHÁCH HÀNG
-        // =========================================================================
         async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
@@ -978,10 +965,8 @@
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
 
-        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
-
         let state = {
-            users: DEFAULT_USERS, currentUser: null, logo: null,
+            users: [], currentUser: null, logo: null,
             services: [
                 { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
                 { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
@@ -1015,37 +1000,111 @@
 
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
         
-        function checkAutoLogin() {
-            const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER'); const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
-            if (savedUserId && loginTime) {
-                const now = new Date().getTime();
-                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) { localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return; }
-                const foundUser = state.users.find(u => u.id === savedUserId);
-                if (foundUser) {
-                    state.currentUser = foundUser;
-                    const authScreen = document.getElementById('authScreen'); if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-                    document.getElementById('currentUserDisplay').innerText = foundUser.name; changeRole(foundUser.role);
-                } else { localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); }
+        // =========================================================================
+        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE
+        // =========================================================================
+        async function checkAutoLogin() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'flex';
+            loading.querySelector('.text-sm').innerText = 'Đang kiểm tra phiên bảo mật...';
+
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (session) {
+                    const { data: userData, error: userError } = await supabaseClient
+                        .from('users')
+                        .select('*')
+                        .eq('username', session.user.email)
+                        .single();
+                        
+                    let activeUser = userData;
+                    if (!userData) {
+                        activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                    }
+                    
+                    state.currentUser = activeUser;
+                    const authScreen = document.getElementById('authScreen'); 
+                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
+                    document.getElementById('currentUserDisplay').innerText = activeUser.name; 
+                    changeRole(activeUser.role);
+                } else {
+                    document.getElementById('authScreen').style.display = 'flex';
+                    setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+                }
+            } catch (err) {
+                console.error("Lỗi kiểm tra phiên:", err);
+            } finally {
+                loading.style.display = 'none';
+                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
             }
         }
 
-        function handleLogin() {
-            const user = document.getElementById('loginUsername').value.trim(); const pass = document.getElementById('loginPassword').value.trim();
-            const remember = document.getElementById('rememberLogin').checked;
-            if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
-            const foundUser = state.users.find(u => u.username === user && u.password === pass);
-            if(foundUser) {
-                state.currentUser = foundUser; localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
-                if (remember) localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); else localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
-                document.getElementById('authScreen').classList.add('opacity-0'); setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
-                document.getElementById('currentUserDisplay').innerText = foundUser.name; changeRole(foundUser.role); document.getElementById('loginPassword').value = '';
-            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
+        // =========================================================================
+        // BẢO MẬT: ĐĂNG NHẬP BẰNG SUPABASE AUTH
+        // =========================================================================
+        async function handleLogin() {
+            const email = document.getElementById('loginUsername').value.trim(); 
+            const pass = document.getElementById('loginPassword').value.trim();
+            
+            if(!email || !pass) return alert("Vui lòng nhập đủ email và mật khẩu!");
+
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'flex';
+            loading.querySelector('.text-sm').innerText = 'Đang xác thực bảo mật...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: pass
+                });
+
+                if (error) throw error;
+
+                const { data: userData, error: userError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('username', email) 
+                    .single();
+
+                let activeUser = userData;
+                if (!userData) {
+                    activeUser = { id: data.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                }
+
+                state.currentUser = activeUser;
+                document.getElementById('authScreen').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
+                document.getElementById('currentUserDisplay').innerText = activeUser.name; 
+                changeRole(activeUser.role);
+                document.getElementById('loginPassword').value = '';
+
+            } catch (error) {
+                console.error(error);
+                alert("Đăng nhập thất bại: Tài khoản hoặc mật khẩu không chính xác!");
+            } finally {
+                loading.style.display = 'none';
+                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
+            }
         }
 
-        function handleLogout() {
+        // =========================================================================
+        // BẢO MẬT: ĐĂNG XUẤT XÓA SESSION TRÊN SERVER
+        // =========================================================================
+        async function handleLogout() {
             if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
-                state.currentUser = null; localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
-                document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+                const loading = document.getElementById('globalLoading');
+                loading.style.display = 'flex';
+                loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
+                
+                await supabaseClient.auth.signOut();
+                
+                state.currentUser = null; 
+                localStorage.removeItem('TRAM_LAST_TAB');
+                
+                loading.style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex'; 
+                setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
             }
         }
 
@@ -1061,20 +1120,54 @@
                 <tr class="border-b hover:bg-slate-50"><td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td><td class="p-3 text-sky-700 font-mono">${u.username}</td><td class="p-3 font-mono text-slate-500">***</td><td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td><td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td></tr>`).join('');
         }
 
+        // =========================================================================
+        // BẢO MẬT: TẠO TÀI KHOẢN MỚI THÔNG QUA SUPABASE AUTH
+        // =========================================================================
         async function addNewAccount() {
-            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim();
-            const pass = document.getElementById('addUserPass').value.trim(); const role = document.getElementById('addUserRole').value;
-            if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-            if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
+            const name = document.getElementById('addUserName').value.trim(); 
+            const email = document.getElementById('addUserLogin').value.trim();
+            const pass = document.getElementById('addUserPass').value.trim(); 
+            const role = document.getElementById('addUserRole').value;
             
-            const newUser = { id: 'U-' + Date.now(), username, password: pass, role, name };
-            state.users.push(newUser); saveLocalState(); renderSettingsUsersTable();
-            document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
-            alert("Tạo tài khoản thành công!"); await supabaseClient.from('users').insert(newUser);
+            if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
+            if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
+            
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'flex';
+            loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
+            
+            try {
+                // 1. Tạo user trên Supabase Auth (Đòi hỏi tắt Confirm email trong Dashboard Supabase)
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: pass,
+                });
+                
+                if (error) throw error;
+                
+                // 2. Lưu thông tin hiển thị và phân quyền vào bảng users
+                const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name };
+                await supabaseClient.from('users').insert(newUser);
+                
+                state.users.push(newUser); 
+                renderSettingsUsersTable();
+                
+                document.getElementById('addUserName').value=''; 
+                document.getElementById('addUserLogin').value=''; 
+                document.getElementById('addUserPass').value='';
+                alert("Tạo tài khoản thành công!");
+                
+            } catch(error) {
+                console.error(error);
+                alert("Lỗi tạo tài khoản: " + error.message);
+            } finally {
+                loading.style.display = 'none';
+                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
+            }
         }
 
         async function deleteAccount(id) {
-            if(confirm("Hủy tài khoản này? Người này sẽ không thể đăng nhập được nữa.")) {
+            if(confirm("Xóa quyền quản trị của tài khoản này?")) {
                 state.users = state.users.filter(u => u.id !== id); saveLocalState(); renderSettingsUsersTable();
                 await supabaseClient.from('users').delete().eq('id', id);
             }
@@ -1103,7 +1196,7 @@
                 const localData = localStorage.getItem('TRAM_LOCAL_STATE');
                 if (localData) {
                     const parsed = JSON.parse(localData);
-                    state.users = parsed.users || DEFAULT_USERS; state.services = parsed.services || state.services;
+                    state.users = parsed.users || []; state.services = parsed.services || state.services;
                     state.orders = parsed.orders || []; state.expenses = parsed.expenses || [];
                     state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; state.logo = parsed.logo || null;
                 }
@@ -1118,7 +1211,7 @@
                     supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
 
-                if (usersRes.data && usersRes.data.length > 0) state.users = usersRes.data; else await supabaseClient.from('users').upsert(DEFAULT_USERS); 
+                if (usersRes.data && usersRes.data.length > 0) state.users = usersRes.data; 
                 if (svcsRes.data && svcsRes.data.length > 0) state.services = svcsRes.data.map(mapServiceDbToJs);
                 else { const defaultSvcsDb = state.services.map((s, idx) => ({ id: s.id, name: s.name, category: s.category, default_price: s.defaultPrice, icon: s.icon, sort_order: idx })); await supabaseClient.from('services').upsert(defaultSvcsDb); }
                 if (settingsRes.data) { state.qrConfig = settingsRes.data.qr_config || state.qrConfig; state.logo = settingsRes.data.logo || null; }
@@ -1130,7 +1223,11 @@
 
             renderLogo(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
-            adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
+            adjustPOSLayout(); renderDashboard(); checkUrlTracking();
+            
+            // Chạy hàm kiểm tra bảo mật
+            checkAutoLogin();
+            
             document.getElementById('globalLoading').style.display = 'none';
 
             supabaseClient.channel('tramgiaysach_realtime')
@@ -1180,9 +1277,6 @@
 
         function initClock() { setInterval(() => { const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN'); document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`; }, 1000); }
 
-        // =========================================================================
-        // CẬP NHẬT RENDER DASHBOARD: Tiền mặt/Chuyển khoản & Extra Fee
-        // =========================================================================
         function renderDashboard() {
             const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
@@ -1541,9 +1635,6 @@
         
         function removeUploadedImage(idOrUrl) { state.uploadedImages = state.uploadedImages.filter(img => { if(typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); renderPreviewImages(); }
 
-        // =========================================================================
-        // THÊM: EXTRA FEE null KHI TẠO ĐƠN MỚI
-        // =========================================================================
         async function processOrder() {
             let finalCartItems = []; let finalImageUrls = []; const dateStr = document.getElementById('orderDateInput').value;
 
@@ -1640,9 +1731,6 @@
             for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
         }
 
-        // =========================================================================
-        // CẬP NHẬT RENDER ORDERS TABLE (Thêm Chuyển khoản, Tiền mặt, Phát sinh)
-        // =========================================================================
         function renderOrdersTable(resetPage = false) {
             if (resetPage) currentOrderPage = 1;
 
@@ -1774,9 +1862,6 @@
             if (nextBtn) nextBtn.disabled = currentOrderPage >= totalPages;
         }
 
-        // =========================================================================
-        // HÀM XỬ LÝ PHÁT SINH
-        // =========================================================================
         function openExtraFeeModal(orderId) {
             const o = state.orders.find(x => x.id === orderId); if(!o) return;
             document.getElementById('extraFeeOrderId').value = orderId;
@@ -1811,9 +1896,6 @@
             if (item) { item.warrantyDate = newDate; renderOrdersTable(); await dbUpdateOrder(orderId); }
         }
 
-        // =========================================================================
-        // CHUYỂN KHOẢN & TIỀN MẶT LOGIC
-        // =========================================================================
         function openCollectPaymentModal(orderId) {
             const o = state.orders.find(x => x.id === orderId); if (!o) return;
             activeCollectingOrderId = orderId;
@@ -2104,9 +2186,6 @@
 
         function clearDateFilter() { document.getElementById('reportStartDate').value = ''; document.getElementById('reportEndDate').value = ''; updateReportMetrics(); }
         
-        // =========================================================================
-        // BÁO CÁO: CẬP NHẬT DOANH THU TIỀN MẶT / CHUYỂN KHOẢN & PHÁT SINH
-        // =========================================================================
         function updateReportMetrics() {
             updateExpenseCharts(); 
             const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
