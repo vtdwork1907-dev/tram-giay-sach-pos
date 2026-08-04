@@ -638,6 +638,21 @@
                  .replace(/"/g, "&quot;")
                  .replace(/'/g, "&#039;");
         }
+        
+        // --- HÀM CHE DỮ LIỆU CÁ NHÂN (PII MASKING) ---
+        function maskPhoneNumber(phone) {
+            if (!phone || phone.length < 7) return phone;
+            // Giữ lại 3 số đầu và 3 số cuối, che 4 số ở giữa bằng 4 dấu *
+            return phone.substring(0, 3) + '****' + phone.substring(phone.length - 3);
+        }
+
+        function maskName(name) {
+            if (!name) return '';
+            const parts = name.trim().split(' ');
+            if (parts.length <= 1) return name;
+            // Chỉ hiện rõ tên chính (từ cuối cùng), các chữ lót bị che thành dấu ***
+            return parts.map((part, idx) => idx === parts.length - 1 ? part : part.charAt(0) + '***').join(' ');
+        }
 
         // --- HÀM TẠO MÃ TRACKING NGẮN & BẢO MẬT (Youtube Style) ---
         function generateShortTrackingId() {
