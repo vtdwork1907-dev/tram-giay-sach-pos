@@ -634,12 +634,54 @@
         const ORDERS_PER_PAGE = 50;
         let searchTimeout = null;
 
+        // BẢN NÂNG CẤP: TÌM KIẾM TRÊN SERVER (SERVER-SIDE SEARCH)
         function debouncedSearchOrder() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                // Đợi 500ms người dùng không gõ nữa mới gọi hàm render, đồng thời đưa về trang 1
+            searchTimeout = setTimeout(async () => {
+                const searchVal = document.getElementById('searchOrderInput').value.trim();
+                
+                // Nếu người dùng có gõ từ khóa -> Gọi Supabase tìm đơn cũ
+                if (searchVal.length > 0) {
+                    const loading = document.getElementById('globalLoading');
+                    loading.style.display = 'flex';
+                    loading.querySelector('.text-sm').innerText = 'Đang tìm dữ liệu cũ...';
+
+                    try {
+                        // Truy vấn Supabase: tìm theo Mã đơn (id), SĐT hoặc Tên khách
+                        const { data, error } = await supabaseClient
+                            .from('orders')
+                            .select('*')
+                            .or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_name.ilike.%${searchVal}%`)
+                            .order('created_at', { ascending: false })
+                            .limit(50); // Giới hạn 50 kết quả để app luôn mượt
+
+                        if (data && !error) {
+                            const fetchedOrders = data.map(mapOrderDbToJs);
+                            
+                            // Trộn kết quả tìm được vào bộ nhớ tạm (state.orders) để render
+                            fetchedOrders.forEach(fetchedObj => {
+                                const existsIndex = state.orders.findIndex(o => o.id === fetchedObj.id);
+                                if (existsIndex === -1) {
+                                    // Nếu đơn cũ này chưa có trên trình duyệt -> thêm vào
+                                    state.orders.push(fetchedObj);
+                                } else {
+                                    // Nếu đã có -> cập nhật data mới nhất
+                                    state.orders[existsIndex] = fetchedObj;
+                                }
+                            });
+                        }
+                    } catch(err) {
+                        console.error("Lỗi tìm kiếm trên server:", err);
+                    } finally {
+                        loading.style.display = 'none';
+                        loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
+                    }
+                }
+                
+                // Chạy render bảng. Nhờ kết quả đã được gộp vào state.orders ở trên, 
+                // bộ lọc cục bộ sẽ tự động nhặt ra và hiển thị đúng kết quả.
                 renderOrdersTable(true);
-            }, 500);
+            }, 600); // Chờ 600ms sau khi ngừng gõ mới gọi API để tiết kiệm Request
         }
 
         function changeOrderPage(delta) {
