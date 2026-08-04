@@ -326,8 +326,8 @@
                     <div class="flex items-center justify-between gap-2">
                         <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
                         <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
-                            <i id="searchIconIndicator" class="fa-solid fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs transition-all"></i>
-                            <input type="text" id="searchOrderInput" onkeyup="handleSearchInput()" placeholder="Tìm Mã, SĐT, Tên..." class="pl-7 pr-2 py-1.5 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50 focus:bg-white focus:border-sky-500 transition shadow-sm">
+                            <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px] md:text-xs">
@@ -393,13 +393,6 @@
                             <tbody id="ordersTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
-                </div>
-                
-                <!-- NÚT TẢI THÊM ĐƠN CŨ -->
-                <div id="loadMoreContainer" class="w-full flex justify-center py-3">
-                    <button onclick="loadMoreOrders()" id="loadMoreBtn" class="bg-white hover:bg-slate-50 text-sky-700 font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm transition flex items-center gap-2 shadow-sm border border-slate-200 active:scale-95">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> Tải thêm đơn cũ
-                    </button>
                 </div>
             </section>
 
@@ -605,12 +598,6 @@
         // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
-
-        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
-        
-        // BIẾN CHO TẢI THÊM VÀ TÌM KIẾM SÂU
-        let currentOrderOffset = 150;
-        let searchTimeout = null;
 
         // HÀM XÓA ẢNH QUA WORKER API
         async function deleteFileFromR2(fileUrl) {
@@ -902,100 +889,135 @@
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
 
-        // HÀM TÌM KIẾM XUYÊN DATABASE
-        function handleSearchInput() {
-            renderOrdersTable(); // Lọc cục bộ lập tức cho mượt
-            
-            const keyword = document.getElementById('searchOrderInput').value.trim();
-            if (keyword.length < 2) return; // Chỉ tìm trên DB nếu gõ từ 2 ký tự trở lên
-            
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchOrdersInDB(keyword.toLowerCase());
-            }, 600); // Đợi người dùng gõ xong (600ms) mới gọi API
+        const DEFAULT_USERS = [{ id: 'u1', username: 'admin', password: '123', role: 'owner', name: 'Chủ Cửa Hàng (Admin)' }];
+
+        let state = {
+            users: DEFAULT_USERS, currentUser: null, logo: null,
+            services: [
+                { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
+                { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
+                { id: 's1', name: 'Thay đế giày thể thao', category: 'SOLE', defaultPrice: 350000, icon: 'fa-shoe-prints' },
+                { id: 'r1', name: 'Repaint thân/đế', category: 'REPAINT', defaultPrice: 200000, icon: 'fa-palette' },
+                { id: 't1', name: 'Tẩy ố mốc', category: 'STAIN', defaultPrice: 120000, icon: 'fa-droplet' },
+                { id: 'g1', name: 'Dán bong keo', category: 'GLUE', defaultPrice: 80000, icon: 'fa-brush' }
+            ],
+            orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, 
+            cart: [], uploadedImages: [], role: null,
+            multiShoeMode: false, shoes: [], activeShoeId: null
+        };
+
+        let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
+
+        // =========================================================================
+        // HÀM LƯU STATE LOCAL (Thay thế cho việc nhét lên DB)
+        // =========================================================================
+        function saveLocalState() {
+            try {
+                localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify({
+                    users: state.users, logo: state.logo || '', services: state.services,
+                    orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig
+                }));
+            } catch (e) {}
         }
 
-        async function searchOrdersInDB(keyword) {
-            const searchIcon = document.getElementById('searchIconIndicator');
-            if(searchIcon) { searchIcon.classList.remove('fa-search', 'text-slate-400'); searchIcon.classList.add('fa-spinner', 'fa-spin', 'text-sky-500'); }
-            
-            try {
-                // Tìm theo id, số điện thoại, hoặc tên khách hàng
-                const { data, error } = await supabaseClient.from('orders')
-                    .select('*')
-                    .or(`id.ilike.%${keyword}%,customer_phone.ilike.%${keyword}%,customer_name.ilike.%${keyword}%`)
-                    .order('created_at', { ascending: false })
-                    .limit(20);
+        // =========================================================================
+        // CÁC HÀM TƯƠNG TÁC DB ĐƠN LẺ (CHỐNG LAG)
+        // =========================================================================
+        async function dbInsertOrder(o) {
+            saveLocalState();
+            await supabaseClient.from('orders').insert([mapOrderJsToDb(o)]);
+        }
+        async function dbUpdateOrder(orderId) {
+            const o = state.orders.find(x => x.id === orderId);
+            if(!o) return;
+            saveLocalState();
+            await supabaseClient.from('orders').update(mapOrderJsToDb(o)).eq('id', orderId);
+        }
+        async function saveSettingsToDB() {
+            saveLocalState();
+            await supabaseClient.from('store_settings').upsert({ id: 'main', qr_config: state.qrConfig, logo: state.logo });
+        }
 
-                if (data && data.length > 0) {
-                    const foundOrders = data.map(mapOrderDbToJs);
-                    let addedNew = false;
-                    foundOrders.forEach(fo => {
-                        if (!state.orders.find(o => o.id === fo.id)) {
-                            state.orders.push(fo);
-                            addedNew = true;
-                        }
-                    });
-                    
-                    if (addedNew) {
-                        state.orders.sort((a,b) => b.date.localeCompare(a.date)); // Sắp xếp lại theo thời gian
-                        saveLocalState();
-                        renderOrdersTable(); // Cập nhật lại UI
-                    }
+        let imgTouchStartY = 0; let imgTouchMoveY = 0;
+        
+        function checkAutoLogin() {
+            const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
+            const loginTime = localStorage.getItem('TRAM_LOGIN_TIME');
+            if (savedUserId && loginTime) {
+                const now = new Date().getTime();
+                if (now - parseInt(loginTime) > 30 * 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); return;
                 }
-            } catch (err) {
-                console.error("Lỗi tìm kiếm DB:", err);
-            } finally {
-                if(searchIcon) { searchIcon.classList.remove('fa-spinner', 'fa-spin', 'text-sky-500'); searchIcon.classList.add('fa-search', 'text-slate-400'); }
+                const foundUser = state.users.find(u => u.id === savedUserId);
+                if (foundUser) {
+                    state.currentUser = foundUser;
+                    const authScreen = document.getElementById('authScreen');
+                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
+                    document.getElementById('currentUserDisplay').innerText = foundUser.name;
+                    changeRole(foundUser.role);
+                } else {
+                    localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME');
+                }
             }
         }
 
-        // HÀM TẢI THÊM ĐƠN CŨ
-        async function loadMoreOrders() {
-            const btn = document.getElementById('loadMoreBtn');
-            if(!btn) return;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải...';
-            btn.disabled = true;
+        function handleLogin() {
+            const user = document.getElementById('loginUsername').value.trim(); const pass = document.getElementById('loginPassword').value.trim();
+            const remember = document.getElementById('rememberLogin').checked;
+            if(!user || !pass) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
+            const foundUser = state.users.find(u => u.username === user && u.password === pass);
+            if(foundUser) {
+                state.currentUser = foundUser; localStorage.setItem('TRAM_ACTIVE_USER', foundUser.id);
+                if (remember) localStorage.setItem('TRAM_LOGIN_TIME', new Date().getTime().toString()); else localStorage.setItem('TRAM_LOGIN_TIME', (new Date().getTime() - (29 * 24 * 60 * 60 * 1000)).toString());
+                document.getElementById('authScreen').classList.add('opacity-0'); setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
+                document.getElementById('currentUserDisplay').innerText = foundUser.name; changeRole(foundUser.role); document.getElementById('loginPassword').value = '';
+            } else { alert("Tài khoản hoặc mật khẩu không chính xác!"); }
+        }
 
-            try {
-                const { data, error } = await supabaseClient.from('orders')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .range(currentOrderOffset, currentOrderOffset + 149); // Tải thêm 150 đơn mỗi lần
+        function handleLogout() {
+            if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
+                state.currentUser = null; localStorage.removeItem('TRAM_ACTIVE_USER'); localStorage.removeItem('TRAM_LOGIN_TIME'); localStorage.removeItem('TRAM_LAST_TAB');
+                document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+            }
+        }
 
-                if (data && data.length > 0) {
-                    currentOrderOffset += data.length;
-                    const newOrders = data.map(mapOrderDbToJs);
-                    let added = 0;
-                    
-                    newOrders.forEach(no => {
-                        if (!state.orders.find(o => o.id === no.id)) {
-                            state.orders.push(no);
-                            added++;
-                        }
-                    });
-                    
-                    if (added > 0) {
-                        state.orders.sort((a,b) => b.date.localeCompare(a.date));
-                        saveLocalState();
-                        renderOrdersTable();
-                        renderCustomersTable(); // Cập nhật cả xếp hạng khách VIP
-                    }
+        function changeRole(r) {
+            state.role = r; 
+            document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
+            document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
+            restoreLastTab();
+        }
 
-                    // Nếu tải về ít hơn 150 tức là đã hết đơn trong DB
-                    if (data.length < 150) {
-                        document.getElementById('loadMoreContainer').style.display = 'none';
-                    }
-                } else {
-                    document.getElementById('loadMoreContainer').style.display = 'none';
-                }
-            } catch (err) {
-                console.error("Lỗi tải thêm đơn:", err);
-                showNotification("❌ LỖI KẾT NỐI", "Không thể tải thêm đơn cũ, vui lòng kiểm tra mạng.");
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+        function renderSettingsUsersTable() {
+            document.getElementById('settingsUsersTable').innerHTML = state.users.map(u => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3 font-bold">${u.name} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td>
+                    <td class="p-3 text-sky-700 font-mono">${u.username}</td>
+                    <td class="p-3 font-mono text-slate-500">***</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td>
+                    <td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
+                </tr>`).join('');
+        }
+
+        async function addNewAccount() {
+            const name = document.getElementById('addUserName').value.trim(); const username = document.getElementById('addUserLogin').value.trim();
+            const pass = document.getElementById('addUserPass').value.trim(); const role = document.getElementById('addUserRole').value;
+            if(!name || !username || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
+            if(state.users.find(u => u.username === username)) return alert("Tên đăng nhập này đã tồn tại!");
+            
+            const newUser = { id: 'U-' + Date.now(), username, password: pass, role, name };
+            state.users.push(newUser);
+            saveLocalState(); renderSettingsUsersTable();
+            document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
+            alert("Tạo tài khoản thành công!");
+            await supabaseClient.from('users').insert(newUser);
+        }
+
+        async function deleteAccount(id) {
+            if(confirm("Hủy tài khoản này? Người này sẽ không thể đăng nhập được nữa.")) {
+                state.users = state.users.filter(u => u.id !== id);
+                saveLocalState(); renderSettingsUsersTable();
+                await supabaseClient.from('users').delete().eq('id', id);
             }
         }
 
@@ -1029,13 +1051,12 @@
             } catch (e) {}
 
             try {
-                const fetchLimit = typeof currentOrderOffset !== 'undefined' ? Math.max(150, currentOrderOffset) : 150;
                 // Tải song song tất cả các bảng (Lazy Load: chỉ 150 đơn mới nhất)
                 const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
                     supabaseClient.from('users').select('*'),
                     supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
                     supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(),
-                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(fetchLimit),
+                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(150),
                     supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
 
@@ -1054,13 +1075,7 @@
                     state.logo = settingsRes.data.logo || null;
                 }
 
-                if (ordersRes.data) {
-                    state.orders = ordersRes.data.map(mapOrderDbToJs);
-                    if (ordersRes.data.length < fetchLimit) {
-                        const btnContainer = document.getElementById('loadMoreContainer');
-                        if (btnContainer) btnContainer.style.display = 'none';
-                    }
-                }
+                if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs);
                 if (expRes.data) state.expenses = expRes.data;
 
                 saveLocalState();
@@ -2077,25 +2092,18 @@
             }
 
             try {
-                const fetchLimit = typeof currentOrderOffset !== 'undefined' ? Math.max(150, currentOrderOffset) : 150;
                 const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
                     supabaseClient.from('users').select('*'),
                     supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
                     supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(),
-                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(fetchLimit),
+                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(150),
                     supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
 
                 if (usersRes.data) state.users = usersRes.data;
                 if (svcsRes.data) state.services = svcsRes.data.map(mapServiceDbToJs);
                 if (settingsRes.data) { state.qrConfig = settingsRes.data.qr_config || state.qrConfig; state.logo = settingsRes.data.logo || null; }
-                if (ordersRes.data) {
-                    state.orders = ordersRes.data.map(mapOrderDbToJs);
-                    if (ordersRes.data.length < fetchLimit) {
-                        const btnContainer = document.getElementById('loadMoreContainer');
-                        if (btnContainer) btnContainer.style.display = 'none';
-                    }
-                }
+                if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs);
                 if (expRes.data) state.expenses = expRes.data;
 
                 saveLocalState();
