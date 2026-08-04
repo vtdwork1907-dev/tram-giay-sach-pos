@@ -20,9 +20,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- SUPABASE & AWS SDK -->
+    <!-- SUPABASE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1492.0/aws-sdk.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -579,6 +578,7 @@
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
+        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             global: {
                 headers: {
@@ -587,44 +587,35 @@
             }
         });
         
-        const R2_PUBLIC_DOMAIN = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev";
-        const R2_BUCKET_NAME = "tram-giay-sach-media";
-        let s3Instance = null;
+        // WORKER URL MỚI & SECRET KEY
+        const WORKER_API_URL = 'https://tramgiaysach-media-api.vtdwork1907.workers.dev';
+        const APP_SECRET_KEY = 'tramgiaysach_pos_2026_secure_key_123';
+        
         let activeCollectingOrderId = null;
         
         // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
 
-        function getS3Client() {
-            if (!s3Instance) {
-                if (typeof AWS === 'undefined') {
-                    throw new Error("Thư viện AWS SDK chưa tải xong.");
-                }
-                AWS.config.update({
-                    accessKeyId: "fd0be070a4cb4bdd08fa67f05b532d2c",
-                    secretAccessKey: "d7974a25905968dd4a4a42de484be6824ae2223f321c0b8ef7ceebb8b24e1944",
-                    region: "auto"
-                });
-                s3Instance = new AWS.S3({
-                    endpoint: "https://9ac27e133ec19611ba62ba162c6c7913.r2.cloudflarestorage.com",
-                    s3ForcePathStyle: true,
-                    signatureVersion: 'v4'
-                });
-            }
-            return s3Instance;
-        }
-
-        function deleteFileFromR2(fileUrl) {
+        // HÀM XÓA ẢNH QUA WORKER API
+        async function deleteFileFromR2(fileUrl) {
             try {
-                const urlObj = new URL(fileUrl);
-                const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
-                const s3 = getS3Client();
-                s3.deleteObject({ Bucket: R2_BUCKET_NAME, Key: key }, function(err, data) {
-                    if (err) console.error("Lỗi xóa file trên R2:", err);
-                    else console.log("Đã xóa file R2 thành công:", key);
+                const response = await fetch(`${WORKER_API_URL}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-app-secret': APP_SECRET_KEY
+                    },
+                    body: JSON.stringify({ key: fileUrl })
                 });
-            } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log("Đã xóa file R2 thành công:", data.deletedKey);
+                }
+            } catch (e) {
+                console.error("Lỗi xóa file trên R2:", e);
+            }
         }
 
         function compressImage(file, maxSizeKB = 500, maxWidth = 1920) {
@@ -661,6 +652,35 @@
                     }; attemptCompress();
                 };
                 img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+            });
+        }
+
+        // HÀM UPLOAD ẢNH QUA WORKER API
+        function uploadFileToR2(file) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const compressedFile = await compressImage(file, 500, 1920);
+                    const formData = new FormData();
+                    formData.append('file', compressedFile);
+
+                    const response = await fetch(`${WORKER_API_URL}/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'x-app-secret': APP_SECRET_KEY
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        reject(new Error(data.error || 'Lỗi khi upload ảnh'));
+                        return;
+                    }
+
+                    resolve(data.url); // Trả về đường dẫn ảnh công khai
+                } catch(err) { 
+                    reject(err); 
+                }
             });
         }
 
@@ -917,23 +937,6 @@
         }
 
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
-        
-        function uploadFileToR2(file) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const compressedFile = await compressImage(file, 500, 1920);
-                    const s3 = getS3Client(); const reader = new FileReader();
-                    reader.readAsArrayBuffer(compressedFile);
-                    reader.onload = (e) => {
-                        const fileBuffer = e.target.result; const fileExtension = compressedFile.name.split('.').pop();
-                        const uniqueFileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-                        const params = { Bucket: R2_BUCKET_NAME, Key: uniqueFileName, Body: fileBuffer, ContentType: compressedFile.type };
-                        s3.upload(params, function(err, data) { if (err) reject(err); else resolve(`${R2_PUBLIC_DOMAIN}/${uniqueFileName}`); });
-                    };
-                    reader.onerror = (err) => reject(err);
-                } catch(err) { reject(err); }
-            });
-        }
         
         function checkAutoLogin() {
             const savedUserId = localStorage.getItem('TRAM_ACTIVE_USER');
