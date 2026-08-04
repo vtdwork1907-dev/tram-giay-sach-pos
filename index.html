@@ -327,15 +327,17 @@
                         <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
                         <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
                             <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
-                            <input type="text" id="searchOrderInput" onkeyup="renderOrdersTable()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
+                            <!-- SỬA ĐỔI: Gọi hàm debouncedSearchOrder() thay vì gọi render trực tiếp -->
+                            <input type="text" id="searchOrderInput" onkeyup="debouncedSearchOrder()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px] md:text-xs">
                         <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable()" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable()" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                            <!-- SỬA ĐỔI: Gửi true vào hàm renderOrdersTable để reset về trang 1 khi lọc -->
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                         </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable()" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ACTIVE" selected>⚡ Đơn đang làm</option>
                             <option value="ALL">📋 Tất cả đơn</option>
                             <option value="RECEIVED">📦 Đã nhận</option>
@@ -344,7 +346,7 @@
                             <option value="PAID">💰 Đã thanh toán</option>
                             <option value="DELIVERED">🤝 Đã trả khách</option>
                         </select>
-                        <select id="filterOrderService" onchange="renderOrdersTable()" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        <select id="filterOrderService" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL">🛠️ Tất cả dịch vụ</option>
                             <option value="CLEAN">🧼 Vệ sinh</option>
                             <option value="SOLE">👟 Thay đế</option>
@@ -394,6 +396,22 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- SỬA ĐỔI: Thêm Giao diện phân trang dưới bảng Kho Đơn -->
+                <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
+                    <span class="text-[11px] md:text-xs font-bold text-slate-500" id="paginationInfo">Hiển thị 0 - 0 / 0 đơn</span>
+                    <div class="flex items-center gap-1.5 md:gap-2">
+                        <button onclick="changeOrderPage(-1)" id="prevPageBtn" class="px-2 py-1.5 md:px-3 md:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[11px] md:text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-chevron-left"></i> <span class="hidden md:inline">Trước</span>
+                        </button>
+                        <span class="text-[11px] md:text-xs font-bold text-navy-800 bg-sky-100 px-3 py-1.5 rounded-lg" id="currentPageDisplay">1</span>
+                        <button onclick="changeOrderPage(1)" id="nextPageBtn" class="px-2 py-1.5 md:px-3 md:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[11px] md:text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="hidden md:inline">Sau</span> <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- KẾT THÚC SỬA ĐỔI PHÂN TRANG -->
+
             </section>
 
             <section id="tab-customers" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
@@ -573,7 +591,6 @@
             </div>
         </div>
     </div>
-
     <!-- SCRIPT CHÍNH -->
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
@@ -596,6 +613,27 @@
         // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
+
+        // =========================================================================
+        // SỬA ĐỔI: BIẾN QUẢN LÝ PHÂN TRANG VÀ DEBOUNCE TÌM KIẾM
+        // =========================================================================
+        let currentOrderPage = 1;
+        const ORDERS_PER_PAGE = 50;
+        let searchTimeout = null;
+
+        function debouncedSearchOrder() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Đợi 500ms người dùng không gõ nữa mới gọi hàm render, đồng thời đưa về trang 1
+                renderOrdersTable(true);
+            }, 500);
+        }
+
+        function changeOrderPage(delta) {
+            currentOrderPage += delta;
+            renderOrdersTable(false); // Không reset page khi lật trang
+        }
+        // =========================================================================
 
         // HÀM XÓA ẢNH QUA WORKER API
         async function deleteFileFromR2(fileUrl) {
@@ -1551,7 +1589,7 @@
             if (['DELIVERED', 'PAID'].includes(initStatus)) setOrderWarrantyOnDelivery(newOrder);
 
             // Cập nhật UI lập tức
-            state.orders.unshift(newOrder); clearCart(); renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard();
+            state.orders.unshift(newOrder); clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
             
             const svcsStr = finalCartItems.map(i => `${i.name} (x${i.qty})`).join(', ');
             lastNotifiedOrderId = newOrder.id;
@@ -1609,7 +1647,12 @@
             for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
         }
 
-        function renderOrdersTable() {
+        // =========================================================================
+        // SỬA ĐỔI: HÀM RENDER KHO ĐƠN ÁP DỤNG PHÂN TRANG (PAGINATION)
+        // =========================================================================
+        function renderOrdersTable(resetPage = false) {
+            if (resetPage) currentOrderPage = 1;
+
             const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
             const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
             const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
@@ -1638,6 +1681,7 @@
 
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
             
+            // 1. LỌC DỮ LIỆU ĐÁP ỨNG TIÊU CHÍ
             const filtered = state.orders.filter(o => {
                 const dateOnly = o.date.split(' ')[0]; if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
                 if (statusFilter === 'ACTIVE') { if (o.status === 'DELIVERED' || o.status === 'PAID') return false; } else if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
@@ -1646,7 +1690,21 @@
                 return true;
             });
 
-            document.getElementById('ordersTableBody').innerHTML = filtered.map(o => {
+            // 2. TÍNH TOÁN PHÂN TRANG
+            const totalItems = filtered.length;
+            const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE) || 1;
+            
+            if (currentOrderPage > totalPages) currentOrderPage = totalPages;
+            if (currentOrderPage < 1) currentOrderPage = 1;
+
+            const startIndex = (currentOrderPage - 1) * ORDERS_PER_PAGE;
+            const endIndex = startIndex + ORDERS_PER_PAGE;
+            
+            // 3. CẮT MẢNG THEO TRANG (Chỉ lấy 50 phần tử)
+            const paginatedOrders = filtered.slice(startIndex, endIndex);
+
+            // 4. HIỂN THỊ HTML DỰA TRÊN 50 PHẦN TỬ ĐÃ CẮT
+            document.getElementById('ordersTableBody').innerHTML = paginatedOrders.map(o => {
                 const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status); 
                 const hasBefore = o.images && o.images.length > 0; 
                 const validAfterImages = (o.imagesAfter || []).filter(url => url && url.trim() !== '');
@@ -1701,7 +1759,23 @@
                     <td class="p-2 md:p-3 text-right align-top min-w-[80px] md:min-w-[100px]">${actionColumn}</td>
                 </tr>`;
             }).join('');
+            
             updateBulkSelectionUI();
+
+            // 5. CẬP NHẬT TRẠNG THÁI NÚT PHÂN TRANG UI
+            const infoEl = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const currDisplay = document.getElementById('currentPageDisplay');
+
+            if (infoEl) {
+                const startLabel = totalItems > 0 ? startIndex + 1 : 0;
+                const endLabel = Math.min(endIndex, totalItems);
+                infoEl.innerText = `Hiển thị ${startLabel} - ${endLabel} / ${totalItems} đơn`;
+            }
+            if (currDisplay) currDisplay.innerText = currentOrderPage;
+            if (prevBtn) prevBtn.disabled = currentOrderPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentOrderPage >= totalPages;
         }
 
         async function updateItemWarrantyDate(orderId, itemIdKey, newDate) {
