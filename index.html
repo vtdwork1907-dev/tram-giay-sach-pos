@@ -639,16 +639,17 @@
                  .replace(/'/g, "&#039;");
         }
 
-        // --- HÀM TẠO UUID BẢO MẬT (Fix 1) ---
-        function generateUUID() {
-            var d = new Date().getTime();
-            var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16;
-                if(d > 0){ r = (d + r)%16 | 0; d = Math.floor(d/16); }
-                else { r = (d2 + r)%16 | 0; d2 = Math.floor(d2/16); }
-                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-            });
+        // --- HÀM TẠO MÃ TRACKING NGẮN & BẢO MẬT (Youtube Style) ---
+        function generateShortTrackingId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            // Sử dụng thuật toán mã hóa sinh số ngẫu nhiên an toàn của trình duyệt
+            const randomValues = new Uint32Array(11); 
+            window.crypto.getRandomValues(randomValues);
+            for (let i = 0; i < 11; i++) {
+                result += chars[randomValues[i] % chars.length];
+            }
+            return result;
         }
 
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
