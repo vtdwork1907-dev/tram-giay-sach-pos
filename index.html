@@ -445,7 +445,9 @@
                         <div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Từ ngày</label><input type="date" id="reportStartDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><span class="text-slate-400 mt-3">-</span><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Đến ngày</label><input type="date" id="reportEndDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><button onclick="clearDateFilter()" class="mt-3 ml-1 bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 md:py-1.5 rounded text-xs transition"><i class="fa-solid fa-rotate-right"></i></button>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full max-w-full">
+                <!-- CẬP NHẬT GRID CHỨA 5 CỘT THỐNG KÊ -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 w-full max-w-full">
+                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-indigo-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-box-open"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG SỐ ĐƠN</span><div id="repTotalOrders" class="text-lg md:text-2xl font-extrabold text-indigo-600 mt-1 relative truncate">0</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-slate-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-file-invoice"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH SỐ</span><div id="repGrossSales" class="text-lg md:text-2xl font-extrabold text-slate-800 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-emerald-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-money-bill-wave"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH THU</span><div id="repRevenue" class="text-lg md:text-2xl font-extrabold text-emerald-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-red-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG CHI PHÍ</span><div id="repExpenses" class="text-lg md:text-2xl font-extrabold text-red-600 mt-1 relative truncate">0 đ</div></div>
@@ -2010,15 +2012,17 @@
             updateExpenseCharts();
             const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if(start && d < start) return false; if(end && d > end) return false; return true; };
-            let grossSales = 0, rev = 0, exp = 0; const svcCounts = {};
+            let grossSales = 0, rev = 0, exp = 0, totalOrdersCount = 0; const svcCounts = {};
             state.orders.forEach(o => {
                 if(inRange(o.date)) {
+                    totalOrdersCount++;
                     grossSales += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') rev += o.total;
                     o.items.forEach(item => { const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC'; if(!svcCounts[cat]) svcCounts[cat] = 0; svcCounts[cat] += item.qty; });
                 }
             });
             state.expenses.forEach(e => { if(inRange(e.date)) exp += e.amount; });
             
+            const elTotalOrders = document.getElementById('repTotalOrders'); if (elTotalOrders) elTotalOrders.innerText = totalOrdersCount.toLocaleString('vi-VN');
             document.getElementById('repGrossSales').innerText = grossSales.toLocaleString() + ' đ'; document.getElementById('repRevenue').innerText = rev.toLocaleString() + ' đ';
             document.getElementById('repExpenses').innerText = exp.toLocaleString() + ' đ'; document.getElementById('repNetProfit').innerText = (rev - exp).toLocaleString() + ' đ';
             
