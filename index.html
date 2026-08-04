@@ -575,7 +575,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT CHÍNH (ĐÃ ĐƯỢC TỐI ƯU HÓA DATABASE 5 BẢNG - CHỐNG LAG) -->
+    <!-- SCRIPT CHÍNH -->
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
@@ -1780,27 +1780,76 @@
             const container = document.getElementById('comparisonPairsContainer'); container.innerHTML = '';
             if (!o.imagesAfter) o.imagesAfter = [];
 
+            let html = '';
+            let pairedSlotsCount = 0; // Để theo dõi tổng số slot đã tạo (cho cả đơn thường và nhiều đôi)
+
             if (o.shoes && o.shoes.length > 0) {
-                let globalImgCounter = 0; let html = '';
                 o.shoes.forEach((shoe, shoeIdx) => {
-                    const shoeTitle = shoe.note ? `${shoe.name} - ${shoe.note}` : shoe.name; const svcsText = (shoe.services && shoe.services.length > 0) ? shoe.services.map(s => `${s.name} (x${s.qty})`).join(', ') : 'Chưa chọn dịch vụ';
-                    const beforeList = shoe.images || []; let shoeSlotsCount = Math.max(beforeList.length, 1);
+                    const shoeTitle = shoe.note ? `${shoe.name} - ${shoe.note}` : shoe.name; 
+                    const svcsText = (shoe.services && shoe.services.length > 0) ? shoe.services.map(s => `${s.name} (x${s.qty})`).join(', ') : 'Chưa chọn dịch vụ';
+                    const beforeList = shoe.images || []; 
+                    let shoeSlotsCount = Math.max(beforeList.length, 1); // Mỗi đôi ít nhất 1 slot để đối chiếu
+                    
                     html += `<div class="bg-white rounded-2xl shadow-sm border border-sky-200 overflow-hidden mb-6"><div class="bg-sky-50 px-4 py-3 border-b border-sky-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2"><span class="font-extrabold text-sm md:text-base text-sky-900 uppercase flex items-center gap-1.5"><i class="fa-solid fa-shoe-prints text-sky-600"></i> ${shoeTitle}</span><span class="text-xs font-semibold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-sky-200 shadow-sm inline-flex items-center gap-1.5"><i class="fa-solid fa-wrench text-sky-600"></i> Dịch vụ: <strong class="text-sky-800">${svcsText}</strong></span></div><div class="p-3 md:p-4 space-y-4 bg-slate-50/50">`;
+                    
                     for (let k = 0; k < shoeSlotsCount; k++) {
-                        const slotIdx = globalImgCounter + k; const beforeSrc = (beforeList[k]) ? (typeof beforeList[k] === 'string' ? beforeList[k] : (beforeList[k]?.r2Url || beforeList[k]?.url)) : null; const afterSrc = o.imagesAfter[slotIdx] || null;
+                        const slotIdx = pairedSlotsCount + k; 
+                        const beforeSrc = (beforeList[k]) ? (typeof beforeList[k] === 'string' ? beforeList[k] : (beforeList[k]?.r2Url || beforeList[k]?.url)) : null; 
+                        const afterSrc = o.imagesAfter[slotIdx] || null;
                         html += renderPairSlotHtml(o.id, slotIdx, k + 1, shoeTitle, svcsText, beforeSrc, afterSrc, o.imagesAfter.length, k < beforeList.length ? k : -1);
                     }
-                    globalImgCounter += shoeSlotsCount; html += `</div></div>`;
+                    pairedSlotsCount += shoeSlotsCount; 
+                    html += `</div></div>`;
                 });
-                container.innerHTML = html;
             } else {
-                const maxLen = Math.max((o.images || []).length, o.imagesAfter.length, 1); const allSvcsText = o.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                let html = '';
-                for (let i = 0; i < maxLen; i++) { const beforeSrc = (o.images && o.images[i]) ? o.images[i] : null; const afterSrc = o.imagesAfter[i] || null; html += renderPairSlotHtml(o.id, i, i + 1, "Giày", allSvcsText, beforeSrc, afterSrc, o.imagesAfter.length, i); }
-                container.innerHTML = html;
+                const beforeImgs = o.images || [];
+                pairedSlotsCount = Math.max(beforeImgs.length, 1); // Chỉ render số hàng before tương ứng (hoặc tối thiểu 1 hàng)
+                const allSvcsText = o.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                
+                for (let i = 0; i < pairedSlotsCount; i++) { 
+                    const beforeSrc = beforeImgs[i] || null; 
+                    const afterSrc = o.imagesAfter[i] || null; 
+                    html += renderPairSlotHtml(o.id, i, i + 1, "Giày", allSvcsText, beforeSrc, afterSrc, o.imagesAfter.length, i); 
+                }
             }
-            
-            document.getElementById('comparisonModal').classList.remove('hidden'); setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
+
+            // XỬ LÝ ẢNH CHỤP SAU BỊ THỪA (EXTRA AFTER IMAGES)
+            if (o.imagesAfter.length > pairedSlotsCount) {
+                let extraHtml = `
+                <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden mt-4">
+                    <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 flex justify-between items-center">
+                        <span class="font-bold text-emerald-800 flex items-center gap-2"><i class="fa-solid fa-images text-emerald-600"></i> Các ảnh chụp sau bổ sung (không có before ghép cặp)</span>
+                    </div>
+                    <div class="p-4 bg-slate-50 grid grid-cols-2 md:grid-cols-4 gap-4">
+                `;
+                
+                for (let i = pairedSlotsCount; i < o.imagesAfter.length; i++) {
+                    const src = o.imagesAfter[i];
+                    if (src && src.trim() !== "") {
+                        extraHtml += `
+                        <div class="relative bg-white p-1 rounded-xl shadow-sm border border-slate-200 group flex flex-col">
+                            <div class="h-32 md:h-40 w-full relative rounded-lg overflow-hidden bg-slate-100">
+                                <img src="${src}" onclick="openImageViewer('${src}')" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition duration-300">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none flex items-center justify-center"><i class="fa-solid fa-magnifying-glass text-white text-2xl"></i></div>
+                                <button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition" title="Xóa ảnh này"><i class="fa-solid fa-times text-[10px]"></i></button>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between px-1">
+                                <span class="text-[10px] font-semibold text-slate-500">Ảnh #${i + 1}</span>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="moveAfterImage('${o.id}', ${i}, -1)" ${i === 0 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="text-sky-600 hover:text-sky-800"'} title="Chuyển lên"><i class="fa-solid fa-arrow-left text-xs bg-slate-100 px-1.5 py-0.5 rounded"></i></button>
+                                    <button onclick="moveAfterImage('${o.id}', ${i}, 1)" ${i === o.imagesAfter.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="text-sky-600 hover:text-sky-800"'} title="Chuyển xuống"><i class="fa-solid fa-arrow-right text-xs bg-slate-100 px-1.5 py-0.5 rounded"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                }
+                extraHtml += `</div></div>`;
+                html += extraHtml;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('comparisonModal').classList.remove('hidden'); 
+            setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
         }
         function closeComparisonModal() { document.getElementById('comparisonBox').classList.add('scale-95'); setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200); }
 
