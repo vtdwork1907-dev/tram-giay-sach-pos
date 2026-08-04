@@ -2329,8 +2329,13 @@
                     supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
 
-                if (usersRes.data) state.users = usersRes.data;
-                if (svcsRes.data) state.services = svcsRes.data.map(mapServiceDbToJs);
+                if (usersRes.data && usersRes.data.length > 0) state.users = usersRes.data;
+                
+                // ĐÂY LÀ ĐIỂM SỬA LỖI: Chỉ cập nhật nếu CSDL trả về có chứa dịch vụ
+                if (svcsRes.data && svcsRes.data.length > 0) {
+                    state.services = svcsRes.data.map(mapServiceDbToJs);
+                }
+                
                 if (settingsRes.data) { state.qrConfig = settingsRes.data.qr_config || state.qrConfig; state.logo = settingsRes.data.logo || null; }
                 if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs);
                 if (expRes.data) state.expenses = expRes.data;
@@ -2338,7 +2343,11 @@
                 saveLocalState();
                 
                 renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+                renderExpensesTable(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+                
+                // Cập nhật lại khung giao diện POS để không bị mất box chọn dịch vụ
+                adjustPOSLayout(); 
+                
                 if (window.location.hash.startsWith('#track=')) checkUrlTracking();
             } catch (err) { console.error("Lỗi đồng bộ khi mở lại app:", err); } 
             finally {
