@@ -625,7 +625,7 @@
             </div>
         </div>
     </div>
-    <!-- SCRIPT CHÍNH (ĐÃ NÂNG CẤP BẢO MẬT SUPABASE AUTH) -->
+    <!-- SCRIPT CHÍNH (ĐÃ NÂNG CẤP BẢO MẬT SUPABASE AUTH & FIX SESSION CỦA TÀI KHOẢN BỊ XÓA) -->
     <script>
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
@@ -1001,7 +1001,7 @@
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
         
         // =========================================================================
-        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE
+        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE & CHỐNG TÀI KHOẢN BỊ XÓA
         // =========================================================================
         async function checkAutoLogin() {
             const loading = document.getElementById('globalLoading');
@@ -1019,8 +1019,20 @@
                         .single();
                         
                     let activeUser = userData;
+                    
+                    // SỬA LỖI Ở ĐÂY: Nếu không tìm thấy userData, thì chứng tỏ tài khoản đã bị xóa (hoặc chưa bao giờ tồn tại)
                     if (!userData) {
-                        activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                        // Nếu là email của chủ cửa hàng thì luôn cho phép truy cập với quyền owner (bảo vệ quyền truy cập cao nhất)
+                        if (session.user.email === 'admin@tramgiaysach.com') {
+                            activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                        } else {
+                            // Nếu không phải email chủ, và không có trong CSDL bảng 'users', tức là TÀI KHOẢN BỊ XÓA => Buộc đăng xuất
+                            await supabaseClient.auth.signOut();
+                            document.getElementById('authScreen').style.display = 'flex';
+                            setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+                            alert("Tài khoản của bạn đã bị chủ cửa hàng thu hồi quyền truy cập hoặc đã bị xóa!");
+                            return; // Thoát hàm ngay lập tức
+                        }
                     }
                     
                     state.currentUser = activeUser;
@@ -1068,8 +1080,16 @@
                     .single();
 
                 let activeUser = userData;
+                
+                // SỬA LỖI TƯƠNG TỰ Ở HÀM ĐĂNG NHẬP
                 if (!userData) {
-                    activeUser = { id: data.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                    if (email === 'admin@tramgiaysach.com') {
+                        activeUser = { id: data.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
+                    } else {
+                        // Tài khoản có thể đăng nhập trên Auth nhưng bị xóa trên bảng 'users'
+                        await supabaseClient.auth.signOut();
+                        throw new Error("Tài khoản đã bị xóa hoặc bạn không có quyền truy cập ứng dụng!");
+                    }
                 }
 
                 state.currentUser = activeUser;
@@ -1081,7 +1101,7 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Đăng nhập thất bại: Tài khoản hoặc mật khẩu không chính xác!");
+                alert("Đăng nhập thất bại: " + (error.message || "Tài khoản hoặc mật khẩu không chính xác!"));
             } finally {
                 loading.style.display = 'none';
                 loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
@@ -1167,9 +1187,12 @@
         }
 
         async function deleteAccount(id) {
-            if(confirm("Xóa quyền quản trị của tài khoản này?")) {
+            if(confirm("Xóa quyền quản trị của tài khoản này? (Tài khoản bị xóa sẽ bị tự động đăng xuất nếu đang mở app)")) {
                 state.users = state.users.filter(u => u.id !== id); saveLocalState(); renderSettingsUsersTable();
                 await supabaseClient.from('users').delete().eq('id', id);
+                // Lưu ý: Không thể xóa trực tiếp user trong Auth qua Supabase JS client từ Frontend, 
+                // nhưng việc xóa khỏi bảng 'users' này kết hợp với hàm checkAutoLogin đã fix ở trên
+                // sẽ khiến user đó không thể dùng được hệ thống.
             }
         }
 
@@ -1225,7 +1248,7 @@
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
             adjustPOSLayout(); renderDashboard(); checkUrlTracking();
             
-            // Chạy hàm kiểm tra bảo mật
+            // Chạy hàm kiểm tra bảo mật (đã được sửa logic chặn user bị xóa)
             checkAutoLogin();
             
             document.getElementById('globalLoading').style.display = 'none';
