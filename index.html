@@ -1086,33 +1086,76 @@
             adjustPOSLayout(); renderDashboard(); checkAutoLogin(); checkUrlTracking();
             document.getElementById('globalLoading').style.display = 'none';
 
-            // KÊNH REAL-TIME RIÊNG CHO BẢNG ORDERS CHỐNG LAG
-            supabaseClient.channel('public:orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-                const { eventType, new: newRec, old: oldRec } = payload;
-                if (eventType === 'INSERT') {
-                    const newO = mapOrderDbToJs(newRec);
-                    if (!state.orders.find(o => o.id === newO.id)) {
-                        state.orders.unshift(newO);
-                        const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
-                        if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
-                    }
-                } else if (eventType === 'UPDATE') {
-                    const updatedO = mapOrderDbToJs(newRec);
-                    const idx = state.orders.findIndex(o => o.id === updatedO.id);
-                    if (idx !== -1) {
-                        const oldO = state.orders[idx];
-                        state.orders[idx] = updatedO;
-                        if (oldO.status !== 'DELIVERED' && updatedO.status === 'DELIVERED') {
-                            if (document.visibilityState === 'visible') showNotification("✅ ĐÃ THU TIỀN", `Khách: ${updatedO.customer.name} - ${updatedO.total.toLocaleString()}đ`);
+            // ĐĂNG KÝ KÊNH REAL-TIME CHO TẤT CẢ CÁC BẢNG (100% REALTIME)
+            supabaseClient.channel('tramgiaysach_realtime')
+                // 1. Lắng nghe bảng Orders
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+                    const { eventType, new: newRec, old: oldRec } = payload;
+                    if (eventType === 'INSERT') {
+                        const newO = mapOrderDbToJs(newRec);
+                        if (!state.orders.find(o => o.id === newO.id)) {
+                            state.orders.unshift(newO);
+                            const svcs = newO.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                            if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${newO.customer.name} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
                         }
+                    } else if (eventType === 'UPDATE') {
+                        const updatedO = mapOrderDbToJs(newRec);
+                        const idx = state.orders.findIndex(o => o.id === updatedO.id);
+                        if (idx !== -1) {
+                            const oldO = state.orders[idx];
+                            state.orders[idx] = updatedO;
+                            if (oldO.status !== 'DELIVERED' && updatedO.status === 'DELIVERED') {
+                                if (document.visibilityState === 'visible') showNotification("✅ ĐÃ THU TIỀN", `Khách: ${updatedO.customer.name} - ${updatedO.total.toLocaleString()}đ`);
+                            }
+                        }
+                    } else if (eventType === 'DELETE') {
+                        state.orders = state.orders.filter(o => o.id !== oldRec.id);
                     }
-                } else if (eventType === 'DELETE') {
-                    state.orders = state.orders.filter(o => o.id !== oldRec.id);
-                }
+                    saveLocalState(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                    if (window.location.hash.startsWith('#track=')) checkUrlTracking();
+                })
+                
+                // 2. Lắng nghe bảng Expenses (Chi phí)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, payload => {
+                    const { eventType, new: newRec, old: oldRec } = payload;
+                    if (eventType === 'INSERT' && !state.expenses.find(e => e.id === newRec.id)) {
+                        state.expenses.unshift(newRec);
+                    } else if (eventType === 'DELETE') {
+                        state.expenses = state.expenses.filter(e => e.id !== oldRec.id);
+                    }
+                    saveLocalState(); renderExpensesTable(); updateReportMetrics();
+                })
 
-                saveLocalState(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
-                if (window.location.hash.startsWith('#track=')) checkUrlTracking();
-            }).subscribe();
+                // 3. Lắng nghe bảng Services (Dịch vụ)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, payload => {
+                    const { eventType, new: newRec, old: oldRec } = payload;
+                    if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                        const updatedSvc = mapServiceDbToJs(newRec);
+                        const idx = state.services.findIndex(s => s.id === updatedSvc.id);
+                        if (idx !== -1) state.services[idx] = updatedSvc;
+                        else state.services.push(updatedSvc);
+                        
+                        // Sắp xếp lại theo sort_order
+                        state.services.sort((a, b) => {
+                            const dbA = newRec.id === a.id ? newRec.sort_order : (state.services.find(s => s.id === a.id)?.sort_order || 0);
+                            const dbB = newRec.id === b.id ? newRec.sort_order : (state.services.find(s => s.id === b.id)?.sort_order || 0);
+                            return dbA - dbB;
+                        });
+                    } else if (eventType === 'DELETE') {
+                        state.services = state.services.filter(s => s.id !== oldRec.id);
+                    }
+                    saveLocalState(); renderServicesGrid(); renderSettingsServicesTable();
+                })
+
+                // 4. Lắng nghe bảng Store Settings (Cấu hình QR, Logo)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'store_settings' }, payload => {
+                    if (payload.new && payload.new.id === 'main') {
+                        state.qrConfig = payload.new.qr_config || state.qrConfig;
+                        state.logo = payload.new.logo || null;
+                        saveLocalState(); renderLogo(); updateQRView();
+                    }
+                })
+            .subscribe();
         });
 
         function adjustPOSLayout() {
