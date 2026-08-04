@@ -1915,12 +1915,40 @@
                 const uploadedUrls = [];
                 for (const file of files) { const r2Url = await uploadFileToR2(file); uploadedUrls.push(r2Url); }
                 
-                // Lấy lại order từ state để không ghi đè dữ liệu cũ
                 const o = state.orders.find(x => x.id === orderId); 
                 if (!o) return; 
                 if (!o.imagesAfter) o.imagesAfter = [];
                 
-                uploadedUrls.forEach(url => o.imagesAfter.push(url));
+                // 1. Tính tổng số lượng ảnh Trước (Before slots) để ghép cặp
+                let pairedSlotsCount = 0;
+                if (o.shoes && o.shoes.length > 0) {
+                    o.shoes.forEach(shoe => { pairedSlotsCount += Math.max((shoe.images || []).length, 1); });
+                } else {
+                    pairedSlotsCount = Math.max((o.images || []).length, 1);
+                }
+
+                // 2. Chèn ảnh mới tải lên vào các vị trí trống theo thứ tự
+                uploadedUrls.forEach(url => {
+                    let placed = false;
+                    for (let i = 0; i < pairedSlotsCount; i++) {
+                        // Nếu ô này chưa có ảnh
+                        if (!o.imagesAfter[i] || o.imagesAfter[i].trim() === "") {
+                            o.imagesAfter[i] = url;
+                            placed = true;
+                            break;
+                        }
+                    }
+                    // Nếu các vị trí chính (ghép cặp với Before) đã đầy, ném xuống cuối (ảnh bổ sung)
+                    if (!placed) {
+                        o.imagesAfter.push(url);
+                    }
+                });
+
+                // Đảm bảo mảng không bị undefined ở các khoảng trống (nếu có)
+                for (let i = 0; i < o.imagesAfter.length; i++) {
+                    if (!o.imagesAfter[i]) o.imagesAfter[i] = "";
+                }
+                
                 renderOrdersTable(); renderDashboard();
                 await dbUpdateOrder(orderId);
             } catch (err) { 
