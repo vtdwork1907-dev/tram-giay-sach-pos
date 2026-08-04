@@ -897,3 +897,619 @@
                 if (data.success) console.log("Đã xóa file R2 thành công:", data.deletedKey);
             } catch (e) { console.error("Lỗi xóa file trên R2:", e); }
         }
+// =========================================================================
+        // CHẾ ĐỘ 1 ĐÔI THƯỜNG: TẢI ẢNH NGẦM & HIỂN THỊ NGAY LẬP TỨC
+        // =========================================================================
+        function handleImageUpload(e, isCamera) {
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            
+            // Xóa bỏ nút Lưu bị khóa, bạn có thể lưu đơn ngay lập tức
+            files.forEach(file => {
+                const imgId = startBackgroundUpload(file); // Bắt đầu đẩy lên ngầm
+                const tempImage = { id: imgId, r2Url: imgId, status: 'uploading' };
+                state.uploadedImages.push(tempImage); // Hiển thị ngay lên màn hình
+            });
+
+            renderPreviewImages();
+            e.target.value = '';
+        }
+
+        function renderPreviewImages() {
+            const c = document.getElementById('renderedImagesBox');
+            let html = '';
+            state.uploadedImages.forEach((imgObj) => { 
+                const srcId = imgObj.r2Url || imgObj.url || imgObj.id;
+                const src = getImageUrl(srcId);
+                const isUploading = srcId && srcId.startsWith('pending_');
+                
+                html += `<div class="image-preview-item"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeUploadedImage('${imgObj.id || srcId}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`; 
+            });
+            c.innerHTML = html;
+        }
+        
+        function removeUploadedImage(idOrUrl) { 
+            state.uploadedImages = state.uploadedImages.filter(img => { 
+                if(typeof img === 'string') return img !== idOrUrl; 
+                return img.id !== idOrUrl && img.r2Url !== idOrUrl; 
+            }); 
+            renderPreviewImages(); 
+        }
+
+        // =========================================================================
+        // LƯU ĐƠN NGAY LẬP TỨC (KHÔNG CẦN CHỜ ẢNH TẢI XONG)
+        // =========================================================================
+        async function processOrder() {
+            let finalCartItems = []; let finalImageUrls = []; const dateStr = document.getElementById('orderDateInput').value;
+
+            if (state.multiShoeMode) {
+                if (state.shoes.length === 0) return alert("Vui lòng thêm ít nhất một đôi giày!");
+                let hasServices = false;
+                state.shoes.forEach((s) => {
+                    if (s.services.length > 0) hasServices = true;
+                    const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
+                    s.services.forEach(svc => { finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}` }); });
+                    s.images.forEach(img => { const url = typeof img === 'string' ? img : (img.r2Url || img.id); if (url) finalImageUrls.push(url); });
+                });
+                if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
+            } else {
+                if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
+                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null }));
+                finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.id); }).filter(url => url !== null);
+            }
+            
+            const name = document.getElementById('custName').value.trim(); const phone = document.getElementById('custPhone').value.trim();
+            if(!phone || !name) return alert("Vui lòng nhập đầy đủ Tên và Số điện thoại khách hàng!");
+
+            const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0; const initStatus = document.getElementById('cartOrderStatus').value;
+            
+            const newOrder = {
+                id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
+                date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
+                customer: {name, phone, note: document.getElementById('custNote').value}, items: finalCartItems, 
+                images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: initStatus,
+                shoes: state.multiShoeMode ? JSON.parse(JSON.stringify(state.shoes)) : null,
+                paymentMethod: null, extraFeeVal: 0, extraFeeReason: ''
+            };
+
+            if (['DELIVERED', 'PAID'].includes(initStatus)) setOrderWarrantyOnDelivery(newOrder);
+
+            state.orders.unshift(newOrder); clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
+            
+            const svcsStr = finalCartItems.map(i => `${i.name} (x${i.qty})`).join(', ');
+            lastNotifiedOrderId = newOrder.id;
+            showNotification("📦 TẠO ĐƠN THÀNH CÔNG", `Đơn đã lưu mượt mà. Ảnh sẽ tự động chạy ngầm.\nKhách: ${name} - ${newOrder.total.toLocaleString()}đ`);
+            sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
+
+            await dbInsertOrder(newOrder);
+        }
+
+        // =========================================================================
+        // CHẾ ĐỘ NHIỀU ĐÔI GIÀY: BACKGROUND UPLOAD
+        // =========================================================================
+        function handleShoeImageUpload(e, shoeId) {
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return;
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+
+            files.forEach(file => {
+                const imgId = startBackgroundUpload(file);
+                const tempImage = { id: imgId, r2Url: imgId, status: 'uploading' };
+                shoe.images.push(tempImage);
+            });
+
+            renderMultiShoeList();
+            e.target.value = '';
+        }
+
+        function removeShoeImage(shoeId, imgIdOrUrl) {
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return;
+            shoe.images = shoe.images.filter(img => { if (typeof img === 'string') return img !== imgIdOrUrl; return img.id !== imgIdOrUrl && img.r2Url !== imgIdOrUrl; });
+            renderMultiShoeList();
+        }
+
+        function renderMultiShoeList() {
+            const listEl = document.getElementById('multiShoeList'); if (!listEl) return;
+            if (state.shoes.length === 0) { listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border rounded-xl">Chưa có đôi giày nào. Nhấn "+ Thêm đôi giày" để bắt đầu.</div>`; return; }
+
+            listEl.innerHTML = state.shoes.map((shoe, idx) => {
+                const isActive = shoe.id === state.activeShoeId; const svcsCount = shoe.services.reduce((acc, s) => acc + s.qty, 0);
+                
+                let imagesHtml = (shoe.images || []).map((imgObj) => {
+                    const srcId = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.url || imgObj.id);
+                    const src = getImageUrl(srcId);
+                    const isUploading = srcId && srcId.startsWith('pending_');
+                    const imgId = imgObj.id || srcId;
+                    return `<div class="image-preview-item"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeShoeImage('${shoe.id}', '${imgId}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`;
+                }).join('');
+
+                let servicesHtml = shoe.services.length === 0 ? `<div class="text-[11px] text-slate-400 italic py-1">Chưa chọn dịch vụ cho đôi này</div>` : shoe.services.map(s => `
+                        <div class="flex items-center justify-between bg-white p-1.5 rounded-lg border border-slate-200 text-xs mb-1 shadow-sm">
+                            <span class="font-bold text-slate-800 text-[11px] md:text-sm">${s.name}</span>
+                            <div class="flex items-center gap-1">
+                                <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, -1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button><span class="font-bold text-xs px-1">${s.qty}</span><button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, 1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">+</button>
+                                <span class="font-bold text-sky-700 text-[11px] md:text-xs ml-1">${(s.price * s.qty).toLocaleString()}đ</span><button type="button" onclick="removeShoeService('${shoe.id}', ${s.cartId})" class="text-red-400 hover:text-red-600 ml-1 text-xs"><i class="fa-solid fa-times"></i></button>
+                            </div>
+                        </div>`).join('');
+
+                return `<div class="p-3 rounded-xl border ${isActive ? 'border-sky-500 bg-sky-50/40 ring-2 ring-sky-400/20 shadow-sm' : 'border-slate-200 bg-white'} transition relative space-y-2">
+                    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2 flex-1"><span class="text-xs font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}">#${idx + 1}</span><input type="text" value="${shoe.note || ''}" onchange="updateShoeNote('${shoe.id}', this.value)" placeholder="Tên/Mô tả (VD: Nike AF1)" class="text-xs md:text-sm font-bold px-2 py-1 rounded border border-slate-200 focus:border-sky-500 outline-none w-full bg-white"></div><button type="button" onclick="removeShoeItem('${shoe.id}')" class="text-slate-400 hover:text-red-500 p-1 text-sm"><i class="fa-solid fa-trash"></i></button></div>
+                    <div class="flex items-center justify-between pt-1"><button type="button" onclick="selectActiveShoe('${shoe.id}')" class="text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition ${isActive ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${isActive ? '<i class="fa-solid fa-check-circle mr-1"></i>Đang chọn dịch vụ cho đôi này' : 'Bấm để chọn dịch vụ cho đôi này'}</button><span class="text-[10px] md:text-xs font-bold text-slate-500">${svcsCount} dịch vụ</span></div>
+                    <div class="pt-1"><div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1 flex items-center justify-between"><span><i class="fa-solid fa-camera text-sky-600 mr-1"></i>Ảnh trước (Before)</span></div><div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll"><label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Chụp</span><input type="file" accept="image/*" capture="environment" onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label><label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Tải lên</span><input type="file" accept="image/*" multiple onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label><div class="flex gap-1.5">${imagesHtml}</div></div></div>
+                    <div class="pt-1"><div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1"><i class="fa-solid fa-list-check text-sky-600 mr-1"></i>Dịch vụ áp dụng</div><div class="space-y-1">${servicesHtml}</div></div>
+                </div>`;
+            }).join('');
+        }
+
+        // =========================================================================
+        // TẢI ẢNH CHỤP SAU (AFTER) TRONG BẢNG: CHẠY NGẦM
+        // =========================================================================
+        function uploadAfterImage(e, orderId) {
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            const o = state.orders.find(x => x.id === orderId); if (!o) return; 
+            if (!o.imagesAfter) o.imagesAfter = [];
+            
+            let pairedSlotsCount = 0;
+            if (o.shoes && o.shoes.length > 0) { o.shoes.forEach(shoe => { pairedSlotsCount += Math.max((shoe.images || []).length, 1); }); } 
+            else { pairedSlotsCount = Math.max((o.images || []).length, 1); }
+
+            files.forEach(file => {
+                const imgId = startBackgroundUpload(file);
+                let placed = false;
+                for (let i = 0; i < pairedSlotsCount; i++) {
+                    if (!o.imagesAfter[i] || o.imagesAfter[i].trim() === "") { o.imagesAfter[i] = imgId; placed = true; break; }
+                }
+                if (!placed) o.imagesAfter.push(imgId);
+            });
+
+            for (let i = 0; i < o.imagesAfter.length; i++) { if (!o.imagesAfter[i]) o.imagesAfter[i] = ""; }
+            
+            renderOrdersTable(); renderDashboard();
+            if(document.getElementById('comparisonModal') && !document.getElementById('comparisonModal').classList.contains('hidden')) { openComparison(orderId); }
+            dbUpdateOrder(orderId); // Cập nhật db với link pending
+            e.target.value = '';
+        }
+
+        function uploadAfterImageSlot(e, orderId, slotIdx) {
+            const file = e.target.files[0]; if (!file) return;
+            const imgId = startBackgroundUpload(file);
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
+            
+            if (!o.imagesAfter) o.imagesAfter = [];
+            o.imagesAfter[slotIdx] = imgId;
+            for (let i = 0; i < o.imagesAfter.length; i++) { if (!o.imagesAfter[i]) o.imagesAfter[i] = ""; }
+            
+            renderOrdersTable(); renderDashboard(); openComparison(orderId);
+            dbUpdateOrder(orderId);
+            e.target.value = '';
+        }
+
+        async function moveAfterImage(orderId, slotIdx, dir) {
+            const o = state.orders.find(x => x.id === orderId); if (!o || !o.imagesAfter) return;
+            const targetIdx = slotIdx + dir; if (targetIdx < 0 || targetIdx >= o.imagesAfter.length) return;
+            const temp = o.imagesAfter[slotIdx]; o.imagesAfter[slotIdx] = o.imagesAfter[targetIdx]; o.imagesAfter[targetIdx] = temp;
+            renderOrdersTable(); renderDashboard(); openComparison(orderId);
+            await dbUpdateOrder(orderId);
+        }
+
+        // =========================================================================
+        // MODAL XEM TRƯỚC VÀ SO SÁNH: ÁP DỤNG HÀM GETIMAGEURL 
+        // =========================================================================
+        function renderPairSlotHtml(orderId, slotIdx, displayNum, shoeTitle, svcsText, beforeSrcRaw, afterSrcRaw, totalAfterCount, beforeImageIndex) {
+            const canMoveUp = afterSrcRaw && slotIdx > 0; const canMoveDown = afterSrcRaw && slotIdx < totalAfterCount - 1;
+            const beforeSrc = getImageUrl(beforeSrcRaw);
+            const afterSrc = getImageUrl(afterSrcRaw);
+
+            // Kiểm tra trạng thái đang tải ngầm để khoá nút xóa hoặc hiện loading mờ
+            const isBeforeUploading = beforeSrcRaw && beforeSrcRaw.startsWith('pending_');
+            const isAfterUploading = afterSrcRaw && afterSrcRaw.startsWith('pending_');
+
+            return `
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 font-bold text-xs text-slate-700 flex justify-between items-center flex-wrap gap-1"><span>Góc chụp #${displayNum} (${shoeTitle})</span><span class="text-[10px] text-sky-700 bg-sky-100 px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-tag mr-1"></i>${svcsText}</span></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50">
+                    <div class="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><div class="bg-slate-100 text-slate-700 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-slate-200"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Trước (Before)</div><div class="p-2 flex items-center justify-center bg-slate-900/5 h-[45vh] md:h-[400px] relative">${beforeSrc ? `<img src="${beforeSrc}" onclick="openImageViewer('${beforeSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition ${isBeforeUploading ? 'opacity-50 blur-sm' : ''}" loading="lazy">${(beforeImageIndex >= 0 && !isBeforeUploading) ? `<button onclick="deleteOrderImage('${orderId}', 'before', ${beforeImageIndex})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>` : ''}` : `<div class="text-slate-400 italic text-xs h-full flex flex-col items-center justify-center gap-1.5"><i class="fa-solid fa-camera-slash text-2xl text-slate-300"></i><span>Không có ảnh trước</span></div>`}</div></div>
+                    <div class="flex flex-col bg-white rounded-xl border border-emerald-100 overflow-hidden shadow-sm"><div class="bg-emerald-50 text-emerald-800 font-bold text-[11px] text-center py-1.5 uppercase tracking-wide border-b border-emerald-100 flex items-center justify-between px-3"><span><i class="fa-solid fa-check-circle mr-1"></i> Sau (After)</span>${afterSrc ? `<div class="flex items-center gap-1"><button onclick="moveAfterImage('${orderId}', ${slotIdx}, -1)" ${!canMoveUp ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển lên trên/trước"><i class="fa-solid fa-arrow-up text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button><button onclick="moveAfterImage('${orderId}', ${slotIdx}, 1)" ${!canMoveDown ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:text-sky-600 cursor-pointer"'} title="Di chuyển xuống dưới/sau"><i class="fa-solid fa-arrow-down text-xs bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm"></i></button></div>` : ''}</div><div class="p-2 flex items-center justify-center bg-emerald-900/5 h-[45vh] md:h-[400px] relative">${afterSrc ? `<img src="${afterSrc}" onclick="openImageViewer('${afterSrc}')" class="w-full h-full object-contain rounded-lg shadow cursor-pointer hover:opacity-80 transition ${isAfterUploading ? 'opacity-50 blur-sm' : ''}" loading="lazy">${!isAfterUploading ? `<button onclick="deleteOrderImage('${orderId}', 'after', ${slotIdx})" class="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm" title="Xóa ảnh này"><i class="fa-solid fa-times"></i></button>` : ''}` : `<div class="flex flex-col items-center justify-center gap-2 text-center p-4"><span class="text-slate-400 italic text-xs">Chưa có ảnh sau</span><label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow cursor-pointer transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-camera"></i> Tải/Chụp Ảnh Sau Góc Này<input type="file" accept="image/*" onchange="uploadAfterImageSlot(event, '${orderId}', ${slotIdx})" class="hidden"></label></div>`}</div></div>
+                </div>
+            </div>`;
+        }
+
+        window.currentComparisonOrderId = null;
+
+        function openComparison(orderId) {
+            window.currentComparisonOrderId = orderId;
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
+            const container = document.getElementById('comparisonPairsContainer'); container.innerHTML = '';
+            if (!o.imagesAfter) o.imagesAfter = [];
+
+            let html = '';
+            let pairedSlotsCount = 0;
+
+            if (o.shoes && o.shoes.length > 0) {
+                o.shoes.forEach((shoe, shoeIdx) => {
+                    const shoeTitle = shoe.note ? `${shoe.name} - ${shoe.note}` : shoe.name; 
+                    const svcsText = (shoe.services && shoe.services.length > 0) ? shoe.services.map(s => `${s.name} (x${s.qty})`).join(', ') : 'Chưa chọn dịch vụ';
+                    const beforeList = shoe.images || []; 
+                    let shoeSlotsCount = Math.max(beforeList.length, 1);
+                    
+                    html += `<div class="bg-white rounded-2xl shadow-sm border border-sky-200 overflow-hidden mb-6"><div class="bg-sky-50 px-4 py-3 border-b border-sky-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2"><span class="font-extrabold text-sm md:text-base text-sky-900 uppercase flex items-center gap-1.5"><i class="fa-solid fa-shoe-prints text-sky-600"></i> ${shoeTitle}</span><span class="text-xs font-semibold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-sky-200 shadow-sm inline-flex items-center gap-1.5"><i class="fa-solid fa-wrench text-sky-600"></i> Dịch vụ: <strong class="text-sky-800">${svcsText}</strong></span></div><div class="p-3 md:p-4 space-y-4 bg-slate-50/50">`;
+                    
+                    for (let k = 0; k < shoeSlotsCount; k++) {
+                        const slotIdx = pairedSlotsCount + k; 
+                        const beforeSrc = (beforeList[k]) ? (typeof beforeList[k] === 'string' ? beforeList[k] : (beforeList[k]?.r2Url || beforeList[k]?.url)) : null; 
+                        const afterSrc = o.imagesAfter[slotIdx] || null;
+                        html += renderPairSlotHtml(o.id, slotIdx, k + 1, shoeTitle, svcsText, beforeSrc, afterSrc, o.imagesAfter.length, k < beforeList.length ? k : -1);
+                    }
+                    pairedSlotsCount += shoeSlotsCount; 
+                    html += `</div></div>`;
+                });
+            } else {
+                const beforeImgs = o.images || [];
+                pairedSlotsCount = Math.max(beforeImgs.length, 1);
+                const allSvcsText = o.items.map(i => `${i.name} (x${i.qty})`).join(', ');
+                
+                for (let i = 0; i < pairedSlotsCount; i++) { 
+                    const beforeSrc = beforeImgs[i] || null; 
+                    const afterSrc = o.imagesAfter[i] || null; 
+                    html += renderPairSlotHtml(o.id, i, i + 1, "Giày", allSvcsText, beforeSrc, afterSrc, o.imagesAfter.length, i); 
+                }
+            }
+
+            if (o.imagesAfter.length > pairedSlotsCount) {
+                let extraHtml = `
+                <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden mt-4">
+                    <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 flex justify-between items-center">
+                        <span class="font-bold text-emerald-800 flex items-center gap-2"><i class="fa-solid fa-images text-emerald-600"></i> Các ảnh chụp sau bổ sung (không có before ghép cặp)</span>
+                    </div>
+                    <div class="p-4 bg-slate-50 grid grid-cols-2 md:grid-cols-4 gap-4">
+                `;
+                
+                for (let i = pairedSlotsCount; i < o.imagesAfter.length; i++) {
+                    const srcRaw = o.imagesAfter[i];
+                    if (srcRaw && srcRaw.trim() !== "") {
+                        const src = getImageUrl(srcRaw);
+                        const isUploading = srcRaw.startsWith('pending_');
+                        extraHtml += `
+                        <div class="relative bg-white p-1 rounded-xl shadow-sm border border-slate-200 group flex flex-col">
+                            <div class="h-32 md:h-40 w-full relative rounded-lg overflow-hidden bg-slate-100">
+                                <img src="${src}" onclick="openImageViewer('${src}')" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition duration-300 ${isUploading ? 'opacity-50 blur-sm' : ''}">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none flex items-center justify-center"><i class="fa-solid fa-magnifying-glass text-white text-2xl"></i></div>
+                                ${!isUploading ? `<button onclick="deleteOrderImage('${o.id}', 'after', ${i})" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition" title="Xóa ảnh này"><i class="fa-solid fa-times text-[10px]"></i></button>` : ''}
+                            </div>
+                            <div class="mt-2 flex items-center justify-between px-1">
+                                <span class="text-[10px] font-semibold text-slate-500">Ảnh #${i + 1}</span>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="moveAfterImage('${o.id}', ${i}, -1)" ${i === 0 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="text-sky-600 hover:text-sky-800"'} title="Chuyển lên"><i class="fa-solid fa-arrow-left text-xs bg-slate-100 px-1.5 py-0.5 rounded"></i></button>
+                                    <button onclick="moveAfterImage('${o.id}', ${i}, 1)" ${i === o.imagesAfter.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="text-sky-600 hover:text-sky-800"'} title="Chuyển xuống"><i class="fa-solid fa-arrow-right text-xs bg-slate-100 px-1.5 py-0.5 rounded"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                }
+                extraHtml += `</div></div>`;
+                html += extraHtml;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('comparisonModal').classList.remove('hidden'); 
+            setTimeout(() => document.getElementById('comparisonBox').classList.remove('scale-95'), 10);
+        }
+        function closeComparisonModal() { window.currentComparisonOrderId = null; document.getElementById('comparisonBox').classList.add('scale-95'); setTimeout(() => document.getElementById('comparisonModal').classList.add('hidden'), 200); }
+
+        // =========================================================================
+        // CÁC HÀM TIỆN ÍCH KHÁC (TÍNH TOÁN VÀ ĐỒNG BỘ DỮ LIỆU)
+        // =========================================================================
+        function toggleSelectAllOrders(checked) { document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = checked); updateBulkSelectionUI(); }
+        function updateBulkSelectionUI() {
+            const checkedCbs = document.querySelectorAll('.order-select-cb:checked'); const toolbar = document.getElementById('bulkActionToolbar'); const countSpan = document.getElementById('selectedOrdersCount');
+            if (checkedCbs.length > 0) { if (toolbar) toolbar.classList.remove('hidden'); toolbar.classList.add('flex'); if (countSpan) countSpan.innerText = checkedCbs.length; } 
+            else { if (toolbar) toolbar.classList.add('hidden'); toolbar.classList.remove('flex'); const headerCb = document.getElementById('selectAllOrdersHeader'); if (headerCb) headerCb.checked = false; }
+        }
+        function clearSelectedOrders() { document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = false); const headerCb = document.getElementById('selectAllOrdersHeader'); if (headerCb) headerCb.checked = false; updateBulkSelectionUI(); }
+
+        async function cycleItemStatus(orderId, itemIdKey) {
+            const o = state.orders.find(x => x.id === orderId); if (!o) return;
+            const item = o.items.find(i => String(i.cartId || i.id) === String(itemIdKey)); if (!item) return;
+            const cur = item.status || 'RECEIVED';
+            if (cur === 'RECEIVED') item.status = 'PROCESSING'; else if (cur === 'PROCESSING') item.status = 'PROCESSED'; else item.status = 'RECEIVED';
+            recalculateOrderStatus(o);
+            renderOrdersTable(); renderDashboard(); 
+            await dbUpdateOrder(orderId); 
+        }
+
+        function recalculateOrderStatus(o) {
+            if (!o.items || o.items.length === 0) return;
+            const allDone = o.items.every(i => i.status === 'PROCESSED'); const anyProgress = o.items.some(i => i.status === 'PROCESSING' || i.status === 'PROCESSED');
+            if (['PAID', 'DELIVERED'].includes(o.status)) return;
+            if (allDone) o.status = 'PROCESSED'; else if (anyProgress) o.status = 'PROCESSING'; else o.status = 'RECEIVED';
+        }
+
+        async function bulkUpdateSelectedOrders(targetStatus) {
+            const checkedCbs = document.querySelectorAll('.order-select-cb:checked'); if (checkedCbs.length === 0) return alert("Vui lòng chọn ít nhất một đơn hàng!");
+            const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
+            let updatedCount = 0; let modifiedOrderIds = [];
+
+            checkedCbs.forEach(cb => {
+                const orderId = cb.value; const o = state.orders.find(x => x.id === orderId); if (!o) return;
+                let modified = false;
+                o.items.forEach(item => {
+                    const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                    if (serviceFilter === 'ALL' || cat === serviceFilter) { item.status = targetStatus; modified = true; }
+                });
+                if (modified) { recalculateOrderStatus(o); updatedCount++; modifiedOrderIds.push(orderId); }
+            });
+
+            renderOrdersTable(); renderDashboard(); updateBulkSelectionUI();
+            const statusText = targetStatus === 'PROCESSING' ? 'Đang làm' : 'Đã xong';
+            showNotification("⚡ CẬP NHẬT HÀNG LOẠT", `Đã cập nhật trạng thái [${statusText}] cho ${updatedCount} đơn hàng!`);
+            
+            for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
+        }
+
+        // Đã gỡ bỏ tính năng cản trở khi tải ảnh ngầm của Dashboard
+        function renderDashboard() {
+            const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
+            let ckRev = 0; let tmRev = 0;
+
+            state.orders.forEach(o => {
+                if(o.date && o.date.startsWith(todayStr)) {
+                    const finalTotal = o.total + (o.extraFeeVal || 0);
+                    grossToday += finalTotal; 
+                    if(o.status === 'PAID' || o.status === 'DELIVERED') {
+                        revToday += finalTotal;
+                        if (o.paymentMethod === 'CASH') tmRev += finalTotal;
+                        else ckRev += finalTotal;
+                    }
+                    if(o.status === 'RECEIVED') cReceived++; if(o.status === 'PROCESSING') cProcessing++;
+                    if(o.status === 'PROCESSED') cProcessed++; if(o.status === 'DELIVERED') cDelivered++;
+                }
+            });
+
+            document.getElementById('dashGrossSales').innerText = grossToday.toLocaleString() + ' đ'; document.getElementById('dashRevenue').innerText = revToday.toLocaleString() + ' đ';
+            const brkDown = document.getElementById('dashRevenueBreakdown');
+            if(brkDown) brkDown.innerText = `CK: ${ckRev.toLocaleString()} đ | TM: ${tmRev.toLocaleString()} đ`;
+
+            document.getElementById('dashCountReceived').innerText = cReceived; document.getElementById('dashCountProcessing').innerText = cProcessing;
+            document.getElementById('dashCountProcessed').innerText = cProcessed; document.getElementById('dashCountDelivered').innerText = cDelivered;
+
+            const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
+
+            const generateDashRow = (o, showNote = false) => {
+                const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status);
+                const hasBefore = o.images && o.images.length > 0;
+                const validAfterImages = (o.imagesAfter || []).filter(url => url && url.trim() !== '');
+                const hasAfter = validAfterImages.length > 0;
+                const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                const finalTotal = o.total + (o.extraFeeVal || 0);
+
+                let imgHtml = '';
+                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${validAfterImages.length}</span>`;
+                
+                let actionHtml = '';
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[9px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                else actionHtml += `<div class="text-[9px] md:text-xs text-slate-400 italic text-center w-full py-1">Không ảnh</div>`;
+                actionHtml += `<label class="text-[9px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+
+                const servicesBadgeHtml = o.items.map(i => {
+                    const st = i.status || 'RECEIVED'; let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700'; let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
+                    if (st === 'PROCESSING') { badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>'; } 
+                    else if (st === 'PROCESSED') { badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>'; }
+                    const itemIdKey = i.cartId || i.id;
+                    return `<span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} border px-1.5 py-0.5 rounded mr-1 mb-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-xs" title="Bấm để chuyển trạng thái">${iconHtml}${i.name} (x${i.qty})</span>`;
+                }).join('');
+
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-[11px] md:text-sm">${finalTotal.toLocaleString()} đ</div>`;
+                if (o.extraFeeVal) totalCellHtml += `<div class="text-[9px] ${o.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} italic font-bold">Phát sinh: ${o.extraFeeVal.toLocaleString()}đ</div>`;
+                
+                if (isUnpaid) {
+                    totalCellHtml += `<div class="flex gap-1 mt-1"><button onclick="openCollectPaymentModal('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white px-1 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> CK</button>`;
+                    totalCellHtml += `<button onclick="confirmCashPayment('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-1 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> Tiền Mặt</button></div>`;
+                }
+
+                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-1.5 w-full text-[9px] md:text-[10px] font-bold bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-700 p-1 md:p-1 rounded-lg outline-none flex items-center justify-center gap-1 transition shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Phát sinh</button>`;
+                let noteHtml = showNote ? `<div class="text-[9px] md:text-xs text-red-600 font-bold italic mb-1 whitespace-normal leading-tight max-w-[120px] md:max-w-[200px]"><i class="fa-solid fa-comment-dots mr-1"></i>${o.customer.note}</div>` : '';
+
+                return `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-2 md:p-3 align-top"><span class="font-mono text-sky-700 font-bold text-[10px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<br class="md:hidden"><span class="hidden md:inline"> - </span>${dStr}</span></td>
+                    <td class="p-2 md:p-3 align-top"><div class="font-bold text-[11px] md:text-sm truncate max-w-[80px] md:max-w-[150px]" title="${o.customer.name}">${o.customer.name}</div><div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${o.customer.phone}</div></td>
+                    <td class="p-2 md:p-3 align-top whitespace-normal min-w-[100px] md:min-w-[180px]">${noteHtml}<div class="mb-1">${imgHtml}</div><div class="flex w-full">${actionHtml}</div></td>
+                    <td class="p-2 md:p-3 align-top whitespace-normal min-w-[130px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[70px] md:min-w-[100px]">${totalCellHtml}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1.5 rounded border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
+                </tr>`;
+            };
+
+            const pending = state.orders.filter(o => o.status === 'RECEIVED').sort((a,b) => a.date.localeCompare(b.date)).slice(0, 5);
+            const tbodyPending = document.getElementById('dashPendingOrdersBody');
+            if(pending.length === 0) tbodyPending.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Cửa hàng đã xử lý hết đơn mới! Rất tuyệt vời.</td></tr>`;
+            else tbodyPending.innerHTML = pending.map(o => generateDashRow(o, false)).join('');
+
+            const notedOrders = state.orders.filter(o => o.customer.note && o.customer.note.trim() !== '' && o.status !== 'DELIVERED').sort((a,b) => b.date.localeCompare(a.date));
+            const tbodyNoted = document.getElementById('dashNotedOrdersBody');
+            if(notedOrders.length === 0) tbodyNoted.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Không có đơn hàng nào đang có yêu cầu đặc biệt.</td></tr>`;
+            else tbodyNoted.innerHTML = notedOrders.map(o => generateDashRow(o, true)).join('');
+        }
+
+        // Hàm render cho Kho Đơn
+        function renderOrdersTable(resetPage = false) {
+            if (resetPage) currentOrderPage = 1;
+
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
+            const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
+            const sDate = document.getElementById('filterOrderStart').value; const eDate = document.getElementById('filterOrderEnd').value;
+            
+            const catMap = { 'CLEAN': 'Vệ sinh', 'SOLE': 'Thay đế', 'STAIN': 'Tẩy ố', 'REPAINT': 'Repaint', 'GLUE': 'Dán đế' };
+            const pendingCounts = {};
+            
+            state.orders.forEach(o => {
+                if (o.status === 'RECEIVED' || o.status === 'PROCESSING') {
+                    o.items.forEach(item => {
+                        if (item.status !== 'PROCESSED') {
+                            const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                            if (!pendingCounts[cat]) pendingCounts[cat] = 0; pendingCounts[cat] += item.qty;
+                        }
+                    });
+                }
+            });
+
+            const summaryEl = document.getElementById('pendingServicesSummary');
+            if (summaryEl) {
+                const summaryParts = [];
+                for (const cat in catMap) { if (pendingCounts[cat] > 0) summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2 py-0.5 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[12px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`); }
+                if (summaryParts.length > 0) { summaryEl.innerHTML = `<div class="flex items-center gap-1 text-amber-700 uppercase shrink-0"><i class="fa-solid fa-clock-rotate-left"></i> <span class="font-extrabold text-[10px] md:text-xs tracking-wider">Đơn chưa làm:</span></div> <div class="flex flex-wrap gap-1.5">${summaryParts.join('')}</div>`; summaryEl.classList.remove('hidden'); summaryEl.classList.add('flex'); } 
+                else { summaryEl.classList.add('hidden'); summaryEl.classList.remove('flex'); summaryEl.innerHTML = ''; }
+            }
+
+            const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
+            
+            const filtered = state.orders.filter(o => {
+                const dateOnly = o.date.split(' ')[0]; if(sDate && dateOnly < sDate) return false; if(eDate && dateOnly > eDate) return false;
+                if (statusFilter === 'ACTIVE') { if (o.status === 'DELIVERED' || o.status === 'PAID') return false; } else if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+                if(serviceFilter !== 'ALL') { const hasService = o.items.some(item => { const svcInfo = state.services.find(s => s.id === item.id); return svcInfo && svcInfo.category === serviceFilter; }); if (!hasService) return false; }
+                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
+                return true;
+            });
+
+            const totalItems = filtered.length;
+            const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE) || 1;
+            
+            if (currentOrderPage > totalPages) currentOrderPage = totalPages;
+            if (currentOrderPage < 1) currentOrderPage = 1;
+
+            const startIndex = (currentOrderPage - 1) * ORDERS_PER_PAGE;
+            const endIndex = startIndex + ORDERS_PER_PAGE;
+            
+            const paginatedOrders = filtered.slice(startIndex, endIndex);
+
+            document.getElementById('ordersTableBody').innerHTML = paginatedOrders.map(o => {
+                const isUnpaid = ['RECEIVED', 'PROCESSING', 'PROCESSED'].includes(o.status); 
+                const hasBefore = o.images && o.images.length > 0; 
+                const validAfterImages = (o.imagesAfter || []).filter(url => url && url.trim() !== '');
+                const hasAfter = validAfterImages.length > 0;
+                const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                const finalTotal = o.total + (o.extraFeeVal || 0);
+
+                let imgHtml = '';
+                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 md:px-1.5 md:py-1 rounded border border-slate-200 inline-flex items-center" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5 md:mr-1"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 md:px-1.5 md:py-1 rounded border border-sky-200 inline-flex items-center ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5 md:mr-1"></i>${validAfterImages.length}</span>`;
+                
+                let actionHtml = '';
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`;
+                actionHtml += `<label class="text-[10px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-0.5 md:gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp <span class="hidden md:inline">Sau</span><input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                
+                let totalCellHtml = `<div class="font-bold text-slate-800 text-xs md:text-sm">${finalTotal.toLocaleString()} đ</div>`;
+                if (o.extraFeeVal) totalCellHtml += `<div class="text-[9px] ${o.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} italic font-bold">Phát sinh: ${o.extraFeeVal.toLocaleString()}đ</div>`;
+                
+                if (isUnpaid) {
+                    totalCellHtml += `<button onclick="openCollectPaymentModal('${o.id}')" class="mt-1 w-full text-[9px] md:text-[11px] font-bold bg-sky-600 hover:bg-sky-700 text-white px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> Chuyển Khoản</button>`;
+                    totalCellHtml += `<button onclick="confirmCashPayment('${o.id}')" class="mt-1 w-full text-[9px] md:text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> Tiền Mặt</button>`;
+                }
+
+                let actionColumn = `<div class="flex flex-col gap-1 items-end mt-0.5">`;
+                if (o.customer.phone && o.customer.phone.trim() !== '') actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${o.customer.name}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-2 py-1 md:py-1.5 rounded-lg transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-comment-sms"></i> Zalo</button>`;
+                actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-2 py-1 md:py-1.5 rounded-lg transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-link"></i> Link KH</button>`;
+                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs md:text-sm p-0.5 md:p-1 mt-0.5 transition w-full text-right"><i class="fa-solid fa-trash"></i></button></div>`;
+
+                const displayItems = serviceFilter === 'ALL' ? o.items : o.items.filter(item => { const svcInfo = state.services.find(s => s.id === item.id); return svcInfo && svcInfo.category === serviceFilter; });
+                const isPaidOrDeliveredFilter = (statusFilter === 'DELIVERED' || statusFilter === 'PAID');
+
+                const servicesBadgeHtml = displayItems.map(i => {
+                    const st = i.status || 'RECEIVED'; let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700'; let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
+                    if (st === 'PROCESSING') { badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>'; } 
+                    else if (st === 'PROCESSED') { badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>'; }
+                    const itemIdKey = i.cartId || i.id; const svcInfo = state.services.find(s => s.id === i.id); const cat = svcInfo ? svcInfo.category : ''; const isWarrantyEligible = (cat === 'SOLE' || cat === 'GLUE');
+                    
+                    let warrantyHtml = '';
+                    if (isWarrantyEligible && isPaidOrDeliveredFilter) {
+                        if (!i.warrantyDate) i.warrantyDate = calculate3MonthsLater(o.date);
+                        const isExpired = i.warrantyDate < new Date().toISOString().split('T')[0];
+                        const warrantyBoxClass = isExpired ? 'bg-red-50 border-red-200 text-red-700' : 'bg-purple-50 border-purple-200 text-purple-800';
+                        warrantyHtml = `<div class="mt-1 p-0.5 rounded border ${warrantyBoxClass} text-[9px] md:text-[10px] inline-flex items-center gap-0.5 shadow-sm"><span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span><input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent border-b border-purple-300 font-mono font-bold outline-none text-[9px] md:text-[10px] cursor-pointer"></div>`;
+                    }
+                    return `<div class="mb-1"><span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} border px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[10px] md:text-xs">${iconHtml}${i.name} (x${i.qty})</span>${warrantyHtml}</div>`;
+                }).join('');
+
+                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-1.5 w-full text-[9px] md:text-[11px] font-bold bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-700 p-1 md:p-1.5 rounded-lg outline-none flex items-center justify-center gap-1 transition shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Phát sinh</button>`;
+
+                return `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-2 md:p-3 text-center align-top pt-2.5 md:pt-3"><input type="checkbox" class="order-select-cb w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
+                    <td class="p-2 md:p-3 align-top min-w-[85px] md:min-w-[110px]"><span class="font-mono text-sky-700 font-bold text-[11px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<br class="md:hidden"><span class="hidden md:inline"> - </span>${dStr}</span></td>
+                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px]"><div class="font-bold text-[11px] md:text-sm whitespace-normal break-words" title="${o.customer.name}">${o.customer.name}</div><div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${o.customer.phone}</div></td>
+                    <td class="p-2 md:p-3 align-top min-w-[120px] md:min-w-[160px]"><div class="text-[10px] md:text-xs text-slate-600 italic mb-1 whitespace-normal leading-tight" title="${o.customer.note || ''}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${o.customer.note || 'Không có'}</div><div class="flex items-center gap-1 mt-1 mb-1 flex-wrap">${imgHtml}</div><div class="flex w-full items-center">${actionHtml}</div></td>
+                    <td class="p-2 md:p-3 text-[10px] md:text-xs whitespace-normal align-top min-w-[140px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[100px]">${totalCellHtml}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1 md:p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
+                    <td class="p-2 md:p-3 text-right align-top min-w-[80px] md:min-w-[100px]">${actionColumn}</td>
+                </tr>`;
+            }).join('');
+            
+            updateBulkSelectionUI();
+
+            const infoEl = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const currDisplay = document.getElementById('currentPageDisplay');
+
+            if (infoEl) {
+                const startLabel = totalItems > 0 ? startIndex + 1 : 0;
+                const endLabel = Math.min(endIndex, totalItems);
+                infoEl.innerText = `Hiển thị ${startLabel} - ${endLabel} / ${totalItems} đơn`;
+            }
+            if (currDisplay) currDisplay.innerText = currentOrderPage;
+            if (prevBtn) prevBtn.disabled = currentOrderPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentOrderPage >= totalPages;
+        }
+
+        async function fetchLatestDataFromCloud(showLoading = true) {
+            if (showLoading) {
+                const loader = document.getElementById('globalLoading');
+                if (loader) { loader.style.display = 'flex'; loader.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu mới nhất...'; }
+            }
+
+            try {
+                const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
+                    supabaseClient.from('users').select('*'),
+                    supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
+                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(),
+                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(150),
+                    supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
+                ]);
+
+                if (usersRes.data) state.users = usersRes.data;
+                if (svcsRes.data) state.services = svcsRes.data.map(mapServiceDbToJs);
+                if (settingsRes.data) { state.qrConfig = settingsRes.data.qr_config || state.qrConfig; state.logo = settingsRes.data.logo || null; }
+                if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs);
+                if (expRes.data) state.expenses = expRes.data;
+
+                saveLocalState();
+                
+                renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                renderExpensesTable(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
+                if (window.location.hash.startsWith('#track=')) checkUrlTracking();
+            } catch (err) { console.error("Lỗi đồng bộ khi mở lại app:", err); } 
+            finally {
+                if (showLoading) {
+                    const loader = document.getElementById('globalLoading');
+                    if (loader) { loader.style.display = 'none'; loader.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; }
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => { 
+            // Không đồng bộ nếu đang upload ngầm để tránh đè dữ liệu pending
+            const isUploadingImages = Object.keys(window.pendingUploads || {}).length > 0;
+            if (document.visibilityState === 'visible' && state.currentUser && !isUploadingImages) { fetchLatestDataFromCloud(true); } 
+        });
+        
+        window.addEventListener('focus', () => { 
+            const isUploadingImages = Object.keys(window.pendingUploads || {}).length > 0;
+            if (document.visibilityState === 'visible' && state.currentUser && !isUploadingImages) { 
+                clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); 
+            } 
+        });
+    </script>
+</body>
+</html>
