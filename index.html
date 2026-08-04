@@ -150,10 +150,14 @@
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all bg-sky-600 text-white md:shadow-md"><i class="fa-solid fa-house text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Trang Chủ</span></button>
             <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-cash-register text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Tạo Đơn</span></button>
             <button onclick="switchTab('orders')" id="nav-orders" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-list-check text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Kho Đơn</span></button>
-            <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-users text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Khách Hàng</span></button>
+            
             <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-file-invoice-dollar text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Chi Phí</span></button>
             <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-chart-line text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Báo Cáo</span></button>
             <button onclick="switchTab('payment')" id="nav-payment" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-emerald-400 md:text-emerald-400"><i class="fa-solid fa-qrcode text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Mã QR</span></button>
+            
+            <!-- NÚT KHÁCH HÀNG CHUYỂN VỊ TRÍ VỀ ĐÂY -->
+            <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-users text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Khách Hàng</span></button>
+
             <div class="hidden md:block pt-4 border-t border-slate-700/60 w-full mt-2"></div>
             <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-sliders text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Cài Đặt</span></button>
         </nav>
@@ -327,13 +331,11 @@
                         <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-boxes-stacked text-navy-800"></i> Kho Đơn</h2>
                         <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
                             <i class="fa-solid fa-search absolute left-2.5 top-2 text-slate-400 text-xs"></i>
-                            <!-- SỬA ĐỔI: Gọi hàm debouncedSearchOrder() thay vì gọi render trực tiếp -->
                             <input type="text" id="searchOrderInput" onkeyup="debouncedSearchOrder()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px] md:text-xs">
                         <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
-                            <!-- SỬA ĐỔI: Gửi true vào hàm renderOrdersTable để reset về trang 1 khi lọc -->
                             <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                             <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                         </div>
@@ -397,7 +399,6 @@
                     </div>
                 </div>
 
-                <!-- SỬA ĐỔI: Thêm Giao diện phân trang dưới bảng Kho Đơn -->
                 <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
                     <span class="text-[11px] md:text-xs font-bold text-slate-500" id="paginationInfo">Hiển thị 0 - 0 / 0 đơn</span>
                     <div class="flex items-center gap-1.5 md:gap-2">
@@ -410,12 +411,12 @@
                         </button>
                     </div>
                 </div>
-                <!-- KẾT THÚC SỬA ĐỔI PHÂN TRANG -->
 
             </section>
 
+            <!-- TAB KHÁCH HÀNG: Top 10 khách VIP -->
             <section id="tab-customers" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 w-full max-w-full"><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-crown text-amber-500"></i> Xếp Hạng Khách Hàng VIP</h2></div>
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 w-full max-w-full"><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-crown text-amber-500"></i> Bảng Xếp Hạng Khách Hàng (Top 10 VIP)</h2></div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
                     <div class="overflow-x-auto w-full max-w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
@@ -426,21 +427,27 @@
                 </div>
             </section>
 
+            <!-- TAB CHI PHÍ: Có bộ lọc chọn Tháng -->
             <section id="tab-expenses" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
-                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between w-full max-w-full">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2 w-full max-w-full">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
-                    <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
+                    <div class="flex items-center gap-2">
+                        <!-- THÊM BỘ LỌC THEO THÁNG NĂM Ở ĐÂY -->
+                        <input type="month" id="expenseMonthFilter" onchange="updateExpensesView()" class="text-[12px] md:text-xs p-1.5 md:py-2 border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 cursor-pointer shadow-sm">
+                        
+                        <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
+                    </div>
                 </div>
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 w-full max-w-full">
                     <div class="w-full md:w-1/2 flex flex-col items-center">
-                        <span class="text-[10px] md:text-xs font-bold text-slate-600 mb-2 uppercase text-center w-full flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-red-500"></i> Cơ Cấu Chi Phí Tháng Hiện Tại</span>
+                        <span class="text-[10px] md:text-xs font-bold text-slate-600 mb-2 uppercase text-center w-full flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-red-500"></i> Cơ Cấu Chi Phí (Theo Tháng Chọn)</span>
                         <div class="relative w-full h-44 md:h-52 flex items-center justify-center">
                             <canvas id="expensesTabPieChart"></canvas>
                         </div>
                     </div>
                     <div class="w-full md:w-1/2 space-y-2 text-xs border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
                         <div class="font-bold text-slate-700 mb-1 flex items-center justify-between">
-                            <span>Chi phí tháng này:</span>
+                            <span>Chi phí trong tháng:</span>
                             <span id="expTabMonthTotal" class="font-extrabold text-red-600 text-sm">0 đ</span>
                         </div>
                         <div id="expTabCategoryBreakdown" class="space-y-1.5 pt-1"></div>
@@ -456,6 +463,7 @@
                 </div>
             </section>
 
+            <!-- TAB BÁO CÁO: Thêm box Tổng số đơn -->
             <section id="tab-reports" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 w-full max-w-full">
                     <div><h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-sky-600"></i> Báo Cáo Tài Chính</h2></div>
@@ -463,12 +471,17 @@
                         <div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Từ ngày</label><input type="date" id="reportStartDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><span class="text-slate-400 mt-3">-</span><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Đến ngày</label><input type="date" id="reportEndDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><button onclick="clearDateFilter()" class="mt-3 ml-1 bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 md:py-1.5 rounded text-xs transition"><i class="fa-solid fa-rotate-right"></i></button>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full max-w-full">
+                
+                <!-- BỔ SUNG: Box TỔNG SỐ ĐƠN và đổi layout grid để chứa được 5 box -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 w-full max-w-full">
+                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-amber-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-boxes-stacked"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG SỐ ĐƠN</span><div id="repTotalOrders" class="text-lg md:text-2xl font-extrabold text-amber-600 mt-1 relative truncate">0</div><div id="repUniqueCustomers" class="text-[9px] font-semibold text-slate-400 mt-0.5 relative">Từ 0 khách hàng</div></div>
+                    
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-slate-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-file-invoice"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH SỐ</span><div id="repGrossSales" class="text-lg md:text-2xl font-extrabold text-slate-800 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-emerald-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-money-bill-wave"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH THU</span><div id="repRevenue" class="text-lg md:text-2xl font-extrabold text-emerald-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-red-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG CHI PHÍ</span><div id="repExpenses" class="text-lg md:text-2xl font-extrabold text-red-600 mt-1 relative truncate">0 đ</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-sky-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-coins"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">LỢI NHUẬN RÒNG</span><div id="repNetProfit" class="text-lg md:text-2xl font-extrabold text-sky-700 mt-1 relative truncate">0 đ</div></div>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 pb-4 w-full max-w-full">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Dịch vụ đặt nhiều nhất</span><div class="flex-1 w-full h-full relative"><canvas id="servicesPieChart"></canvas></div></div>
@@ -615,7 +628,7 @@
         let lastPaidNotifiedId = null;
 
         // =========================================================================
-        // SỬA ĐỔI: BIẾN QUẢN LÝ PHÂN TRANG VÀ DEBOUNCE TÌM KIẾM
+        // BIẾN QUẢN LÝ PHÂN TRANG VÀ DEBOUNCE TÌM KIẾM
         // =========================================================================
         let currentOrderPage = 1;
         const ORDERS_PER_PAGE = 50;
@@ -1062,6 +1075,13 @@
         // =========================================================================
         window.addEventListener('DOMContentLoaded', async () => {
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
+
+            // Đặt mặc định tháng hiện tại cho bộ lọc Chi phí
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            if (document.getElementById('expenseMonthFilter')) {
+                document.getElementById('expenseMonthFilter').value = currentMonthStr;
+            }
 
             const modalView = document.getElementById('imageViewerModal'); const imgView = document.getElementById('viewerImage');
             if (modalView && imgView) {
@@ -1648,7 +1668,7 @@
         }
 
         // =========================================================================
-        // SỬA ĐỔI: HÀM RENDER KHO ĐƠN ÁP DỤNG PHÂN TRANG (PAGINATION)
+        // HÀM RENDER KHO ĐƠN ÁP DỤNG PHÂN TRANG (PAGINATION)
         // =========================================================================
         function renderOrdersTable(resetPage = false) {
             if (resetPage) currentOrderPage = 1;
@@ -2037,13 +2057,19 @@
             }
         }
 
+        // =========================================================================
+        // SỬA ĐỔI: CHỈ LẤY TOP 10 KHÁCH HÀNG
+        // =========================================================================
         function renderCustomersTable() {
             const map = {};
             state.orders.forEach(o => {
                 const phone = o.customer.phone; if(!map[phone]) map[phone] = { phone, name: o.customer.name, count: 0, total: 0 };
                 map[phone].count += 1; if(o.status === 'PAID' || o.status === 'DELIVERED') map[phone].total += o.total;
             });
-            document.getElementById('customersTableBody').innerHTML = Object.values(map).sort((a,b) => b.total - a.total).map((c, idx) => `
+            document.getElementById('customersTableBody').innerHTML = Object.values(map)
+                .sort((a,b) => b.total - a.total)
+                .slice(0, 10) // Lọc lấy Top 10
+                .map((c, idx) => `
                 <tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${c.name}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>
             `).join('');
         }
@@ -2057,7 +2083,7 @@
             
             const newExp = { id: Date.now(), date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], name, amount: amt, cat: document.getElementById('expCategory').value };
             state.expenses.unshift(newExp);
-            saveLocalState(); closeExpenseModal(); renderExpensesTable(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
+            saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
             
             await supabaseClient.from('expenses').insert(newExp);
         }
@@ -2065,11 +2091,32 @@
         async function deleteExpenseDB(id) {
             if(!confirm("Bạn muốn xóa khoản chi này?")) return;
             state.expenses = state.expenses.filter(x => x.id !== id);
-            saveLocalState(); renderExpensesTable(); updateReportMetrics(); updateExpenseCharts();
+            saveLocalState(); updateExpensesView(); updateReportMetrics();
             await supabaseClient.from('expenses').delete().eq('id', id);
         }
 
-        function renderExpensesTable() { document.getElementById('expensesTableBody').innerHTML = state.expenses.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${e.name}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vật tư':'Vận hành'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); updateExpenseCharts(); }
+        // =========================================================================
+        // SỬA ĐỔI: RENDER CHI PHÍ THEO THÁNG ĐƯỢC CHỌN
+        // =========================================================================
+        function updateExpensesView() {
+            renderExpensesTable();
+            updateExpenseCharts();
+        }
+
+        function renderExpensesTable() { 
+            const monthFilter = document.getElementById('expenseMonthFilter').value;
+            const filtered = state.expenses.filter(e => {
+                if (!monthFilter) return true;
+                return e.date && e.date.startsWith(monthFilter);
+            });
+
+            const tbody = document.getElementById('expensesTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Không có khoản chi nào trong tháng này.</td></tr>`;
+            } else {
+                tbody.innerHTML = filtered.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${e.name}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vật tư':'Vận hành'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); 
+            }
+        }
 
         function initCharts() {
             Chart.defaults.font.family = "'Lexend', sans-serif";
@@ -2080,19 +2127,32 @@
         }
 
         function clearDateFilter() { document.getElementById('reportStartDate').value = ''; document.getElementById('reportEndDate').value = ''; updateReportMetrics(); }
+        
+        // =========================================================================
+        // SỬA ĐỔI: BÁO CÁO CÓ THÊM TỔNG SỐ ĐƠN & SỐ KHÁCH HÀNG UNIQUE
+        // =========================================================================
         function updateReportMetrics() {
-            updateExpenseCharts();
+            updateExpenseCharts(); // Cập nhật luôn biểu đồ của Tab Chi phí cho đồng bộ
             const start = document.getElementById('reportStartDate').value; const end = document.getElementById('reportEndDate').value;
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if(start && d < start) return false; if(end && d > end) return false; return true; };
+            
             let grossSales = 0, rev = 0, exp = 0; const svcCounts = {};
+            let totalOrdersCount = 0;
+            const uniqueCustomersPhones = new Set(); // Dùng Set để lọc trùng số điện thoại
+            
             state.orders.forEach(o => {
                 if(inRange(o.date)) {
+                    totalOrdersCount++; // Đếm số đơn
+                    if(o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone); // Lọc số khách
+
                     grossSales += o.total; if(o.status === 'PAID' || o.status === 'DELIVERED') rev += o.total;
                     o.items.forEach(item => { const svcInfo = state.services.find(s => s.id === item.id); const cat = svcInfo ? svcInfo.category : 'KHÁC'; if(!svcCounts[cat]) svcCounts[cat] = 0; svcCounts[cat] += item.qty; });
                 }
             });
             state.expenses.forEach(e => { if(inRange(e.date)) exp += e.amount; });
             
+            document.getElementById('repTotalOrders').innerText = totalOrdersCount.toLocaleString();
+            document.getElementById('repUniqueCustomers').innerText = `Từ ${uniqueCustomersPhones.size} khách hàng`;
             document.getElementById('repGrossSales').innerText = grossSales.toLocaleString() + ' đ'; document.getElementById('repRevenue').innerText = rev.toLocaleString() + ' đ';
             document.getElementById('repExpenses').innerText = exp.toLocaleString() + ' đ'; document.getElementById('repNetProfit').innerText = (rev - exp).toLocaleString() + ' đ';
             
@@ -2105,9 +2165,20 @@
             }
         }
 
+        // =========================================================================
+        // SỬA ĐỔI: CHART CHI PHÍ (Cập nhật đọc theo filter tháng)
+        // =========================================================================
         function updateExpenseCharts() {
-            const now = new Date(); const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(currentMonthPrefix));
+            let targetMonthPrefix = '';
+            if (document.getElementById('expenseMonthFilter')) {
+                targetMonthPrefix = document.getElementById('expenseMonthFilter').value;
+            }
+            if (!targetMonthPrefix) {
+                const now = new Date();
+                targetMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            }
+
+            const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(targetMonthPrefix));
             const expTabCounts = {}; let monthTotal = 0;
             
             monthExpenses.forEach(e => {
@@ -2134,6 +2205,7 @@
                 expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; expTabPieInst.update();
             }
 
+            // PIE CHART BÁO CÁO (Vẫn dùng filter từ ngày -> đến ngày)
             const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
             const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
             const inRange = (dStr) => { const d = dStr.split(' ')[0]; if (start && d < start) return false; if (end && d > end) return false; return true; };
