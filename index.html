@@ -916,14 +916,15 @@
                 
                 if (!order) {
                     try {
-                        const { data } = await supabaseClient.from('orders').select('*').eq('tracking_id', trackingId).single();
-                        if (data) order = mapOrderDbToJs(data);
-                        else {
-                            // Dự phòng query id cho các đơn hàng cũ chưa có tracking_id
-                            const { data: oldData } = await supabaseClient.from('orders').select('*').eq('id', trackingId).single();
-                            if (oldData) order = mapOrderDbToJs(oldData);
+                        // FIX 3: Gọi qua hàm bảo mật RPC (Chỉ trả về 1 đơn, chống cào dữ liệu toàn hệ thống)
+                        const { data, error } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
+                        
+                        if (data && data.length > 0) {
+                            order = mapOrderDbToJs(data[0]);
                         }
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error("Lỗi tra cứu đơn hàng từ server:", e);
+                    }
                 }
 
                 const screen = document.getElementById('customerTrackingScreen');
