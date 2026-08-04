@@ -1282,25 +1282,6 @@
                 }
             } catch (e) {}
 
-            try {
-                const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
-                    supabaseClient.from('users').select('*'),
-                    supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
-                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(),
-                    supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(150),
-                    supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
-                ]);
-
-                if (usersRes.data && usersRes.data.length > 0) state.users = usersRes.data; 
-                if (svcsRes.data && svcsRes.data.length > 0) state.services = svcsRes.data.map(mapServiceDbToJs);
-                else { const defaultSvcsDb = state.services.map((s, idx) => ({ id: s.id, name: s.name, category: s.category, default_price: s.defaultPrice, icon: s.icon, sort_order: idx })); await supabaseClient.from('services').upsert(defaultSvcsDb); }
-                if (settingsRes.data) { state.qrConfig = settingsRes.data.qr_config || state.qrConfig; state.logo = settingsRes.data.logo || null; }
-                if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs);
-                if (expRes.data) state.expenses = expRes.data;
-
-                saveLocalState();
-            } catch(err) { console.error("Lỗi khi load DB mới: ", err); }
-
             renderLogo(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
             adjustPOSLayout(); renderDashboard(); checkUrlTracking();
