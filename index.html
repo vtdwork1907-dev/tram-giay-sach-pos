@@ -1261,6 +1261,9 @@
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none';
                 
+                const authScreen = document.getElementById('authScreen');
+                if (authScreen) authScreen.remove(); // Dùng remove() để xóa sạch form login khỏi mã HTML của khách
+                
                 let lastOrderState = ""; 
                 const trackingId = window.location.hash.replace('#track=', '');
                 
