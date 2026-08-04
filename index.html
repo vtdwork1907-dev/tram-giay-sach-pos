@@ -1261,13 +1261,32 @@
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none';
                 
+                // 1. Xóa form đăng nhập
                 const authScreen = document.getElementById('authScreen');
-                if (authScreen) authScreen.remove(); // Dùng remove() để xóa sạch form login khỏi mã HTML của khách
+                if (authScreen) authScreen.remove();
                 
+                // 2. TIÊU HỦY TOÀN BỘ GIAO DIỆN NỘI BỘ (Chống nháy lộ doanh thu)
+                const headerEl = document.querySelector('header');
+                if (headerEl) headerEl.remove();
+                
+                const mainAppEl = document.querySelector('.flex.flex-1.overflow-hidden');
+                if (mainAppEl) mainAppEl.remove();
+
+                // 3. Bật ngay màn hình tracking lên để che màn hình, kèm hiệu ứng Đang tải
+                const trackScreen = document.getElementById('customerTrackingScreen');
+                const trackBox = document.getElementById('trackingContentBox');
+                if (trackScreen && trackBox) {
+                    trackScreen.classList.remove('hidden');
+                    trackBox.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500 mb-4"></i>
+                            <span class="font-bold text-sm">Đang kết nối hệ thống...</span>
+                        </div>
+                    `;
+                }
+
                 let lastOrderState = ""; 
                 const trackingId = window.location.hash.replace('#track=', '');
-                
-                // Khai báo biến vòng lặp để có thể dừng nó lại sau
                 let trackingInterval;
 
                 const fetchTrackingData = async () => {
@@ -1278,32 +1297,29 @@
                             const orderData = data[0];
                             const currentState = JSON.stringify(orderData);
                             
-                            // CHỈ render lại màn hình NẾU nhân viên có thay đổi dữ liệu
                             if (currentState !== lastOrderState) {
                                 lastOrderState = currentState;
                                 state.orders = [mapOrderDbToJs(orderData)];
                                 checkUrlTracking(); 
                             }
 
-                            // TỰ ĐỘNG DỪNG: Nếu đơn đã hoàn thành (PROCESSED), đã thu tiền (PAID) hoặc đã trả khách (DELIVERED) thì DỪNG LẠI
                             if (orderData.status === 'PROCESSED' || orderData.status === 'PAID' || orderData.status === 'DELIVERED') {
                                 clearInterval(trackingInterval);
-                                console.log("Đơn đã hoàn thành, dừng cập nhật ngầm để tiết kiệm tài nguyên.");
+                            }
+                        } else {
+                            // Xử lý nếu mã tracking không tồn tại
+                            if (trackBox && lastOrderState === "") {
+                                trackBox.innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Không tìm thấy đơn hàng! Vui lòng kiểm tra lại đường link.</div>';
                             }
                         }
                     } catch (e) { console.error("Lỗi realtime tracking:", e); }
                 };
 
-                // Chạy hiển thị ngay lần đầu tiên mở link
                 fetchTrackingData();
-
-                // Vòng lặp hỏi thăm server mỗi 3 giây (3000ms) để cập nhật tức thời
                 trackingInterval = setInterval(fetchTrackingData, 3000); 
 
-                // ⛔ LỆNH QUAN TRỌNG NHẤT: Dừng toàn bộ code POS phía dưới, CÔ LẬP TRANG TRACKING!
                 return; 
             }
-
             // =====================================================================
             // 2. CODE DÀNH RIÊNG CHO HỆ THỐNG POS NỘI BỘ CỬA HÀNG 
             // =====================================================================
