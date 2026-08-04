@@ -625,6 +625,7 @@
             </div>
         </div>
     </div>
+    
 <!-- SCRIPT CHÍNH (ĐÃ BẢO MẬT XÁC THỰC BẰNG TOKEN, GỠ BỎ SECRET KEY) -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
@@ -636,6 +637,18 @@
                  .replace(/>/g, "&gt;")
                  .replace(/"/g, "&quot;")
                  .replace(/'/g, "&#039;");
+        }
+
+        // --- HÀM TẠO UUID BẢO MẬT (Fix 1) ---
+        function generateUUID() {
+            var d = new Date().getTime();
+            var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16;
+                if(d > 0){ r = (d + r)%16 | 0; d = Math.floor(d/16); }
+                else { r = (d2 + r)%16 | 0; d2 = Math.floor(d2/16); }
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
         }
 
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
@@ -794,9 +807,12 @@
             });
         }
 
+        // Đã cập nhật để MAP thêm tracking_id (Cần tạo cột tracking_id ở CSDL)
         function mapOrderJsToDb(o) {
             return {
-                id: o.id, date: o.date,
+                id: o.id, 
+                tracking_id: o.tracking_id || null, // FIX 1
+                date: o.date,
                 customer_name: o.customer.name, customer_phone: o.customer.phone, customer_note: o.customer.note || '',
                 items: o.items || [], shoes: o.shoes || null,
                 images: o.images || [], images_after: o.imagesAfter || [],
@@ -808,9 +824,12 @@
             };
         }
 
+        // Đã cập nhật để LẤY tracking_id từ CSDL (Fallback về ID cũ nếu đơn cũ chưa có)
         function mapOrderDbToJs(db) {
             return {
-                id: db.id, date: db.date,
+                id: db.id, 
+                tracking_id: db.tracking_id || db.id, // FIX 1 (Fallback tránh lỗi đơn cũ)
+                date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
                 items: db.items || [], shoes: db.shoes || null,
                 images: db.images || [], imagesAfter: db.images_after || [],
@@ -823,7 +842,6 @@
         }
 
         function mapServiceDbToJs(db) { return { id: db.id, name: db.name, category: db.category, defaultPrice: db.default_price, icon: db.icon }; }
-
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -838,13 +856,17 @@
 
         function sendNtfyAlert(title, message) {
             const topicName = 'Tramgiaysach_news'; 
-            fetch(`https://ntfy.sh/${topicName}`, { method: 'POST', body: `${title}\\n${message}` }).catch(err => console.error("Lỗi gửi ntfy:", err));
+            fetch(`https://ntfy.sh/${topicName}`, { method: 'POST', body: `${title}\n${message}` }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
+        // Đã cập nhật để dùng tracking_id cho Zalo (Fix 1)
         function sendZaloTracking(orderId, phone, customerName) {
-            const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
-            const message = `Cảm ơn quý khách đã sử dụng dịch vụ tại Trạm Giày Sạch, quý khách hãy theo dõi quá trình xử lý giày của mình tại đây:\\n${trackingUrl}`;
-            let cleanPhone = phone.replace(/\\D/g, ''); if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
+            const order = state.orders.find(o => o.id === orderId);
+            const trackingId = order ? (order.tracking_id || order.id) : orderId; 
+            
+            const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${trackingId}`;
+            const message = `Cảm ơn quý khách đã sử dụng dịch vụ tại Trạm Giày Sạch, quý khách hãy theo dõi quá trình xử lý giày của mình tại đây:\n${trackingUrl}`;
+            let cleanPhone = phone.replace(/\D/g, ''); if(cleanPhone.startsWith('0')) cleanPhone = '84' + cleanPhone.substring(1);
             navigator.clipboard.writeText(message).then(() => {
                 showNotification("🔗 ĐÃ COPY TIN NHẮN", "Bạn chỉ cần ấn 'Dán' (Paste) vào khung chat Zalo để gửi khách nhé!");
                 setTimeout(() => { window.open(`https://zalo.me/${cleanPhone}`, '_blank'); }, 800);
@@ -857,28 +879,34 @@
             modal.classList.remove('hidden'); void modal.offsetWidth; modal.classList.remove('opacity-0'); img.classList.remove('scale-95');
         }
 
-        function closeImageViewer() {
-            const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage');
-            modal.classList.add('opacity-0'); img.style.transform = 'translateY(100px) scale(0.8)'; img.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-            setTimeout(() => { modal.classList.add('hidden'); img.src = ''; img.style.transform = ''; }, 300);
-        }
-
+        // Đã cập nhật để dùng tracking_id khi copy link (Fix 1)
         function copyTrackingLink(orderId) {
-            const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${orderId}`;
+            const order = state.orders.find(o => o.id === orderId);
+            const trackingId = order ? (order.tracking_id || order.id) : orderId;
+            
+            const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${trackingId}`;
             navigator.clipboard.writeText(trackingUrl).then(() => { showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn đã được sao chép vào bộ nhớ tạm!`); })
             .catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
         }
 
+        // Đã cập nhật để tra cứu bằng tracking_id trên URL thay vì order ID (Fix 1)
         async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
-                const orderId = hash.replace('#track=', '');
+                const trackingId = hash.replace('#track=', '');
                 
-                let order = state.orders.find(o => o.id === orderId);
+                // Tìm kiếm theo tracking_id hoặc id (tương thích ngược cho đơn cũ)
+                let order = state.orders.find(o => o.tracking_id === trackingId || o.id === trackingId);
+                
                 if (!order) {
                     try {
-                        const { data } = await supabaseClient.from('orders').select('*').eq('id', orderId).single();
+                        const { data } = await supabaseClient.from('orders').select('*').eq('tracking_id', trackingId).single();
                         if (data) order = mapOrderDbToJs(data);
+                        else {
+                            // Dự phòng query id cho các đơn hàng cũ chưa có tracking_id
+                            const { data: oldData } = await supabaseClient.from('orders').select('*').eq('id', trackingId).single();
+                            if (oldData) order = mapOrderDbToJs(oldData);
+                        }
                     } catch(e) {}
                 }
 
@@ -1273,7 +1301,7 @@
                         if (!state.orders.find(o => o.id === newO.id)) {
                             state.orders.unshift(newO);
                             const svcs = newO.items.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
-                            if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${escapeHtml(newO.customer.name)} - ${newO.total.toLocaleString()}đ\\nDịch vụ: ${svcs}`);
+                            if (document.visibilityState === 'visible') showNotification("📦 CÓ ĐƠN MỚI", `Khách: ${escapeHtml(newO.customer.name)} - ${newO.total.toLocaleString()}đ\nDịch vụ: ${svcs}`);
                         }
                     } else if (eventType === 'UPDATE') {
                         const updatedO = mapOrderDbToJs(newRec);
@@ -1670,6 +1698,7 @@
         
         function removeUploadedImage(idOrUrl) { state.uploadedImages = state.uploadedImages.filter(img => { if(typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); renderPreviewImages(); }
 
+        // Đã cập nhật để tích hợp UUID tạo đơn (Fix 1)
         async function processOrder() {
             let finalCartItems = []; let finalImageUrls = []; const dateStr = document.getElementById('orderDateInput').value;
 
@@ -1700,6 +1729,7 @@
             
             const newOrder = {
                 id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
+                tracking_id: generateUUID(), // TẠO UUID BẢO MẬT Ở ĐÂY
                 date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, items: finalCartItems, 
                 images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: initStatus,
@@ -1713,7 +1743,7 @@
             
             const svcsStr = finalCartItems.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
             lastNotifiedOrderId = newOrder.id;
-            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)} - ${newOrder.total.toLocaleString()}đ\\nDịch vụ: ${svcsStr}`);
+            showNotification("📦 TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)} - ${newOrder.total.toLocaleString()}đ\nDịch vụ: ${svcsStr}`);
             sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`);
 
             await dbInsertOrder(newOrder);
