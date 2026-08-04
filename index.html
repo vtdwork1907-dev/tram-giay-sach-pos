@@ -621,7 +621,6 @@
             } catch (e) { console.error("URL ảnh không hợp lệ để xóa:", e); }
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: URL.revokeObjectURL chuyển xuống dưới
         function compressImage(file, maxSizeKB = 500, maxWidth = 1920) {
             return new Promise((resolve) => {
                 if (!file || !file.type.startsWith('image/') || file.size <= maxSizeKB * 1024) { resolve(file); return; }
@@ -751,7 +750,6 @@
             .catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: Lọc các url rỗng trước khi map hình ảnh
         async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
@@ -1122,7 +1120,6 @@
             }, 1000);
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: Lọc url rỗng đếm số lượng ảnh Dashboard
         function renderDashboard() {
             const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
@@ -1450,7 +1447,6 @@
             saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: Ưu tiên link r2Url (Cloudflare) lên trước url (Blob) và chống đập nhả giao diện (DOM Thrashing)
         function renderPreviewImages() {
             const c = document.getElementById('renderedImagesBox');
             let html = '';
@@ -1561,7 +1557,6 @@
             for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: Lọc url rỗng đếm số lượng ảnh tại Bảng Kho Đơn
         function renderOrdersTable() {
             const search = document.getElementById('searchOrderInput').value.toLowerCase(); const statusFilter = document.getElementById('filterOrderStatus').value;
             const serviceFilter = document.getElementById('filterOrderService') ? document.getElementById('filterOrderService').value : 'ALL';
@@ -1703,7 +1698,6 @@
             } 
         }
 
-        // ĐÃ ĐƯỢC FIX LỖI: Gán ảnh After thành "" thay vì dùng lệnh splice xóa mất index
         async function deleteOrderImage(orderId, type, index) {
             if (!confirm("Bạn có chắc chắn muốn xóa bức ảnh này khỏi đơn hàng không?")) return;
             const o = state.orders.find(x => x.id === orderId); if (!o) return;
@@ -1732,17 +1726,33 @@
 
         async function uploadAfterImageSlot(e, orderId, slotIdx) {
             const file = e.target.files[0]; if (!file) return;
-            const o = state.orders.find(x => x.id === orderId); if (!o) return;
-            if (!o.imagesAfter) o.imagesAfter = [];
+            
+            window.isUploadingImages = true; // BẬT KHÓA ĐỒNG BỘ
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ảnh sau...`;
 
             try {
-                const r2Url = await uploadFileToR2(file); o.imagesAfter[slotIdx] = r2Url;
+                const r2Url = await uploadFileToR2(file); 
+                
+                // Fetch lại order mới nhất từ state để tránh ghi đè sai
+                const o = state.orders.find(x => x.id === orderId); 
+                if (!o) return;
+                
+                if (!o.imagesAfter) o.imagesAfter = [];
+                o.imagesAfter[slotIdx] = r2Url;
                 for (let i = 0; i < o.imagesAfter.length; i++) { if (!o.imagesAfter[i]) o.imagesAfter[i] = ""; }
+                
                 renderOrdersTable(); renderDashboard(); openComparison(orderId);
                 await dbUpdateOrder(orderId);
-            } catch (err) { console.error("Lỗi upload ảnh sau vị trí slot:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
+            } catch (err) { 
+                console.error("Lỗi upload ảnh sau vị trí slot:", err); 
+                alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); 
+            } finally { 
+                loading.style.display = 'none'; 
+                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; 
+                e.target.value = ''; 
+                
+                setTimeout(() => { window.isUploadingImages = false; }, 1000); // NHẢ KHÓA
+            }
         }
 
         async function moveAfterImage(orderId, slotIdx, dir) {
@@ -1796,14 +1806,32 @@
 
         async function uploadAfterImage(e, orderId) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
-            const o = state.orders.find(x => x.id === orderId); if (!o) return; if (!o.imagesAfter) o.imagesAfter = [];
+            
+            window.isUploadingImages = true; // BẬT KHÓA ĐỒNG BỘ
             const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = `Đang tải ${files.length} ảnh lên...`;
+            
             try {
-                for (const file of files) { const r2Url = await uploadFileToR2(file); o.imagesAfter.push(r2Url); }
+                const uploadedUrls = [];
+                for (const file of files) { const r2Url = await uploadFileToR2(file); uploadedUrls.push(r2Url); }
+                
+                // Lấy lại order từ state để không ghi đè dữ liệu cũ
+                const o = state.orders.find(x => x.id === orderId); 
+                if (!o) return; 
+                if (!o.imagesAfter) o.imagesAfter = [];
+                
+                uploadedUrls.forEach(url => o.imagesAfter.push(url));
                 renderOrdersTable(); renderDashboard();
                 await dbUpdateOrder(orderId);
-            } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; }
+            } catch (err) { 
+                console.error("Lỗi upload ảnh sau:", err); 
+                alert("Có lỗi xảy ra khi tải ảnh. Vui lòng thử lại."); 
+            } finally { 
+                loading.style.display = 'none'; 
+                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; 
+                e.target.value = ''; 
+                
+                setTimeout(() => { window.isUploadingImages = false; }, 1000); // NHẢ KHÓA
+            }
         }
 
         function renderCustomersTable() {
@@ -1959,8 +1987,19 @@
             }
         }
 
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (state.currentUser) fetchLatestDataFromCloud(true); } });
-        window.addEventListener('focus', () => { if (document.visibilityState === 'visible' && state.currentUser) { clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); } });
+        // ĐÃ FIX: Điều kiện "!window.isUploadingImages" để chặn đồng bộ khi đang tải ảnh
+        document.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'visible' && state.currentUser && !window.isUploadingImages) { 
+                fetchLatestDataFromCloud(true); 
+            } 
+        });
+        
+        window.addEventListener('focus', () => { 
+            if (document.visibilityState === 'visible' && state.currentUser && !window.isUploadingImages) { 
+                clearTimeout(window.syncTimeout); 
+                window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); 
+            } 
+        });
     </script>
 </body>
 </html>
