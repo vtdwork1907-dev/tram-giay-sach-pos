@@ -809,26 +809,29 @@
 }
 
         function uploadFileToR2(file) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    // Lấy session token hiện tại
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) throw new Error("Chưa đăng nhập");
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) throw new Error("Chưa đăng nhập");
 
-                    const compressedFile = await compressImage(file, 500, 1920);
-                    const formData = new FormData(); formData.append('file', compressedFile);
-                    
-                    const response = await fetch(`${WORKER_API_URL}/upload`, { 
-                        method: 'POST', 
-                        headers: { 'Authorization': `Bearer ${session.access_token}` }, 
-                        body: formData 
-                    });
-                    const data = await response.json();
-                    if (!response.ok) { reject(new Error(data.error || 'Lỗi khi upload ảnh')); return; }
-                    resolve(data.url);
-                } catch(err) { reject(err); }
+            const compressedFile = await compressImage(file, 500, 1920);
+            
+            // FIX CHO MOBILE: Bắt buộc truyền tham số tên file thứ 3 vào formData
+            const formData = new FormData(); 
+            const finalName = compressedFile.name || file.name || `image_${Date.now()}.jpg`;
+            formData.append('file', compressedFile, finalName);
+            
+            const response = await fetch(`${WORKER_API_URL}/upload`, { 
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${session.access_token}` }, 
+                body: formData 
             });
-        }
+            const data = await response.json();
+            if (!response.ok) { reject(new Error(data.error || 'Lỗi khi upload ảnh')); return; }
+            resolve(data.url);
+        } catch(err) { reject(err); }
+    });
+}
 
         function calculate3MonthsLater(dateStr) {
             try {
