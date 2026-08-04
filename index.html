@@ -977,8 +977,8 @@
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-sm">
-                            <div class="flex justify-between gap-4"><span class="text-slate-500">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span></div>
-                            <div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(order.customer.phone)}</span></div>
+                            <div class="flex justify-between gap-4"><span class="text-slate-500">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(maskName(order.customer.name))}</span></div>
+<div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${order.date}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền (Gốc):</span><span class="font-bold text-slate-700 text-sm">${order.total.toLocaleString()} đ</span></div>
                             ${extraFeeHtml}
