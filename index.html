@@ -1254,6 +1254,49 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
+            // =====================================================================
+            // 1. VÁCH NGĂN BẢO MẬT & REALTIME CHO TRANG TRACKING (DÀNH CHO KHÁCH)
+            // =====================================================================
+            if (window.location.hash.startsWith('#track=')) {
+                document.getElementById('globalLoading').style.display = 'none'; // Ẩn loading nội bộ
+                
+                let lastOrderState = ""; // Biến lưu trạng thái cũ để so sánh
+
+                // Vòng lặp Realtime an toàn (Hỏi thăm ngầm mỗi 3 giây)
+                setInterval(async () => {
+                    const trackingId = window.location.hash.replace('#track=', '');
+                    try {
+                        // Gọi thẳng vào hàm RPC an toàn (đã che SĐT/Tên bằng SQL)
+                        const { data } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
+                        
+                        if (data && data.length > 0) {
+                            const currentState = JSON.stringify(data[0]);
+                            
+                            // CHỈ render lại màn hình NẾU nhân viên có thay đổi dữ liệu
+                            if (currentState !== lastOrderState) {
+                                lastOrderState = currentState;
+                                
+                                // Ghi đè dữ liệu mới vào state tạm để hàm checkUrlTracking hiển thị
+                                state.orders = [mapOrderDbToJs(data[0])];
+                                checkUrlTracking(); 
+                            }
+                        }
+                    } catch (e) { console.error("Lỗi realtime tracking:", e); }
+                }, 3000); // 3000ms = 3 giây
+
+                // Chạy hiển thị ngay lần đầu tiên mở link
+                checkUrlTracking();
+
+                // ⛔ LỆNH QUAN TRỌNG NHẤT: Dừng toàn bộ code POS phía dưới, CÔ LẬP TRANG TRACKING!
+                return; 
+            }
+
+            // =====================================================================
+            // 2. CODE DÀNH RIÊNG CHO HỆ THỐNG POS NỘI BỘ CỬA HÀNG (Sẽ không chạy nếu là khách)
+            // =====================================================================
+            initClock(); 
+            initCharts(); 
+            document.getElementById('globalLoading').style.display = 'flex';
             initClock(); initCharts(); document.getElementById('globalLoading').style.display = 'flex';
 
             const now = new Date(); const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
