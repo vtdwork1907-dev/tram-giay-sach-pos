@@ -1505,12 +1505,29 @@
         function removeStoreLogo() { state.logo = null; saveSettingsToDB(); renderLogo(); }
         function renderLogo() {
             const has = !!state.logo;
-            document.getElementById('defaultLogoIcon').style.display = has ? 'none' : 'block'; document.getElementById('customLogoImg').style.display = has ? 'block' : 'none';
-            if(has) document.getElementById('customLogoImg').src = state.logo;
-            document.getElementById('settingLogoDefault').style.display = has ? 'none' : 'block'; document.getElementById('settingLogoImg').style.display = has ? 'block' : 'none';
-            if(has) document.getElementById('settingLogoImg').src = state.logo;
-            const trackDefault = document.getElementById('trackingDefaultLogo'); const trackCustom = document.getElementById('trackingCustomLogo');
-            if (trackDefault && trackCustom) { trackDefault.style.display = has ? 'none' : 'flex'; trackCustom.style.display = has ? 'block' : 'none'; if (has) trackCustom.src = state.logo; }
+            
+            // 1. Cập nhật Logo ở Header (Chỉ làm khi Header chưa bị xóa)
+            const defaultIcon = document.getElementById('defaultLogoIcon');
+            const customImg = document.getElementById('customLogoImg');
+            if (defaultIcon) defaultIcon.style.display = has ? 'none' : 'block'; 
+            if (customImg) customImg.style.display = has ? 'block' : 'none';
+            if (has && customImg) customImg.src = state.logo;
+            
+            // 2. Cập nhật Logo ở phần Cài đặt (Chỉ làm khi chưa bị xóa)
+            const settingDefault = document.getElementById('settingLogoDefault');
+            const settingImg = document.getElementById('settingLogoImg');
+            if (settingDefault) settingDefault.style.display = has ? 'none' : 'block'; 
+            if (settingImg) settingImg.style.display = has ? 'block' : 'none';
+            if (has && settingImg) settingImg.src = state.logo;
+            
+            // 3. Cập nhật Logo ở màn hình Tracking của khách hàng
+            const trackDefault = document.getElementById('trackingDefaultLogo'); 
+            const trackCustom = document.getElementById('trackingCustomLogo');
+            if (trackDefault && trackCustom) { 
+                trackDefault.style.display = has ? 'none' : 'flex'; 
+                trackCustom.style.display = has ? 'block' : 'none'; 
+                if (has) trackCustom.src = state.logo; 
+            }
         }
 
         function loadQRConfig() {
