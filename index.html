@@ -1730,7 +1730,7 @@
             
             const newOrder = {
                 id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
-                tracking_id: generateUUID(), // TẠO UUID BẢO MẬT Ở ĐÂY
+                tracking_id: generateShortTrackingId(), // TẠO MÃ 11 KÝ TỰ NGẮN GỌN Ở ĐÂY
                 date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, items: finalCartItems, 
                 images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: initStatus,
