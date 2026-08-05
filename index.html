@@ -1,325 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TRẠM GIÀY SẠCH - Hệ Thống POS</title>
-    <!-- 1. Icon hiển thị trên thanh tab trình duyệt (Favicon) -->
-    <link rel="icon" type="image/png" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-
-    <!-- 2. Icon hiển thị trên màn hình chính Điện thoại (iPhone / Android) -->
-    <link rel="apple-touch-icon" href="https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png">
-    <meta name="apple-mobile-web-app-title" content="Trạm Giày Sạch">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- SUPABASE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { navy: { 50: '#f0f5fa', 100: '#e1ebd5', 600: '#1d5494', 800: '#10386C', 900: '#0a2347' }, cyanBrand: '#00A8E8' } } }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Lexend', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        
-        #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); pointer-events: none; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
-        .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-        .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
-        .image-preview-item .upload-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; }
-        .image-preview-item .upload-spinner { width: 1.25rem; height: 1.25rem; border: 2px solid #cbd5e1; border-top-color: #0284c7; border-radius: 50%; animation: spin 1s linear infinite; }
-        @media (min-width: 768px) {
-            .image-preview-item { width: 4.5rem; height: 6rem; }
-        }
-    </style>
-</head>
-<body class="h-screen flex flex-col overflow-hidden text-slate-800 relative w-full max-w-full">
-
-    <div id="globalLoading">
-        <div class="spinner mb-3"></div>
-        <div class="text-sm font-bold text-navy-800 animate-pulse">Đang đồng bộ dữ liệu...</div>
-    </div>
-
-    <!-- KHUNG CHỨA THÔNG BÁO NỔI TRONG APP -->
-    <div id="toastContainer" class="fixed top-16 right-4 left-4 md:left-auto md:w-80 z-[99999] flex flex-col space-y-2 pointer-events-none"></div>
-
-    <!-- MÀN HÌNH XEM ẢNH TO (FULLSCREEN) -->
-    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex flex-col items-center justify-center p-2 opacity-0 transition-opacity duration-300 select-none">
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 text-white/80 text-[11px] font-medium bg-black/60 px-3 py-1 rounded-full pointer-events-none md:hidden flex items-center gap-1.5 border border-white/10 z-10 shadow-sm">
-            <i class="fa-solid fa-arrow-down text-sky-400 animate-bounce"></i> Vuốt xuống để đóng
-        </div>
-
-        <button onclick="closeImageViewer()" class="absolute top-12 right-4 md:top-6 md:right-6 text-white hover:text-red-400 text-2xl leading-none z-20 w-11 h-11 flex items-center justify-center bg-black/60 rounded-full cursor-pointer border border-white/20 shadow-lg active:scale-95 transition">&times;</button>
-        
-        <img id="viewerImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg transition-transform duration-300 scale-95 touch-none">
-    </div>
-
-    <!-- GIAO DIỆN TRA CỨU DÀNH RIÊNG CHO KHÁCH HÀNG -->
-    <div id="customerTrackingScreen" class="fixed inset-0 bg-slate-100 z-[200] hidden overflow-y-auto p-4 md:p-8">
-        <div class="w-full max-w-xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden my-4">
-            <div class="bg-navy-800 text-white p-6 text-center relative">
-                <div class="w-16 h-16 bg-white text-navy-800 rounded-full flex items-center justify-center mx-auto shadow-lg mb-3 text-2xl font-bold overflow-hidden">
-                    <div id="trackingDefaultLogo" class="flex items-center justify-center w-full h-full"><i class="fa-solid fa-shoe-prints"></i></div>
-                    <img id="trackingCustomLogo" src="" class="hidden w-full h-full object-cover">
-                </div>
-                <h1 class="font-bold text-xl tracking-wider">TRẠM GIÀY SẠCH</h1>
-                <p class="text-[11px] md:text-xs text-sky-200 mt-1">Vệ sinh, thay đế & Phục hồi giày thể thao</p>
-            </div>
-            
-            <div class="p-5 md:p-6 space-y-6" id="trackingContentBox">
-                <!-- Nội dung động được render bằng JS -->
-            </div>
-            
-            <div class="bg-slate-50 p-4 text-center border-t border-slate-100 text-xs text-slate-400">
-                Cảm ơn quý khách đã sử dụng dịch vụ tại Trạm Giày Sạch ❤️
-            </div>
-        </div>
-    </div>
-
-    <!-- MÀN HÌNH ĐĂNG NHẬP (ĐÃ CẬP NHẬT BẢO MẬT SUPABASE) -->
-    <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
-        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-        <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-
-        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative z-10">
-            <div class="bg-navy-800 p-8 flex flex-col items-center text-white text-center">
-                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg mb-4"><i class="fa-solid fa-shoe-prints text-navy-800 text-3xl"></i></div>
-                <h2 class="font-bold text-xl tracking-widest">TRẠM GIÀY SẠCH</h2>
-                <p class="text-[11px] text-sky-200 mt-1 opacity-80">Hệ Thống Quản Lý Nội Bộ</p>
-            </div>
-            <div class="p-6 space-y-4">
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-600">Email đăng nhập</label>
-                    <div class="relative"><i class="fa-solid fa-envelope absolute left-3 top-3 text-slate-400"></i><input type="email" id="loginUsername" placeholder="Nhập email..." class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" value=""></div>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-600">Mật khẩu</label>
-                    <div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full text-sm pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:bg-white transition" onkeypress="if(event.key === 'Enter') handleLogin()" value=""></div>
-                </div>
-                <button onclick="handleLogin()" type="button" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-sky-600/30 transition active:scale-95 mt-2 relative z-20 cursor-pointer">ĐĂNG NHẬP <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i></button>
-            </div>
-            <div class="bg-slate-50 p-4 text-center border-t border-slate-100"><p class="text-[10px] text-slate-400">Chỉ Chủ cửa hàng mới có quyền cấp tài khoản mới.</p></div>
-        </div>
-    </div>
-
-    <!-- GIAO DIỆN CHÍNH -->
-    <header class="bg-navy-800 text-white px-3 md:px-4 pb-2 pt-12 md:pt-2 flex items-center justify-between shadow-md z-20 shrink-0 w-full max-w-full">
-        <div class="flex items-center space-x-2 md:space-x-3">
-            <div id="logoContainer" class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm overflow-hidden shrink-0"><i id="defaultLogoIcon" class="fa-solid fa-shoe-prints text-navy-800 text-sm md:text-xl"></i><img id="customLogoImg" src="" class="hidden w-full h-full object-cover rounded-full"></div>
-            <div>
-                <h1 class="font-bold text-base md:text-lg leading-none tracking-wide text-white">TRẠM GIÀY SẠCH</h1>
-                <p class="text-[10px] md:text-xs text-sky-200 mt-0.5 hidden sm:block">Hệ thống quản lý dịch vụ Shoe Spa</p>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-2 md:space-x-4">
-            <div class="flex items-center space-x-2 bg-white/10 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/20">
-                <i class="fa-solid fa-user-circle text-cyanBrand text-xs md:text-sm"></i>
-                <span id="currentUserDisplay" class="text-[10px] md:text-xs font-bold text-white uppercase line-clamp-1 max-w-[100px] md:max-w-none">...</span>
-            </div>
-            <button onclick="handleLogout()" class="bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-red-500/30 text-xs md:text-sm font-bold transition flex items-center gap-1.5 active:scale-95"><i class="fa-solid fa-power-off"></i> <span class="hidden md:inline">Thoát</span></button>
-            <div class="text-right text-xs text-slate-300 hidden md:block border-l border-white/10 pl-3 ml-2"><div id="clockDate" class="font-bold text-white text-sm tracking-wide"><i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> --/--/----</div><div id="clockTime" class="font-mono text-[11px] mt-0.5 text-sky-200">--:--:--</div></div>
-        </div>
-    </header>
-
-    <div class="flex flex-1 overflow-hidden relative w-full max-w-full">
-        <nav class="fixed bottom-0 left-0 w-full bg-navy-900 flex flex-row overflow-x-auto hide-scroll z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:relative md:w-20 lg:w-48 md:flex-col md:justify-start md:p-2 lg:p-3 md:space-y-1 md:pb-0 md:shadow-lg md:shrink-0 transition-all">
-            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all bg-sky-600 text-white md:shadow-md"><i class="fa-solid fa-house text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Trang Chủ</span></button>
-            <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-cash-register text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Tạo Đơn</span></button>
-            <button onclick="switchTab('orders')" id="nav-orders" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-list-check text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Kho Đơn</span></button>
-            
-            <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-file-invoice-dollar text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Chi Phí</span></button>
-            <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-chart-line text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Báo Cáo</span></button>
-            <button onclick="switchTab('payment')" id="nav-payment" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-emerald-400 md:text-emerald-400"><i class="fa-solid fa-qrcode text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Mã QR</span></button>
-            
-            <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-users text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Khách Hàng</span></button>
-
-            <div class="hidden md:block pt-4 border-t border-slate-700/60 w-full mt-2"></div>
-            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-restricted flex-1 min-w-[72px] md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 py-2.5 md:p-3 md:rounded-xl font-medium transition-all hover:bg-white/10 text-slate-300"><i class="fa-solid fa-sliders text-[18px] md:text-lg md:w-6 text-center mb-1 md:mb-0"></i><span class="text-[10px] md:text-sm lg:inline">Cài Đặt</span></button>
-        </nav>
-
-        <main class="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-slate-100 p-2 md:p-4 pb-24 md:pb-4 relative w-full hide-scroll">
-            
-            <!-- TAB: TRANG CHỦ -->
-            <section id="tab-dashboard" class="tab-content flex flex-col space-y-5 pb-8 w-full min-w-0">
-                <div>
-                    <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-calendar-day text-sky-600"></i> Tổng Quan Hôm Nay</h2>
-                    <div class="grid grid-cols-2 gap-3 md:gap-4 w-full">
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-center"><div class="absolute -right-4 -top-4 text-sky-100 text-6xl opacity-40"><i class="fa-solid fa-file-invoice"></i></div><span class="text-[10px] md:text-xs font-bold text-slate-500 relative uppercase">Doanh Số H.Nay</span><div id="dashGrossSales" class="text-2xl md:text-3xl font-extrabold text-slate-800 mt-1 relative">0 đ</div></div>
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-center"><div class="absolute -right-4 -top-4 text-emerald-100 text-6xl opacity-40"><i class="fa-solid fa-money-bill-wave"></i></div><span class="text-[10px] md:text-xs font-bold text-slate-500 relative uppercase">Doanh Thu H.Nay</span><div id="dashRevenue" class="text-2xl md:text-3xl font-extrabold text-emerald-600 mt-1 relative">0 đ</div><div id="dashRevenueBreakdown" class="text-[9px] text-emerald-700 font-bold mt-0.5 relative">CK: 0 đ | TM: 0 đ</div></div>
-                    </div>
-                </div>
-                <div>
-                    <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-bars-progress text-amber-500"></i> Tiến Độ Đơn Hàng (Hôm Nay)</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full">
-                        <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-box"></i></div><div><div class="text-[10px] md:text-xs font-bold text-slate-500 uppercase">Mới Nhận</div><div id="dashCountReceived" class="text-xl font-extrabold text-slate-800">0</div></div></div>
-                        <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-clock-rotate-left"></i></div><div><div class="text-[10px] md:text-xs font-bold text-slate-500 uppercase">Đang Xử Lý</div><div id="dashCountProcessing" class="text-xl font-extrabold text-slate-800">0</div></div></div>
-                        <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-check"></i></div><div><div class="text-[10px] md:text-xs font-bold text-slate-500 uppercase">Đã Xong (Kho)</div><div id="dashCountProcessed" class="text-xl font-extrabold text-slate-800">0</div></div></div>
-                        <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-handshake"></i></div><div><div class="text-[10px] md:text-xs font-bold text-slate-500 uppercase">Đã Trả Khách</div><div id="dashCountDelivered" class="text-xl font-extrabold text-slate-800">0</div></div></div>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col gap-6 mt-2 w-full max-w-full">
-                    <div class="flex flex-col w-full max-w-full">
-                        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Cần Xử Lý Gấp (5 Đơn Tồn Lâu Nhất)</h2>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
-                            <div class="overflow-x-auto w-full max-w-full">
-                                <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-28 md:w-48">Hình Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
-                                    <tbody id="dashPendingOrdersBody" class="divide-y divide-slate-100"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col w-full max-w-full">
-                        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-3"><i class="fa-solid fa-comment-dots text-indigo-500"></i> Đơn Có Ghi Chú / Yêu Cầu</h2>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
-                            <div class="overflow-x-auto w-full max-w-full">
-                                <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-36 md:w-48 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
-                                    <tbody id="dashNotedOrdersBody" class="divide-y divide-slate-100"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: TẠO ĐƠN (POS) -->
-            <section id="tab-pos" class="tab-content hidden lg:h-full flex flex-col lg:flex-row-reverse gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden w-full min-w-0">
-                <div class="w-full lg:w-[380px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col shrink-0 lg:h-full lg:overflow-hidden">
-                    <div class="bg-navy-800 text-white px-3 md:px-4 py-3 flex items-center justify-between shrink-0 rounded-t-2xl lg:rounded-none">
-                        <span class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-cyanBrand"></i> Thông Tin Đơn</span>
-                        <button onclick="clearCart()" class="text-xs bg-red-500/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition shadow">Làm mới</button>
-                    </div>
-
-                    <div class="p-3 overflow-visible lg:overflow-y-auto space-y-3 lg:flex-1">
-                        
-                        <!-- THỜI GIAN & KHÁCH HÀNG (GỘP GỌN) -->
-                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-2 shadow-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-white border border-slate-200 text-sky-600 w-[38px] h-[38px] flex items-center justify-center rounded-lg shrink-0 shadow-sm"><i class="fa-regular fa-clock"></i></span>
-                                <input type="datetime-local" id="orderDateInput" class="w-full text-[16px] md:text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 outline-none text-slate-700 bg-white">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" id="custName" placeholder="Tên khách *" class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
-                                </div>
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-phone"></i></span>
-                                    <input type="text" id="custPhone" placeholder="SĐT *" onblur="autoFillCustomer(this.value)" class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
-                                </div>
-                            </div>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-[11px] text-slate-400 text-xs"><i class="fa-solid fa-comment-dots"></i></span>
-                                <input type="text" id="custNote" placeholder="Ghi chú yêu cầu chung..." class="w-full text-[16px] md:text-xs pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 outline-none focus:border-sky-500">
-                            </div>
-                        </div>
-
-                        <!-- CHỌN DỊCH VỤ (THU NHỎ LẠI) -->
-                        <div id="mobileServicesPlaceholder" class="flex lg:hidden flex-col shrink-0 w-full mb-1">
-                            <div id="servicesMainContainer" class="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden shrink-0 w-full lg:flex-1 lg:h-full">
-                                <div class="bg-slate-50 p-1.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto hide-scroll shrink-0 w-full" id="categoryFilterContainer"></div>
-                                <div class="p-1.5 flex-1 overflow-y-auto max-h-[220px] lg:max-h-none grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-1.5 content-start bg-slate-100" id="servicesGrid"></div>
-                            </div>
-                        </div>
-
-                        <!-- TÌNH TRẠNG ĐƠN (GỘP THÀNH 1 HÀNG) -->
-                        <div class="bg-sky-50 p-2 rounded-xl border border-sky-200 flex items-center justify-between gap-2 shadow-sm">
-                            <label class="text-[11px] font-bold text-sky-800 uppercase flex items-center gap-1 shrink-0"><i class="fa-solid fa-bars-progress"></i> Tình Trạng</label>
-                            <select id="cartOrderStatus" class="flex-1 text-[14px] md:text-xs font-bold px-2 py-1 rounded-lg border border-sky-300 text-sky-900 outline-none bg-white">
-                                <option value="RECEIVED">📦 Đã nhận</option>
-                                <option value="PROCESSING">⏳ Đang xử lý</option>
-                                <option value="PROCESSED">✅ Đã xử lý xong</option>
-                                <option value="PAID">💰 Đã thanh toán (Tính DS)</option>
-                                <option value="DELIVERED">🤝 Đã trả khách (Tính DS)</option>
-                            </select>
-                        </div>
-
-                        <!-- NÚT CHUYỂN CHẾ ĐỘ: ĐƠN 1 ĐÔI THƯỜNG / ĐƠN NHIỀU ĐÔI -->
-                        <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200 flex items-center justify-between">
-                            <label for="multiShoeToggle" class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5 cursor-pointer">
-                                <i class="fa-solid fa-layer-group text-sky-600"></i> Đơn nhiều đôi giày (Ảnh & Dịch vụ riêng)
-                            </label>
-                            <input type="checkbox" id="multiShoeToggle" onchange="toggleMultiShoeMode(this.checked)" class="w-4 h-4 text-sky-600 rounded border-sky-300 focus:ring-sky-500 cursor-pointer">
-                        </div>
-
-                        <!-- CHẾ ĐỘ 1 ĐÔI THƯỜNG -->
-                        <div id="singleShoeSection" class="space-y-3">
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
-                                <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span class="flex items-center gap-1"><i class="fa-solid fa-camera text-sky-600"></i> Ảnh Tình Trạng (Before)</span></label>
-                                <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll w-full" id="imagePreviewContainer">
-                                    <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Chụp Ảnh</span><input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(event, true)" class="hidden" id="cameraInput"></label>
-                                    <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-lg md:text-base"></i><span class="text-[8px] font-bold mt-0.5">Tải Lên</span><input type="file" accept="image/*" multiple onchange="handleImageUpload(event, false)" class="hidden" id="fileInput"></label>
-                                    <div id="renderedImagesBox" class="flex gap-2"></div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-1.5"><label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between"><span><i class="fa-solid fa-list-check text-sky-600"></i> Dịch Vụ Đã Chọn</span><span id="cartCountBadge" class="bg-sky-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0</span></label><div id="cartItemsList" class="space-y-2 lg:max-h-32 overflow-y-auto pr-1"></div></div>
-                        </div>
-
-                        <!-- CHẾ ĐỘ NHIỀU ĐÔI GIÀY -->
-                        <div id="multiShoeSection" class="hidden space-y-3">
-                            <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200">
-                                <span class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-shoe-prints text-sky-600 mr-1"></i> Danh Sách Các Đôi Giày</span>
-                                <button type="button" onclick="addShoeItem()" class="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1.5 rounded-lg transition shadow flex items-center gap-1 active:scale-95">
-                                    <i class="fa-solid fa-plus"></i> Thêm đôi giày
-                                </button>
-                            </div>
-                            <div id="multiShoeList" class="space-y-3"></div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 md:p-4 bg-slate-50 border-t border-slate-200 space-y-2.5 shrink-0 rounded-b-2xl lg:rounded-none">
-                        <div class="space-y-2 text-xs">
-                            <div class="flex justify-between items-center text-slate-700 font-medium"><span>Tạm tính:</span><div class="flex items-center gap-1 w-28"><input type="number" id="subtotalInput" oninput="calculateFinalTotal()" class="w-full text-right font-bold text-[16px] md:text-sm text-slate-800 px-2 py-1 border border-slate-300 focus:border-sky-500 rounded bg-white outline-none">đ</div></div>
-                            <div class="flex justify-between items-center text-slate-600"><span>Giảm giá:</span><div class="flex items-center gap-1 w-28"><input type="number" id="discountInput" value="0" min="0" oninput="calculateFinalTotal()" class="w-full text-right text-[16px] md:text-sm px-2 py-1 border border-slate-300 focus:border-sky-500 rounded bg-white outline-none">đ</div></div>
-                            <div class="flex justify-between text-sm md:text-base font-bold text-navy-800 pt-2 border-t border-slate-200"><span>TỔNG TIỀN:</span><span id="totalDisplay" class="text-sky-700 text-lg md:text-xl">0 đ</span></div>
-                        </div>
-                        <button onclick="processOrder()" id="saveOrderBtn" class="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-3 md:py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md md:mt-2 active:scale-[0.98]"><i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG</button>
-                    </div>
-                </div>
-
-                <div id="pcServicesPlaceholder" class="hidden lg:flex flex-1 flex-col overflow-hidden shrink-0 h-full"></div>
-            </section>
-
-            <!-- CÁC TAB CÒN LẠI -->
-            <section id="tab-payment" class="tab-content hidden flex-col items-center justify-center py-6 w-full max-w-full">
-                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
-                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
-                    <h2 class="font-bold text-slate-800 text-2xl mb-1">Mã QR Thanh Toán</h2>
-                    <p class="text-xs text-slate-500 mb-6">Đưa mã này cho khách hàng quét để tự động điền STK</p>
-                    <div class="p-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl shadow-sm mb-6 w-full flex justify-center bg-white"><img id="paymentTabQR" src="" class="w-56 h-56 object-contain rounded-xl"></div>
-                    <div class="w-full space-y-2.5">
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Ngân hàng:</span><span id="paymentTabBank" class="font-bold text-navy-800"></span></div>
-                        <div class="flex items-center justify-between bg-sky-50 p-3 rounded-xl text-sm border border-sky-100"><span class="text-sky-800 font-medium">Số tài khoản:</span><span id="paymentTabAcc" class="font-mono font-bold text-sky-700 text-base"></span></div>
-                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl text-sm"><span class="text-slate-500 font-medium">Chủ tài khoản:</span><span id="paymentTabName" class="font-bold text-slate-800 uppercase"></span></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB: KHO ĐƠN -->
+<!-- TAB: KHO ĐƠN -->
             <section id="tab-orders" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full max-w-full">
                     <div class="flex items-center justify-between gap-2">
@@ -329,11 +8,24 @@
                             <input type="text" id="searchOrderInput" onkeyup="debouncedSearchOrder()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
                     </div>
+                    
+                    <!-- ĐÃ SỬA: Thay đổi layout grid thành 4 cột trên PC để chứa Nút Chips ngang hàng -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px] md:text-xs">
+                        
+                        <!-- 1. CHIPS BỘ LỌC NHANH (CHỈ HIỂN THỊ MÁY TÍNH) -->
+                        <div class="hidden md:flex items-center justify-between gap-1 col-span-2 md:col-span-1">
+                            <button type="button" onclick="setQuickOrderDate('today')" class="flex-1 bg-white border border-slate-300 text-slate-600 rounded-lg py-1.5 text-[11px] font-bold hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition shadow-sm">Hôm nay</button>
+                            <button type="button" onclick="setQuickOrderDate('yesterday')" class="flex-1 bg-white border border-slate-300 text-slate-600 rounded-lg py-1.5 text-[11px] font-bold hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition shadow-sm">Hôm qua</button>
+                            <button type="button" onclick="setQuickOrderDate('week')" class="flex-1 bg-white border border-slate-300 text-slate-600 rounded-lg py-1.5 text-[11px] font-bold hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition shadow-sm">Tuần này</button>
+                        </div>
+
+                        <!-- 2. BỘ LỌC NGÀY (GỐC) -->
                         <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
                             <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                             <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                         </div>
+                        
+                        <!-- 3. BỘ LỌC TÌNH TRẠNG -->
                         <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL" selected>📋 Tất cả đơn</option>
                             <option value="ACTIVE">⚡ Đơn đang làm</option>
@@ -343,6 +35,8 @@
                             <option value="PAID">💰 Đã thanh toán</option>
                             <option value="DELIVERED">🤝 Đã trả khách</option>
                         </select>
+                        
+                        <!-- 4. BỘ LỌC DỊCH VỤ -->
                         <select id="filterOrderService" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL">🛠️ Tất cả dịch vụ</option>
                             <option value="CLEAN">🧼 Vệ sinh</option>
@@ -374,7 +68,76 @@
 
                 <div id="pendingServicesSummary" class="text-[11px] md:text-xs bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center w-full max-w-full"></div>
 
+                <!-- CHIPS BỘ LỌC NHANH (CHỈ HIỂN THỊ ĐIỆN THOẠI) -->
+                <!-- Nằm giữa ô "Đơn chưa làm" và Bảng đơn hàng -->
+                <div class="flex md:hidden items-center justify-start gap-2 w-full overflow-x-auto hide-scroll pb-1">
+                    <button type="button" onclick="setQuickOrderDate('today')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Hôm nay</button>
+                    <button type="button" onclick="setQuickOrderDate('yesterday')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Hôm qua</button>
+                    <button type="button" onclick="setQuickOrderDate('week')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Tuần này</button>
+                    <button type="button" onclick="setQuickOrderDate('all')" class="whitespace-nowrap px-3 py-1 bg-slate-100 border border-slate-200 text-slate-500 rounded-full text-[10px] font-bold shadow-sm transition"><i class="fa-solid fa-rotate-right mr-1"></i>Bỏ lọc</button>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
+                    <div class="overflow-x-auto w-full max-w-full">
+                        <table class="w-full min-w-[700px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+                            <!-- BẢNG ĐƠN HÀNG GIỮ NGUYÊN BÊN DƯỚI -->
+                            // =========================================================================
+        // HÀM XỬ LÝ LỌC NHANH (CHIPS) NGÀY THÁNG KHO ĐƠN
+        // =========================================================================
+        function setQuickOrderDate(type) {
+            const startDateInput = document.getElementById('filterOrderStart');
+            const endDateInput = document.getElementById('filterOrderEnd');
+            
+            if (!startDateInput || !endDateInput) return;
+
+            const now = new Date();
+            
+            // Hàm phụ để format ngày chuẩn yyyy-mm-dd cho thẻ input date
+            const formatDate = (dateObj) => {
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            if (type === 'today') {
+                const todayStr = formatDate(now);
+                startDateInput.value = todayStr;
+                endDateInput.value = todayStr;
+            } 
+            else if (type === 'yesterday') {
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = formatDate(yesterday);
+                startDateInput.value = yesterdayStr;
+                endDateInput.value = yesterdayStr;
+            } 
+            else if (type === 'week') {
+                // Tính ngày Thứ 2 của tuần hiện tại
+                const currentDay = now.getDay(); // 0 là Chủ nhật, 1-6 là Thứ 2 - Thứ 7
+                const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() + distanceToMonday);
+                
+                // Tính ngày Chủ nhật của tuần hiện tại
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                
+                startDateInput.value = formatDate(startOfWeek);
+                endDateInput.value = formatDate(endOfWeek);
+            }
+            else if (type === 'all') {
+                // Nút "Bỏ lọc" trên điện thoại
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+
+            // Hiệu ứng UX: Đổi màu nút đang được chọn (Tùy chọn)
+            // Cập nhật lại bảng đơn hàng và đưa về trang 1
+            renderOrdersTable(true);
+        }
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
                     <div class="overflow-x-auto w-full max-w-full">
                         <table class="w-full min-w-[700px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                             <thead class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider shadow-sm text-[10px] md:text-xs">
