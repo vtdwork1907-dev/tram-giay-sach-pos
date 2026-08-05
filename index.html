@@ -1319,6 +1319,12 @@
                 let lastOrderState = ""; 
                 const trackingId = window.location.hash.replace('#track=', '');
                 let trackingInterval;
+                supabaseClient.from('store_settings').select('logo').eq('id', 'main').maybeSingle().then(({data}) => {
+                    if (data && data.logo) {
+                        state.logo = data.logo;
+                        renderLogo(); // Cập nhật lại UI logo ngay khi tải xong
+                    }
+                });
 
                 const fetchTrackingData = async () => {
                     try {
