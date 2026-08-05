@@ -38,7 +38,8 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        #globalLoading { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); pointer-events: none; }
+        /* ĐÃ SỬA: Hiển thị mặc định màn loading để che đi lúc chuyển trang chống giật */
+        #globalLoading { display: flex; position: fixed; inset: 0; background: rgba(255,255,255,1); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); pointer-events: none; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
@@ -95,8 +96,8 @@
         </div>
     </div>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP (ĐÃ CẬP NHẬT BẢO MẬT SUPABASE) -->
-    <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
+    <!-- MÀN HÌNH ĐĂNG NHẬP (ĐÃ CẬP NHẬT BẢO MẬT SUPABASE & ẨN MẶC ĐỊNH CHỐNG GIẬT) -->
+    <div id="authScreen" class="fixed inset-0 bg-navy-900 z-[100] hidden opacity-0 flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-cyanBrand rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
 
@@ -120,7 +121,6 @@
             <div class="bg-slate-50 p-4 text-center border-t border-slate-100"><p class="text-[10px] text-slate-400">Chỉ Chủ cửa hàng mới có quyền cấp tài khoản mới.</p></div>
         </div>
     </div>
-
     <!-- GIAO DIỆN CHÍNH -->
     <header class="bg-navy-800 text-white px-3 md:px-4 pb-2 pt-12 md:pt-2 flex items-center justify-between shadow-md z-20 shrink-0 w-full max-w-full">
         <div class="flex items-center space-x-2 md:space-x-3">
@@ -184,7 +184,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
                             <div class="overflow-x-auto w-full max-w-full">
                                 <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-28 md:w-48">Hình Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
+                                    <thead><tr class="bg-red-50 text-red-800 border-b border-red-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="hidden md:table-cell p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-28 md:w-48">Hình Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
                                     <tbody id="dashPendingOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -196,7 +196,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
                             <div class="overflow-x-auto w-full max-w-full">
                                 <table class="w-full min-w-[600px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-36 md:w-48 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
+                                    <thead><tr class="bg-indigo-50 text-indigo-800 border-b border-indigo-100 font-bold uppercase tracking-wider text-[10px] md:text-xs"><th class="hidden md:table-cell p-2 md:p-3 w-[70px] md:w-auto">Mã & Ngày</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Khách Hàng</th><th class="p-2 md:p-3 w-36 md:w-48 whitespace-normal">Ghi Chú & Ảnh</th><th class="p-2 md:p-3 min-w-[110px] md:w-auto">Dịch Vụ</th><th class="p-2 md:p-3 w-[70px] md:w-auto">Tổng Tiền</th><th class="p-2 md:p-3 w-[80px] md:w-auto">Tình Trạng</th></tr></thead>
                                     <tbody id="dashNotedOrdersBody" class="divide-y divide-slate-100"></tbody>
                                 </table>
                             </div>
@@ -318,7 +318,7 @@
                 </div>
             </section>
 
-            <!-- TAB: KHO ĐƠN (ĐÃ CHỈNH SỬA THÊM BỘ LỌC NHANH DẠNG SELECT) -->
+            <!-- TAB: KHO ĐƠN (ĐÃ ĐIỀU CHỈNH GIAO DIỆN MOBILE & PC THEO YÊU CẦU) -->
             <section id="tab-orders" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full max-w-full">
                     <div class="flex items-center justify-between gap-2">
@@ -397,8 +397,9 @@
                             <thead class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider shadow-sm text-[10px] md:text-xs">
                                 <tr>
                                     <th class="p-2 md:p-3 w-7 md:w-10 text-center bg-slate-100"><input type="checkbox" id="selectAllOrdersHeader" onchange="toggleSelectAllOrders(this.checked)" class="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" title="Chọn tất cả"></th>
-                                    <th class="p-2 md:p-3 min-w-[85px] md:min-w-[110px] bg-slate-100">Mã & Ngày</th>
-                                    <th class="p-2 md:p-3 min-w-[90px] md:min-w-[130px] bg-slate-100">Khách Hàng</th>
+                                    <!-- ĐÃ ĐIỀU CHỈNH: Ẩn cột Mã & Ngày trên mobile -->
+                                    <th class="hidden md:table-cell p-2 md:p-3 min-w-[85px] md:min-w-[110px] bg-slate-100">Mã & Ngày</th>
+                                    <th class="p-2 md:p-3 min-w-[120px] md:min-w-[130px] bg-slate-100">Khách Hàng</th>
                                     <th class="p-2 md:p-3 min-w-[120px] md:min-w-[160px] bg-slate-100">Ghi Chú & Ảnh</th>
                                     <th class="p-2 md:p-3 min-w-[140px] md:min-w-[200px] whitespace-normal bg-slate-100">Dịch Vụ (SL)</th>
                                     <th class="p-2 md:p-3 min-w-[80px] md:min-w-[100px] bg-slate-100">Tổng Tiền</th>
@@ -573,7 +574,6 @@
             </section>
         </main>
     </div>
-    
     <!-- MODAL SO SÁNH TRƯỚC & SAU -->
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex flex-col justify-end md:justify-center items-center pt-12 pb-2 px-2 md:p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
@@ -677,7 +677,8 @@
             </div>
         </div>
     </div>
-    <!-- SCRIPT CHÍNH (ĐÃ TÍCH HỢP LOGIC CHỤP/TẢI ẢNH CHI PHÍ) -->
+    
+    <!-- SCRIPT CHÍNH -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
         function escapeHtml(unsafe) {
@@ -727,12 +728,8 @@
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
 
-        // BIẾN QUẢN LÝ ẢNH CHI PHÍ (MỚI)
         let expenseTempImages = [];
 
-        // =========================================================================
-        // BIẾN QUẢN LÝ PHÂN TRANG VÀ DEBOUNCE TÌM KIẾM
-        // =========================================================================
         let currentOrderPage = 1;
         const ORDERS_PER_PAGE = 50;
         let searchTimeout = null;
@@ -1041,11 +1038,15 @@
                         extraFeeHtml = `<div class="flex justify-between gap-4 pt-1"><span class="text-slate-500">Phát sinh (${escapeHtml(order.extraFeeReason || 'Không có lý do')}):</span><span class="font-bold ${order.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} text-right">${order.extraFeeVal > 0 ? '+' : ''}${order.extraFeeVal.toLocaleString()} đ</span></div>`;
                     }
 
+                    // Format Date to dd/mm/yyyy
+                    const dateParts = order.date.split(' ')[0].split('-');
+                    const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : order.date.split(' ')[0];
+
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-sm">
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span></div>
-<div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
-                            <div class="flex justify-between gap-4"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${order.date}</span></div>
+                            <div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
+                            <div class="flex justify-between gap-4"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${formattedDate}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền (Gốc):</span><span class="font-bold text-slate-700 text-sm">${order.total.toLocaleString()} đ</span></div>
                             ${extraFeeHtml}
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-700 font-bold">Thực Thu (Cần thanh toán):</span><span class="font-extrabold text-emerald-600 text-base">${finalTotal.toLocaleString()} đ</span></div>
@@ -1131,7 +1132,7 @@
         
         async function checkAutoLogin() {
             const loading = document.getElementById('globalLoading');
-            loading.style.display = 'flex';
+            // Bỏ thay đổi display: flex từ đây để mượt hơn, loading mặc định bật
             loading.querySelector('.text-sm').innerText = 'Đang kiểm tra phiên bảo mật...';
 
             try {
@@ -1287,6 +1288,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.location.hash.startsWith('#track=')) {
+                // Tracking UI - Load Smoothly
                 document.getElementById('globalLoading').style.display = 'none';
                 state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
                 renderLogo();
@@ -1332,7 +1334,6 @@
 
             initClock(); 
             initCharts(); 
-            document.getElementById('globalLoading').style.display = 'flex';
             const now = new Date(); const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
             if (document.getElementById('expenseMonthFilter')) document.getElementById('expenseMonthFilter').value = currentMonthStr;
 
@@ -1364,7 +1365,6 @@
             adjustPOSLayout(); renderDashboard(); checkUrlTracking();
             
             checkAutoLogin();
-            document.getElementById('globalLoading').style.display = 'none';
 
             supabaseClient.channel('tramgiaysach_realtime')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
@@ -1446,7 +1446,13 @@
                 const hasBefore = o.images && o.images.length > 0;
                 const validAfterImages = (o.imagesAfter || []).filter(url => url && url.trim() !== '');
                 const hasAfter = validAfterImages.length > 0;
-                const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                const parts = o.date.split(' '); 
+                
+                // Format Date to dd/mm/yyyy
+                const dateParts = parts[0].split('-');
+                const dStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : parts[0];
+                const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                
                 const finalTotal = o.total + (o.extraFeeVal || 0);
 
                 let imgHtml = '';
@@ -1479,8 +1485,15 @@
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-2 md:p-3 align-top"><span class="font-mono text-sky-700 font-bold text-[10px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<br class="md:hidden"><span class="hidden md:inline"> - </span>${dStr}</span></td>
-                    <td class="p-2 md:p-3 align-top"><div class="font-bold text-[11px] md:text-sm truncate max-w-[80px] md:max-w-[150px]" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div><div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div></td>
+                    <td class="hidden md:table-cell p-2 md:p-3 align-top"><span class="font-mono text-sky-700 font-bold text-[10px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<span class="hidden md:inline"> - </span>${dStr}</span></td>
+                    <td class="p-2 md:p-3 align-top">
+                        <div class="font-bold text-[11px] md:text-sm truncate max-w-[80px] md:max-w-[150px]" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
+                        <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
+                        <div class="md:hidden mt-1.5 pt-1.5 border-t border-slate-200/70">
+                            <span class="font-mono text-sky-700 font-bold text-[10px] block leading-tight">${o.id}</span>
+                            <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
+                        </div>
+                    </td>
                     <td class="p-2 md:p-3 align-top whitespace-normal min-w-[100px] md:min-w-[180px]">${noteHtml}<div class="mb-1">${imgHtml}</div><div class="flex w-full">${actionHtml}</div></td>
                     <td class="p-2 md:p-3 align-top whitespace-normal min-w-[130px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
                     <td class="p-2 md:p-3 align-top min-w-[70px] md:min-w-[100px]">${totalCellHtml}</td>
@@ -1970,7 +1983,13 @@
                 const hasBefore = o.images && o.images.length > 0; 
                 const validAfterImages = (o.imagesAfter || []).filter(url => url && url.trim() !== '');
                 const hasAfter = validAfterImages.length > 0;
-                const parts = o.date.split(' '); const dStr = parts[0]; const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                const parts = o.date.split(' '); 
+                
+                // Format Date to dd/mm/yyyy
+                const dateParts = parts[0].split('-');
+                const dStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : parts[0];
+                const tStr = parts[1] ? parts[1].substring(0, 5) : '';
+                
                 const finalTotal = o.total + (o.extraFeeVal || 0);
 
                 let imgHtml = '';
@@ -2019,8 +2038,15 @@
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-2 md:p-3 text-center align-top pt-2.5 md:pt-3"><input type="checkbox" class="order-select-cb w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
-                    <td class="p-2 md:p-3 align-top min-w-[85px] md:min-w-[110px]"><span class="font-mono text-sky-700 font-bold text-[11px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<br class="md:hidden"><span class="hidden md:inline"> - </span>${dStr}</span></td>
-                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px]"><div class="font-bold text-[11px] md:text-sm whitespace-normal break-words" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div><div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div></td>
+                    <td class="hidden md:table-cell p-2 md:p-3 align-top min-w-[85px] md:min-w-[110px]"><span class="font-mono text-sky-700 font-bold text-[11px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<span class="hidden md:inline"> - </span>${dStr}</span></td>
+                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px]">
+                        <div class="font-bold text-[11px] md:text-sm whitespace-normal break-words" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
+                        <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
+                        <div class="md:hidden mt-1.5 pt-1.5 border-t border-slate-200/70">
+                            <span class="font-mono text-sky-700 font-bold text-[10px] block leading-tight">${o.id}</span>
+                            <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
+                        </div>
+                    </td>
                     <td class="p-2 md:p-3 align-top min-w-[120px] md:min-w-[160px]"><div class="text-[10px] md:text-xs text-slate-600 italic mb-1 whitespace-normal leading-tight" title="${escapeHtml(o.customer.note || '')}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${escapeHtml(o.customer.note || 'Không có')}</div><div class="flex items-center gap-1 mt-1 mb-1 flex-wrap">${imgHtml}</div><div class="flex w-full items-center">${actionHtml}</div></td>
                     <td class="p-2 md:p-3 text-[10px] md:text-xs whitespace-normal align-top min-w-[140px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
                     <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[100px]">${totalCellHtml}</td>
