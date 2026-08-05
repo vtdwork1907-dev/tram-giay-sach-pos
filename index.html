@@ -1130,46 +1130,61 @@
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
         
         async function checkAutoLogin() {
-            const loading = document.getElementById('globalLoading');
-            loading.style.display = 'flex';
-            loading.querySelector('.text-sm').innerText = 'Đang kiểm tra phiên bảo mật...';
+    const loading = document.getElementById('globalLoading');
+    // Chỉ cập nhật text vì CSS đã tự động hiển thị màn hình loading mặc định
+    if(loading) loading.querySelector('.text-sm').innerText = 'Đang kiểm tra phiên bảo mật...';
 
-            try {
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
+    try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+        if (session) {
+            const { data: userData, error: userError } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('username', session.user.email)
+                .single();
                 
-                if (session) {
-                    const { data: userData, error: userError } = await supabaseClient
-                        .from('users')
-                        .select('*')
-                        .eq('username', session.user.email)
-                        .single();
-                        
-                    let activeUser = userData;
-                    
-                    if (!userData) {
-                        if (session.user.email === 'admin@tramgiaysach.com') {
-                            activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
-                        } else {
-                            await supabaseClient.auth.signOut();
-                            document.getElementById('authScreen').style.display = 'flex';
-                            setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
-                            alert("Tài khoản của bạn đã bị chủ cửa hàng thu hồi quyền truy cập hoặc đã bị xóa!");
-                            return; 
-                        }
-                    }
-                    
-                    state.currentUser = activeUser;
-                    const authScreen = document.getElementById('authScreen'); 
-                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-                    document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name); 
-                    changeRole(activeUser.role);
+            let activeUser = userData;
+            
+            if (!userData) {
+                if (session.user.email === 'admin@tramgiaysach.com') {
+                    activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
                 } else {
-                    document.getElementById('authScreen').style.display = 'flex';
-                    setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+                    await supabaseClient.auth.signOut();
+                    const authScreen = document.getElementById('authScreen');
+                    if(authScreen) {
+                        authScreen.classList.remove('hidden');
+                        authScreen.style.display = 'flex';
+                        setTimeout(() => authScreen.classList.remove('opacity-0'), 10);
+                    }
+                    alert("Tài khoản của bạn đã bị chủ cửa hàng thu hồi quyền truy cập hoặc đã bị xóa!");
+                    return; 
                 }
-            } catch (err) { console.error("Lỗi kiểm tra phiên:", err); } 
-            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; }
+            }
+            
+            state.currentUser = activeUser;
+            document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name); 
+            changeRole(activeUser.role);
+            
+        } else {
+            // NẾU CHƯA ĐĂNG NHẬP: Xóa class ẩn và bật lại màn hình đăng nhập
+            const authScreen = document.getElementById('authScreen');
+            if(authScreen) {
+                authScreen.classList.remove('hidden');
+                authScreen.style.display = 'flex'; 
+                setTimeout(() => authScreen.classList.remove('opacity-0'), 10);
+            }
         }
+    } catch (err) { 
+        console.error("Lỗi kiểm tra phiên:", err); 
+    } finally { 
+        // Sau khi xử lý xong (dù thành công hay thất bại), luôn tắt màn hình loading
+        if(loading) {
+            loading.style.display = 'none'; 
+            loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; 
+        }
+    }
+}
 
         async function handleLogin() {
             const email = document.getElementById('loginUsername').value.trim(); 
