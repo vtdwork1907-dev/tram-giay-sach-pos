@@ -2504,6 +2504,13 @@
 
         async function deleteExpenseDB(id) {
             if(!confirm("Bạn muốn xóa khoản chi này?")) return;
+            
+            // Xóa ảnh trên Cloudflare R2 nếu có
+            const expToDelete = state.expenses.find(x => x.id === id);
+            if (expToDelete && expToDelete.images) {
+                expToDelete.images.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); });
+            }
+
             state.expenses = state.expenses.filter(x => x.id !== id);
             saveLocalState(); updateExpensesView(); updateReportMetrics();
             await supabaseClient.from('expenses').delete().eq('id', id);
@@ -2516,7 +2523,14 @@
             const filtered = state.expenses.filter(e => { if (!monthFilter) return true; return e.date && e.date.startsWith(monthFilter); });
             const tbody = document.getElementById('expensesTableBody');
             if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Không có khoản chi nào trong tháng này.</td></tr>`; } 
-            else { tbody.innerHTML = filtered.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư, phát sinh,...)':'Cố định'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); }
+            else { 
+                tbody.innerHTML = filtered.map(e => {
+                    // Nếu có ảnh, tạo nút hiển thị Mắt xem ảnh
+                    let imgBtn = (e.images && e.images.length > 0) ? `<button onclick="openImageViewer('${e.images[0]}')" class="text-sky-600 bg-sky-100 hover:bg-sky-200 px-2 py-1 rounded text-[10px] font-bold shadow-sm transition" title="Xem ảnh chứng từ"><i class="fa-solid fa-image"></i> Xem hóa đơn</button>` : '';
+
+                    return `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư, phát sinh,...)':'Cố định'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right flex items-center justify-end gap-2">${imgBtn}<button onclick="deleteExpenseDB(${e.id})" class="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 px-2 py-1.5 rounded transition"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
+                }).join(''); 
+            }
         }
 
         function initCharts() {
