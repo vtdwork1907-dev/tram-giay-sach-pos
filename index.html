@@ -2424,16 +2424,82 @@
                 .map((c, idx) => `<tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(c.name)}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>`).join('');
         }
 
-        function openAddExpenseModal() { document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; document.getElementById('addExpenseModal').classList.remove('hidden'); }
-        function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
+        function openAddExpenseModal() { 
+            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
+            state.expenseImages = []; // Reset ảnh
+            renderExpenseImages();
+            document.getElementById('addExpenseModal').classList.remove('hidden'); 
+        }
+
+        function closeExpenseModal() { 
+            state.expenseImages = []; // Reset ảnh
+            document.getElementById('addExpenseModal').classList.add('hidden'); 
+        }
         
         async function saveNewExpense() {
             const name = document.getElementById('expName').value; const amt = parseInt(document.getElementById('expAmount').value) || 0;
             if(!name || amt<=0) return alert("Nhập đủ thông tin");
             
-            const newExp = { id: Date.now(), date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], name, amount: amt, cat: document.getElementById('expCategory').value };
-            state.expenses.unshift(newExp); saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
+            // Chặn lưu nếu ảnh đang tải lên
+            const isUploading = state.expenseImages && state.expenseImages.some(img => img.status === 'uploading');
+            if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
+            
+            // Trích xuất URL ảnh
+            const finalImageUrls = (state.expenseImages || []).map(img => img.r2Url).filter(url => url !== null);
+
+            const newExp = { 
+                id: Date.now(), 
+                date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], 
+                name, 
+                amount: amt, 
+                cat: document.getElementById('expCategory').value,
+                images: finalImageUrls // Lưu ảnh vào object
+            };
+            
+            state.expenses.unshift(newExp); saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); 
+            document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
+            
             await supabaseClient.from('expenses').insert(newExp);
+        }
+
+        // HÀM MỚI: Xử lý upload ảnh chi phí lên R2
+        async function handleExpenseImageUpload(e) {
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            const saveBtn = document.getElementById('btnSaveExpense');
+            if(saveBtn) { saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+
+            for (const file of files) {
+                const imgId = 'exp_' + Date.now() + Math.random().toString(36).substring(7);
+                const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
+                state.expenseImages.push(tempImage); renderExpenseImages();
+                
+                try {
+                    const r2Url = await uploadFileToR2(file); 
+                    const targetImg = state.expenseImages.find(img => img.id === imgId);
+                    if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderExpenseImages(); }
+                } catch (err) { 
+                    alert(`Không thể tải ảnh ${file.name} lên server`); 
+                    state.expenseImages = state.expenseImages.filter(img => img.id !== imgId); renderExpenseImages(); 
+                }
+            }
+            if(saveBtn) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            e.target.value = '';
+        }
+
+        // HÀM MỚI: Hiển thị giao diện ảnh preview
+        function renderExpenseImages() {
+            const box = document.getElementById('expRenderedImagesBox'); if(!box) return;
+            box.innerHTML = state.expenseImages.map((imgObj) => { 
+                const isUploading = imgObj.status === 'uploading';
+                const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.url);
+                return `<div class="image-preview-item"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeExpenseImage('${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`; 
+            }).join('');
+        }
+
+        // HÀM MỚI: Xóa ảnh khi đang preview
+        function removeExpenseImage(idOrUrl) {
+            state.expenseImages = state.expenseImages.filter(img => { if(typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); 
+            renderExpenseImages();
         }
 
         async function deleteExpenseDB(id) {
