@@ -643,7 +643,15 @@
             </div>
         </div>
     </div>
-    
+    <!-- KẾT THÚC: Thêm khu vực tải ảnh -->
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeExpenseModal()" class="px-4 py-2.5 rounded-lg bg-slate-200 font-bold text-slate-700">Hủy</button>
+                    <button onclick="saveNewExpense()" id="btnSaveExpense" class="px-4 py-2.5 rounded-lg bg-red-600 text-white font-bold">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- SCRIPT CHÍNH (ĐÃ BẢO MẬT XÁC THỰC BẰNG TOKEN, GỠ BỎ SECRET KEY) -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
