@@ -924,6 +924,21 @@
                 setTimeout(() => { window.open(`https://zalo.me/${cleanPhone}`, '_blank'); }, 800);
             }).catch(err => { window.open(`https://zalo.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank'); });
         }
+        function closeImageViewer() {
+            const modal = document.getElementById('imageViewerModal'); 
+            const img = document.getElementById('viewerImage');
+            
+            // Thêm class để tạo hiệu ứng mờ dần và thu nhỏ lại
+            modal.classList.add('opacity-0'); 
+            img.classList.add('scale-95');
+            
+            // Chờ hiệu ứng CSS kết thúc (300ms) rồi mới ẩn hẳn phần tử
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                // Reset lại transform để chuẩn bị cho lần mở sau
+                img.style.transform = 'translateY(0px) scale(0.95)';
+            }, 300);
+        }
 
         function openImageViewer(url) {
             const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage');
