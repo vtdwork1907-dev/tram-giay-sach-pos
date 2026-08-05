@@ -643,15 +643,7 @@
             </div>
         </div>
     </div>
-    <!-- KẾT THÚC: Thêm khu vực tải ảnh -->
-
-                <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="closeExpenseModal()" class="px-4 py-2.5 rounded-lg bg-slate-200 font-bold text-slate-700">Hủy</button>
-                    <button onclick="saveNewExpense()" id="btnSaveExpense" class="px-4 py-2.5 rounded-lg bg-red-600 text-white font-bold">Lưu</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
     <!-- SCRIPT CHÍNH (ĐÃ BẢO MẬT XÁC THỰC BẰNG TOKEN, GỠ BỎ SECRET KEY) -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
@@ -1097,7 +1089,6 @@
             orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, 
             cart: [], uploadedImages: [], role: null,
             multiShoeMode: false, shoes: [], activeShoeId: null
-            expenseImages: []
         };
 
         let activeCategory = 'ALL'; let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
@@ -2424,93 +2415,20 @@
                 .map((c, idx) => `<tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(c.name)}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>`).join('');
         }
 
-        function openAddExpenseModal() { 
-            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
-            state.expenseImages = []; // Reset ảnh
-            renderExpenseImages();
-            document.getElementById('addExpenseModal').classList.remove('hidden'); 
-        }
-
-        function closeExpenseModal() { 
-            state.expenseImages = []; // Reset ảnh
-            document.getElementById('addExpenseModal').classList.add('hidden'); 
-        }
+        function openAddExpenseModal() { document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; document.getElementById('addExpenseModal').classList.remove('hidden'); }
+        function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
         async function saveNewExpense() {
             const name = document.getElementById('expName').value; const amt = parseInt(document.getElementById('expAmount').value) || 0;
             if(!name || amt<=0) return alert("Nhập đủ thông tin");
             
-            // Chặn lưu nếu ảnh đang tải lên
-            const isUploading = state.expenseImages && state.expenseImages.some(img => img.status === 'uploading');
-            if(isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
-            
-            // Trích xuất URL ảnh
-            const finalImageUrls = (state.expenseImages || []).map(img => img.r2Url).filter(url => url !== null);
-
-            const newExp = { 
-                id: Date.now(), 
-                date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], 
-                name, 
-                amount: amt, 
-                cat: document.getElementById('expCategory').value,
-                images: finalImageUrls // Lưu ảnh vào object
-            };
-            
-            state.expenses.unshift(newExp); saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); 
-            document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
-            
+            const newExp = { id: Date.now(), date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], name, amount: amt, cat: document.getElementById('expCategory').value };
+            state.expenses.unshift(newExp); saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
             await supabaseClient.from('expenses').insert(newExp);
-        }
-
-        // HÀM MỚI: Xử lý upload ảnh chi phí lên R2
-        async function handleExpenseImageUpload(e) {
-            const files = Array.from(e.target.files); if (files.length === 0) return;
-            const saveBtn = document.getElementById('btnSaveExpense');
-            if(saveBtn) { saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
-
-            for (const file of files) {
-                const imgId = 'exp_' + Date.now() + Math.random().toString(36).substring(7);
-                const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
-                state.expenseImages.push(tempImage); renderExpenseImages();
-                
-                try {
-                    const r2Url = await uploadFileToR2(file); 
-                    const targetImg = state.expenseImages.find(img => img.id === imgId);
-                    if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderExpenseImages(); }
-                } catch (err) { 
-                    alert(`Không thể tải ảnh ${file.name} lên server`); 
-                    state.expenseImages = state.expenseImages.filter(img => img.id !== imgId); renderExpenseImages(); 
-                }
-            }
-            if(saveBtn) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
-            e.target.value = '';
-        }
-
-        // HÀM MỚI: Hiển thị giao diện ảnh preview
-        function renderExpenseImages() {
-            const box = document.getElementById('expRenderedImagesBox'); if(!box) return;
-            box.innerHTML = state.expenseImages.map((imgObj) => { 
-                const isUploading = imgObj.status === 'uploading';
-                const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.url);
-                return `<div class="image-preview-item"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeExpenseImage('${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`; 
-            }).join('');
-        }
-
-        // HÀM MỚI: Xóa ảnh khi đang preview
-        function removeExpenseImage(idOrUrl) {
-            state.expenseImages = state.expenseImages.filter(img => { if(typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); 
-            renderExpenseImages();
         }
 
         async function deleteExpenseDB(id) {
             if(!confirm("Bạn muốn xóa khoản chi này?")) return;
-            
-            // Xóa ảnh trên Cloudflare R2 nếu có
-            const expToDelete = state.expenses.find(x => x.id === id);
-            if (expToDelete && expToDelete.images) {
-                expToDelete.images.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); });
-            }
-
             state.expenses = state.expenses.filter(x => x.id !== id);
             saveLocalState(); updateExpensesView(); updateReportMetrics();
             await supabaseClient.from('expenses').delete().eq('id', id);
@@ -2523,14 +2441,7 @@
             const filtered = state.expenses.filter(e => { if (!monthFilter) return true; return e.date && e.date.startsWith(monthFilter); });
             const tbody = document.getElementById('expensesTableBody');
             if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Không có khoản chi nào trong tháng này.</td></tr>`; } 
-            else { 
-                tbody.innerHTML = filtered.map(e => {
-                    // Nếu có ảnh, tạo nút hiển thị Mắt xem ảnh
-                    let imgBtn = (e.images && e.images.length > 0) ? `<button onclick="openImageViewer('${e.images[0]}')" class="text-sky-600 bg-sky-100 hover:bg-sky-200 px-2 py-1 rounded text-[10px] font-bold shadow-sm transition" title="Xem ảnh chứng từ"><i class="fa-solid fa-image"></i> Xem hóa đơn</button>` : '';
-
-                    return `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư, phát sinh,...)':'Cố định'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right flex items-center justify-end gap-2">${imgBtn}<button onclick="deleteExpenseDB(${e.id})" class="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 px-2 py-1.5 rounded transition"><i class="fa-solid fa-trash text-xs"></i></button></td></tr>`;
-                }).join(''); 
-            }
+            else { tbody.innerHTML = filtered.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư, phát sinh,...)':'Cố định'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); }
         }
 
         function initCharts() {
