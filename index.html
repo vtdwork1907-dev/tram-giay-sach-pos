@@ -341,8 +341,16 @@
                             <option value="CUSTOM" hidden>Tùy chỉnh</option>
                         </select>
                         
-                        <!-- 2. TRẠNG THÁI (Đưa lên hàng 1 trên Mobile cho đẹp) -->
-                        <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="order-2 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        <!-- 2. NHẬP NGÀY TÙY CHỈNH (Chiếm 2 cột) -->
+                        <div class="order-2 md:order-none col-span-2 flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5">
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span>
+                            <input type="date" id="filterOrderStart" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span>
+                            <input type="date" id="filterOrderEnd" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                        </div>
+
+                        <!-- 3. TRẠNG THÁI -->
+                        <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="order-3 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL" selected>📋 Tất cả đơn</option>
                             <option value="ACTIVE">⚡ Đơn đang làm</option>
                             <option value="RECEIVED">📦 Đã nhận</option>
@@ -351,14 +359,6 @@
                             <option value="PAID">💰 Đã thanh toán</option>
                             <option value="DELIVERED">🤝 Đã trả khách</option>
                         </select>
-                        
-                        <!-- 3. NHẬP NGÀY TÙY CHỈNH (Chiếm 2 cột) -->
-                        <div class="order-3 md:order-none col-span-2 flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span>
-                            <input type="date" id="filterOrderStart" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span>
-                            <input type="date" id="filterOrderEnd" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
-                        </div>
                         
                         <!-- 4. LỌC DỊCH VỤ -->
                         <select id="filterOrderService" onchange="renderOrdersTable(true)" class="order-4 md:order-none col-span-2 md:col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
