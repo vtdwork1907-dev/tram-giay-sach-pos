@@ -1291,6 +1291,9 @@
             // =====================================================================
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none';
+                // Ép hiển thị cứng logo cho khách hàng
+                state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
+                renderLogo();
                 
                 // 1. Xóa form đăng nhập
                 const authScreen = document.getElementById('authScreen');
