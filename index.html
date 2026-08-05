@@ -373,6 +373,75 @@
                 </div>
 
                 <div id="pendingServicesSummary" class="text-[11px] md:text-xs bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200 shadow-sm hidden flex-wrap gap-1.5 items-center w-full max-w-full"></div>
+                <!-- CHIPS BỘ LỌC NHANH (CHỈ HIỂN THỊ ĐIỆN THOẠI) -->
+                <!-- Nằm giữa ô "Đơn chưa làm" và Bảng đơn hàng -->
+                <div class="flex md:hidden items-center justify-start gap-2 w-full overflow-x-auto hide-scroll pb-1">
+                    <button type="button" onclick="setQuickOrderDate('today')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Hôm nay</button>
+                    <button type="button" onclick="setQuickOrderDate('yesterday')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Hôm qua</button>
+                    <button type="button" onclick="setQuickOrderDate('week')" class="whitespace-nowrap px-3 py-1 bg-white border border-slate-300 text-slate-600 rounded-full text-[10px] font-bold shadow-sm active:bg-sky-50 active:text-sky-700 active:border-sky-300 transition">Tuần này</button>
+                    <button type="button" onclick="setQuickOrderDate('all')" class="whitespace-nowrap px-3 py-1 bg-slate-100 border border-slate-200 text-slate-500 rounded-full text-[10px] font-bold shadow-sm transition"><i class="fa-solid fa-rotate-right mr-1"></i>Bỏ lọc</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
+                    <div class="overflow-x-auto w-full max-w-full">
+                        <table class="w-full min-w-[700px] md:min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+                            <!-- BẢNG ĐƠN HÀNG GIỮ NGUYÊN BÊN DƯỚI -->
+                            // =========================================================================
+        // HÀM XỬ LÝ LỌC NHANH (CHIPS) NGÀY THÁNG KHO ĐƠN
+        // =========================================================================
+        function setQuickOrderDate(type) {
+            const startDateInput = document.getElementById('filterOrderStart');
+            const endDateInput = document.getElementById('filterOrderEnd');
+            
+            if (!startDateInput || !endDateInput) return;
+
+            const now = new Date();
+            
+            // Hàm phụ để format ngày chuẩn yyyy-mm-dd cho thẻ input date
+            const formatDate = (dateObj) => {
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            if (type === 'today') {
+                const todayStr = formatDate(now);
+                startDateInput.value = todayStr;
+                endDateInput.value = todayStr;
+            } 
+            else if (type === 'yesterday') {
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = formatDate(yesterday);
+                startDateInput.value = yesterdayStr;
+                endDateInput.value = yesterdayStr;
+            } 
+            else if (type === 'week') {
+                // Tính ngày Thứ 2 của tuần hiện tại
+                const currentDay = now.getDay(); // 0 là Chủ nhật, 1-6 là Thứ 2 - Thứ 7
+                const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() + distanceToMonday);
+                
+                // Tính ngày Chủ nhật của tuần hiện tại
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                
+                startDateInput.value = formatDate(startOfWeek);
+                endDateInput.value = formatDate(endOfWeek);
+            }
+            else if (type === 'all') {
+                // Nút "Bỏ lọc" trên điện thoại
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+
+            // Hiệu ứng UX: Đổi màu nút đang được chọn (Tùy chọn)
+            // Cập nhật lại bảng đơn hàng và đưa về trang 1
+            renderOrdersTable(true);
+        }
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full max-w-full">
                     <div class="overflow-x-auto w-full max-w-full">
