@@ -319,7 +319,7 @@
                 </div>
             </section>
 
-            <!-- TAB: KHO ĐƠN -->
+            <!-- TAB: KHO ĐƠN (ĐÃ CHỈNH SỬA THÊM BỘ LỌC NHANH DẠNG SELECT) -->
             <section id="tab-orders" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-2.5 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full max-w-full">
                     <div class="flex items-center justify-between gap-2">
@@ -329,12 +329,20 @@
                             <input type="text" id="searchOrderInput" onkeyup="debouncedSearchOrder()" placeholder="Tìm Mã, SĐT..." class="pl-7 pr-2 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px] md:text-xs">
-                        <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5 col-span-2 md:col-span-1">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span><input type="date" id="filterOrderStart" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
-                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span><input type="date" id="filterOrderEnd" onchange="renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
-                        </div>
-                        <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                    
+                    <!-- BỘ LỌC CẬP NHẬT GIAO DIỆN MỚI -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-1.5 text-[11px] md:text-xs">
+                        <!-- 1. BỘ LỌC NHANH THỜI GIAN -->
+                        <select id="quickDateFilter" onchange="applyQuickDateFilter()" class="order-1 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                            <option value="ALL">🗓️ Tất cả ngày</option>
+                            <option value="TODAY">📅 Hôm nay</option>
+                            <option value="YESTERDAY">📅 Hôm qua</option>
+                            <option value="THIS_WEEK">📆 Tuần này</option>
+                            <option value="CUSTOM" hidden>Tùy chỉnh</option>
+                        </select>
+                        
+                        <!-- 2. TRẠNG THÁI (Đưa lên hàng 1 trên Mobile cho đẹp) -->
+                        <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="order-2 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL" selected>📋 Tất cả đơn</option>
                             <option value="ACTIVE">⚡ Đơn đang làm</option>
                             <option value="RECEIVED">📦 Đã nhận</option>
@@ -343,7 +351,17 @@
                             <option value="PAID">💰 Đã thanh toán</option>
                             <option value="DELIVERED">🤝 Đã trả khách</option>
                         </select>
-                        <select id="filterOrderService" onchange="renderOrdersTable(true)" class="text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        
+                        <!-- 3. NHẬP NGÀY TÙY CHỈNH (Chiếm 2 cột) -->
+                        <div class="order-3 md:order-none col-span-2 flex items-center bg-slate-50 border border-slate-300 rounded-lg p-0.5">
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">TỪ</span>
+                            <input type="date" id="filterOrderStart" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                            <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span>
+                            <input type="date" id="filterOrderEnd" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
+                        </div>
+                        
+                        <!-- 4. LỌC DỊCH VỤ -->
+                        <select id="filterOrderService" onchange="renderOrdersTable(true)" class="order-4 md:order-none col-span-2 md:col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL">🛠️ Tất cả dịch vụ</option>
                             <option value="CLEAN">🧼 Vệ sinh</option>
                             <option value="SOLE">👟 Thay đế</option>
@@ -427,7 +445,6 @@
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2 w-full max-w-full">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
                     <div class="flex items-center gap-2">
-                        <!-- THÊM BỘ LỌC THEO THÁNG NĂM Ở ĐÂY -->
                         <input type="month" id="expenseMonthFilter" onchange="updateExpensesView()" class="text-[12px] md:text-xs p-1.5 md:py-2 border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 cursor-pointer shadow-sm">
                         
                         <button onclick="openAddExpenseModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow"><i class="fa-solid fa-plus"></i> Thêm Chi</button>
@@ -467,7 +484,6 @@
                     </div>
                 </div>
                 
-                <!-- BỔ SUNG: Box TỔNG SỐ ĐƠN và đổi layout grid để chứa được 5 box -->
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 w-full max-w-full">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-amber-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-boxes-stacked"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG SỐ ĐƠN</span><div id="repTotalOrders" class="text-lg md:text-2xl font-extrabold text-amber-600 mt-1 relative truncate">0</div><div id="repUniqueCustomers" class="text-[9px] font-semibold text-slate-400 mt-0.5 relative">Từ 0 khách hàng</div></div>
                     
@@ -551,7 +567,6 @@
             </section>
         </main>
     </div>
-
     <!-- MODAL SO SÁNH TRƯỚC & SAU -->
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex flex-col justify-end md:justify-center items-center pt-12 pb-2 px-2 md:p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
@@ -628,6 +643,7 @@
             </div>
         </div>
     </div>
+    
     <!-- SCRIPT CHÍNH (ĐÃ BẢO MẬT XÁC THỰC BẰNG TOKEN, GỠ BỎ SECRET KEY) -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
@@ -672,16 +688,12 @@
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
         
-        // Đã gỡ bỏ header x-app-secret để bảo mật tuyệt đối
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // WORKER URL
         const WORKER_API_URL = 'https://tramgiaysach-media-api.vtdwork1907.workers.dev';
-        // Đã xóa biến APP_SECRET_KEY ở đây
         
         let activeCollectingOrderId = null;
-        
-        // Khóa để chống gọi lặp lệnh NTFY
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
 
@@ -741,7 +753,6 @@
 
         async function deleteFileFromR2(fileUrl) {
             try {
-                // Lấy session token hiện tại
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) throw new Error("Chưa đăng nhập");
 
@@ -756,84 +767,80 @@
         }
 
         function compressImage(file, maxSizeKB = 500, maxWidth = 1920) {
-    return new Promise((resolve) => {
-        // Đảm bảo file tồn tại và cấp tên mặc định nếu trình duyệt di động làm mất tên
-        if (!file) { resolve(file); return; }
-        const fileName = file.name || `image_${Date.now()}.jpg`;
+            return new Promise((resolve) => {
+                if (!file) { resolve(file); return; }
+                const fileName = file.name || `image_${Date.now()}.jpg`;
 
-        if (!file.type.startsWith('image/') || file.size <= maxSizeKB * 1024) { 
-            resolve(file); return; 
-        }
-        
-        const img = new Image(); 
-        const url = URL.createObjectURL(file); 
-        img.src = url;
-        
-        img.onload = () => {
-            let width = img.width; let height = img.height;
-            if (width > maxWidth || height > maxWidth) {
-                if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
-                else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
-            }
-            const canvas = document.createElement('canvas'); 
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d'); 
-            ctx.drawImage(img, 0, 0, width, height); 
-            URL.revokeObjectURL(url); 
-            
-            let quality = 0.8; // Bắt đầu ở mức 0.8 để tránh lặp quá nhiều
-            const attemptCompress = () => {
-                canvas.toBlob((blob) => {
-                    if (!blob) { resolve(file); return; } // Fallback an toàn nếu Canvas bị crash RAM
-                    
-                    if (blob.size <= maxSizeKB * 1024 || quality <= 0.3) {
-                        const safeName = fileName.replace(/\.[^/.]+$/, "") + ".jpg";
-                        try {
-                            // Cố gắng tạo File object
-                            const compressedFile = new File([blob], safeName, { type: 'image/jpeg', lastModified: Date.now() });
-                            resolve(compressedFile);
-                        } catch (e) {
-                            // FALLBACK CHO MOBILE: Nếu Webview/iOS cũ không hỗ trợ new File, trả về Blob an toàn
-                            blob.name = safeName;
-                            blob.lastModified = Date.now();
-                            resolve(blob);
-                        }
-                    } else { 
-                        quality -= 0.15; // Ép nén nhanh hơn để tránh vòng lặp đệ quy sâu trên điện thoại
-                        attemptCompress(); 
+                if (!file.type.startsWith('image/') || file.size <= maxSizeKB * 1024) { 
+                    resolve(file); return; 
+                }
+                
+                const img = new Image(); 
+                const url = URL.createObjectURL(file); 
+                img.src = url;
+                
+                img.onload = () => {
+                    let width = img.width; let height = img.height;
+                    if (width > maxWidth || height > maxWidth) {
+                        if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
+                        else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
                     }
-                }, 'image/jpeg', quality);
-            }; 
-            attemptCompress();
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    });
-}
+                    const canvas = document.createElement('canvas'); 
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d'); 
+                    ctx.drawImage(img, 0, 0, width, height); 
+                    URL.revokeObjectURL(url); 
+                    
+                    let quality = 0.8;
+                    const attemptCompress = () => {
+                        canvas.toBlob((blob) => {
+                            if (!blob) { resolve(file); return; }
+                            
+                            if (blob.size <= maxSizeKB * 1024 || quality <= 0.3) {
+                                const safeName = fileName.replace(/\.[^/.]+$/, "") + ".jpg";
+                                try {
+                                    const compressedFile = new File([blob], safeName, { type: 'image/jpeg', lastModified: Date.now() });
+                                    resolve(compressedFile);
+                                } catch (e) {
+                                    blob.name = safeName;
+                                    blob.lastModified = Date.now();
+                                    resolve(blob);
+                                }
+                            } else { 
+                                quality -= 0.15;
+                                attemptCompress(); 
+                            }
+                        }, 'image/jpeg', quality);
+                    }; 
+                    attemptCompress();
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+            });
+        }
 
         function uploadFileToR2(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) throw new Error("Chưa đăng nhập");
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) throw new Error("Chưa đăng nhập");
 
-            const compressedFile = await compressImage(file, 500, 1920);
-            
-            // FIX CHO MOBILE: Bắt buộc truyền tham số tên file thứ 3 vào formData
-            const formData = new FormData(); 
-            const finalName = compressedFile.name || file.name || `image_${Date.now()}.jpg`;
-            formData.append('file', compressedFile, finalName);
-            
-            const response = await fetch(`${WORKER_API_URL}/upload`, { 
-                method: 'POST', 
-                headers: { 'Authorization': `Bearer ${session.access_token}` }, 
-                body: formData 
+                    const compressedFile = await compressImage(file, 500, 1920);
+                    
+                    const formData = new FormData(); 
+                    const finalName = compressedFile.name || file.name || `image_${Date.now()}.jpg`;
+                    formData.append('file', compressedFile, finalName);
+                    
+                    const response = await fetch(`${WORKER_API_URL}/upload`, { 
+                        method: 'POST', 
+                        headers: { 'Authorization': `Bearer ${session.access_token}` }, 
+                        body: formData 
+                    });
+                    const data = await response.json();
+                    if (!response.ok) { reject(new Error(data.error || 'Lỗi khi upload ảnh')); return; }
+                    resolve(data.url);
+                } catch(err) { reject(err); }
             });
-            const data = await response.json();
-            if (!response.ok) { reject(new Error(data.error || 'Lỗi khi upload ảnh')); return; }
-            resolve(data.url);
-        } catch(err) { reject(err); }
-    });
-}
+        }
 
         function calculate3MonthsLater(dateStr) {
             try {
@@ -854,11 +861,10 @@
             });
         }
 
-        // Đã cập nhật để MAP thêm tracking_id (Cần tạo cột tracking_id ở CSDL)
         function mapOrderJsToDb(o) {
             return {
                 id: o.id, 
-                tracking_id: o.tracking_id || null, // FIX 1
+                tracking_id: o.tracking_id || null,
                 date: o.date,
                 customer_name: o.customer.name, customer_phone: o.customer.phone, customer_note: o.customer.note || '',
                 items: o.items || [], shoes: o.shoes || null,
@@ -871,11 +877,10 @@
             };
         }
 
-        // Đã cập nhật để LẤY tracking_id từ CSDL (Fallback về ID cũ nếu đơn cũ chưa có)
         function mapOrderDbToJs(db) {
             return {
                 id: db.id, 
-                tracking_id: db.tracking_id || db.id, // FIX 1 (Fallback tránh lỗi đơn cũ)
+                tracking_id: db.tracking_id || db.id,
                 date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
                 items: db.items || [], shoes: db.shoes || null,
@@ -889,6 +894,7 @@
         }
 
         function mapServiceDbToJs(db) { return { id: db.id, name: db.name, category: db.category, defaultPrice: db.default_price, icon: db.icon }; }
+        
         function showNotification(title, body) {
             const container = document.getElementById('toastContainer');
             if (container) {
@@ -906,7 +912,6 @@
             fetch(`https://ntfy.sh/${topicName}`, { method: 'POST', body: `${title}\n${message}` }).catch(err => console.error("Lỗi gửi ntfy:", err));
         }
 
-        // Đã cập nhật để dùng tracking_id cho Zalo (Fix 1)
         function sendZaloTracking(orderId, phone, customerName) {
             const order = state.orders.find(o => o.id === orderId);
             const trackingId = order ? (order.tracking_id || order.id) : orderId; 
@@ -926,7 +931,6 @@
             modal.classList.remove('hidden'); void modal.offsetWidth; modal.classList.remove('opacity-0'); img.classList.remove('scale-95');
         }
 
-        // Đã cập nhật để dùng tracking_id khi copy link (Fix 1)
         function copyTrackingLink(orderId) {
             const order = state.orders.find(o => o.id === orderId);
             const trackingId = order ? (order.tracking_id || order.id) : orderId;
@@ -936,18 +940,15 @@
             .catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
         }
 
-        // Đã cập nhật để tra cứu bằng tracking_id trên URL thay vì order ID (Fix 1)
         async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
                 const trackingId = hash.replace('#track=', '');
                 
-                // Tìm kiếm theo tracking_id hoặc id (tương thích ngược cho đơn cũ)
                 let order = state.orders.find(o => o.tracking_id === trackingId || o.id === trackingId);
                 
                 if (!order) {
                     try {
-                        // FIX 3: Gọi qua hàm bảo mật RPC (Chỉ trả về 1 đơn, chống cào dữ liệu toàn hệ thống)
                         const { data, error } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
                         
                         if (data && data.length > 0) {
@@ -1096,7 +1097,7 @@
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
         
         // =========================================================================
-        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE & CHỐNG TÀI KHOẢN BỊ XÓA
+        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE
         // =========================================================================
         async function checkAutoLogin() {
             const loading = document.getElementById('globalLoading');
@@ -1248,7 +1249,6 @@
             loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
             
             try {
-                // 1. Tạo user trên Supabase Auth (Đòi hỏi tắt Confirm email trong Dashboard Supabase)
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
                     password: pass,
@@ -1256,7 +1256,6 @@
                 
                 if (error) throw error;
                 
-                // 2. Lưu thông tin hiển thị và phân quyền vào bảng users
                 const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name };
                 await supabaseClient.from('users').insert(newUser);
                 
@@ -1291,22 +1290,18 @@
             // =====================================================================
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none';
-                // Ép hiển thị cứng logo cho khách hàng
                 state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
                 renderLogo();
                 
-                // 1. Xóa form đăng nhập
                 const authScreen = document.getElementById('authScreen');
                 if (authScreen) authScreen.remove();
                 
-                // 2. TIÊU HỦY TOÀN BỘ GIAO DIỆN NỘI BỘ (Chống nháy lộ doanh thu)
                 const headerEl = document.querySelector('header');
                 if (headerEl) headerEl.remove();
                 
                 const mainAppEl = document.querySelector('.flex.flex-1.overflow-hidden');
                 if (mainAppEl) mainAppEl.remove();
 
-                // 3. Bật ngay màn hình tracking lên để che màn hình, kèm hiệu ứng Đang tải
                 const trackScreen = document.getElementById('customerTrackingScreen');
                 const trackBox = document.getElementById('trackingContentBox');
                 if (trackScreen && trackBox) {
@@ -1325,7 +1320,7 @@
                 supabaseClient.from('store_settings').select('logo').eq('id', 'main').maybeSingle().then(({data}) => {
                     if (data && data.logo) {
                         state.logo = data.logo;
-                        renderLogo(); // Cập nhật lại UI logo ngay khi tải xong
+                        renderLogo(); 
                     }
                 });
 
@@ -1347,7 +1342,6 @@
                                 clearInterval(trackingInterval);
                             }
                         } else {
-                            // Xử lý nếu mã tracking không tồn tại
                             if (trackBox && lastOrderState === "") {
                                 trackBox.innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Không tìm thấy đơn hàng! Vui lòng kiểm tra lại đường link.</div>';
                             }
@@ -1396,7 +1390,6 @@
             renderOrdersTable(); renderExpensesTable(); renderCustomersTable(); updateReportMetrics(); loadQRConfig(); setCurrentDateTimeForOrder(); renderPreviewImages();
             adjustPOSLayout(); renderDashboard(); checkUrlTracking();
             
-            // Chạy hàm kiểm tra bảo mật 
             checkAutoLogin();
             
             document.getElementById('globalLoading').style.display = 'none';
@@ -1447,7 +1440,6 @@
         window.addEventListener('resize', adjustPOSLayout);
 
         function initClock() { setInterval(() => { const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN'); document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`; }, 1000); }
-
         function renderDashboard() {
             const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
@@ -1542,25 +1534,24 @@
             catch(error) { alert("Lỗi khi upload logo: " + error.message); } 
             finally { btnText.innerText = oldText; document.getElementById('logoInput').disabled = false; e.target.value = ''; }
         }
+        
         function removeStoreLogo() { state.logo = null; saveSettingsToDB(); renderLogo(); }
+        
         function renderLogo() {
             const has = !!state.logo;
             
-            // 1. Cập nhật Logo ở Header (Chỉ làm khi Header chưa bị xóa)
             const defaultIcon = document.getElementById('defaultLogoIcon');
             const customImg = document.getElementById('customLogoImg');
             if (defaultIcon) defaultIcon.style.display = has ? 'none' : 'block'; 
             if (customImg) customImg.style.display = has ? 'block' : 'none';
             if (has && customImg) customImg.src = state.logo;
             
-            // 2. Cập nhật Logo ở phần Cài đặt (Chỉ làm khi chưa bị xóa)
             const settingDefault = document.getElementById('settingLogoDefault');
             const settingImg = document.getElementById('settingLogoImg');
             if (settingDefault) settingDefault.style.display = has ? 'none' : 'block'; 
             if (settingImg) settingImg.style.display = has ? 'block' : 'none';
             if (has && settingImg) settingImg.src = state.logo;
             
-            // 3. Cập nhật Logo ở màn hình Tracking của khách hàng
             const trackDefault = document.getElementById('trackingDefaultLogo'); 
             const trackCustom = document.getElementById('trackingCustomLogo');
             if (trackDefault && trackCustom) { 
@@ -1574,10 +1565,12 @@
             document.getElementById('cfgBank').value = state.qrConfig.bank || 'ICB'; document.getElementById('cfgAccountNo').value = state.qrConfig.accountNo || ''; document.getElementById('cfgAccountName').value = state.qrConfig.accountName || '';
             updateQRView();
         }
+        
         function saveQRConfig() {
             state.qrConfig.bank = document.getElementById('cfgBank').value; state.qrConfig.accountNo = document.getElementById('cfgAccountNo').value.trim(); state.qrConfig.accountName = document.getElementById('cfgAccountName').value.trim();
             saveSettingsToDB(); updateQRView(); alert("Đã lưu cấu hình mã QR!");
         }
+        
         function updateQRView() {
             const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000'; const nameStr = state.qrConfig.accountName || 'TRAM GIAY SACH';
             const qrUrl = `https://api.vietqr.io/image/${bank}-${acc}-compact2.png?amount=0`;
@@ -1588,6 +1581,7 @@
             const cats = [{k: 'ALL', n: 'Tất Cả'}, {k: 'CLEAN', n: 'Vệ Sinh'}, {k: 'SOLE', n: 'Thay Đế'}, {k: 'STAIN', n: 'Tẩy Ố'}, {k: 'REPAINT', n: 'Repaint'}, {k: 'GLUE', n: 'Dán Đế'}];
             document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `<button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-3 py-1 md:px-4 md:py-1.5 rounded-lg text-[10px] md:text-[11px] font-bold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>`).join('');
         }
+        
         function filterCategory(c) { activeCategory = c; renderCategoryTabs(); renderServicesGrid(); }
 
         function renderServicesGrid() {
@@ -1767,12 +1761,14 @@
 
         function updateCartItemQty(id, chg) { const item = state.cart.find(c => c.cartId === id); if(item) { item.qty += chg; if(item.qty <= 0) state.cart = state.cart.filter(c => c.cartId !== id); recalculateSubtotalInput(); renderCart(); } }
         function removeCartItem(id) { state.cart = state.cart.filter(c => c.cartId !== id); recalculateSubtotalInput(); renderCart(); }
+        
         function recalculateSubtotalInput() { 
             let sub = 0;
             if (state.multiShoeMode) state.shoes.forEach(s => { s.services.forEach(c => { sub += (c.price * c.qty); }); });
             else sub = state.cart.reduce((s, c) => s + (c.price * c.qty), 0);
             document.getElementById('subtotalInput').value = sub; calculateFinalTotal(); 
         }
+        
         function calculateFinalTotal() {
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; const disc = parseInt(document.getElementById('discountInput').value) || 0;
             document.getElementById('totalDisplay').innerText = Math.max(0, sub - disc).toLocaleString('vi-VN') + ' đ';
@@ -1823,7 +1819,6 @@
         
         function removeUploadedImage(idOrUrl) { state.uploadedImages = state.uploadedImages.filter(img => { if(typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); renderPreviewImages(); }
 
-        // Đã cập nhật để tích hợp UUID tạo đơn (Fix 1)
         async function processOrder() {
             let finalCartItems = []; let finalImageUrls = []; const dateStr = document.getElementById('orderDateInput').value;
 
@@ -1854,7 +1849,7 @@
             
             const newOrder = {
                 id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
-                tracking_id: generateShortTrackingId(), // TẠO MÃ 11 KÝ TỰ NGẮN GỌN Ở ĐÂY
+                tracking_id: generateShortTrackingId(), 
                 date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '),
                 customer: {name, phone, note: document.getElementById('custNote').value}, items: finalCartItems, 
                 images: finalImageUrls, imagesAfter: [], subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), status: initStatus,
@@ -1919,6 +1914,58 @@
             showNotification("⚡ CẬP NHẬT HÀNG LOẠT", `Đã cập nhật trạng thái [${statusText}] cho ${updatedCount} đơn hàng!`);
             
             for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
+        }
+
+        // =========================================================================
+        // HÀM XỬ LÝ LỌC NHANH THỜI GIAN THEO YÊU CẦU
+        // =========================================================================
+        function applyQuickDateFilter() {
+            const filter = document.getElementById('quickDateFilter').value;
+            const startInput = document.getElementById('filterOrderStart');
+            const endInput = document.getElementById('filterOrderEnd');
+            
+            const today = new Date();
+            
+            // Hàm chuyển đổi format ngày về YYYY-MM-DD
+            const formatDate = (date) => {
+                const d = new Date(date);
+                let month = '' + (d.getMonth() + 1);
+                let day = '' + d.getDate();
+                const year = d.getFullYear();
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+                return [year, month, day].join('-');
+            };
+
+            if (filter === 'ALL') {
+                startInput.value = '';
+                endInput.value = '';
+            } else if (filter === 'TODAY') {
+                const todayStr = formatDate(today);
+                startInput.value = todayStr;
+                endInput.value = todayStr;
+            } else if (filter === 'YESTERDAY') {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = formatDate(yesterday);
+                startInput.value = yesterdayStr;
+                endInput.value = yesterdayStr;
+            } else if (filter === 'THIS_WEEK') {
+                // Tuần tính từ Thứ 2 đến Chủ nhật
+                const currentDay = today.getDay();
+                const distance = currentDay === 0 ? 6 : currentDay - 1; 
+                const monday = new Date(today);
+                monday.setDate(monday.getDate() - distance);
+                
+                const sunday = new Date(monday);
+                sunday.setDate(sunday.getDate() + 6);
+                
+                startInput.value = formatDate(monday);
+                endInput.value = formatDate(sunday);
+            }
+            
+            // Render lại bảng với trang số 1
+            renderOrdersTable(true);
         }
 
         function renderOrdersTable(resetPage = false) {
@@ -2108,7 +2155,6 @@
                 o.status = 'DELIVERED';
                 o.paymentMethod = 'TRANSFER';
                 
-                // ĐỒNG BỘ TRẠNG THÁI CÁC DỊCH VỤ CON THÀNH "ĐÃ XONG" MÀU XANH LÁ
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED');
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') });
 
@@ -2130,7 +2176,6 @@
                 o.status = 'DELIVERED';
                 o.paymentMethod = 'CASH';
 
-                // ĐỒNG BỘ TRẠNG THÁI CÁC DỊCH VỤ CON THÀNH "ĐÃ XONG" MÀU XANH LÁ
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED');
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') });
 
@@ -2151,10 +2196,9 @@
             if(o) { 
                 const oldStatus = o.status; o.status = st; 
 
-                // ĐỒNG BỘ TRẠNG THÁI CÁC DỊCH VỤ CON BÊN TRONG THEO TÌNH TRẠNG CHUNG
                 let newItemStatus = 'RECEIVED';
                 if (st === 'PROCESSING') newItemStatus = 'PROCESSING';
-                else if (['PROCESSED', 'PAID', 'DELIVERED'].includes(st)) newItemStatus = 'PROCESSED'; // Tất cả đều nhảy màu Xanh lá
+                else if (['PROCESSED', 'PAID', 'DELIVERED'].includes(st)) newItemStatus = 'PROCESSED'; 
 
                 if (o.items) { o.items.forEach(item => item.status = newItemStatus); }
                 if (o.shoes) { o.shoes.forEach(shoe => { if (shoe.services) shoe.services.forEach(item => item.status = newItemStatus); }); }
@@ -2509,7 +2553,6 @@
 
                 if (usersRes.data && usersRes.data.length > 0) state.users = usersRes.data;
                 
-                // ĐÂY LÀ ĐIỂM SỬA LỖI: Chỉ cập nhật nếu CSDL trả về có chứa dịch vụ
                 if (svcsRes.data && svcsRes.data.length > 0) {
                     state.services = svcsRes.data.map(mapServiceDbToJs);
                 }
@@ -2523,7 +2566,6 @@
                 renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
                 renderExpensesTable(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable();
                 
-                // Cập nhật lại khung giao diện POS để không bị mất box chọn dịch vụ
                 adjustPOSLayout(); 
                 
                 if (window.location.hash.startsWith('#track=')) checkUrlTracking();
