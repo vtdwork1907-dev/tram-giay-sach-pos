@@ -303,7 +303,6 @@
 
                 <div id="pcServicesPlaceholder" class="hidden lg:flex flex-1 flex-col overflow-hidden shrink-0 h-full"></div>
             </section>
-
             <!-- CÁC TAB CÒN LẠI -->
             <section id="tab-payment" class="tab-content hidden flex-col items-center justify-center py-6 w-full max-w-full">
                 <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center w-full max-w-sm text-center">
@@ -440,7 +439,7 @@
                 </div>
             </section>
 
-            <!-- TAB CHI PHÍ: Có bộ lọc chọn Tháng -->
+            <!-- TAB CHI PHÍ: Đã thêm cột Chứng Từ -->
             <section id="tab-expenses" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2 w-full max-w-full">
                     <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-red-600"></i> Theo Dõi Chi Phí</h2>
@@ -468,7 +467,14 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col w-full min-w-0">
                     <div class="overflow-x-auto flex-1 w-full">
                         <table class="w-full text-left text-xs border-collapse whitespace-nowrap">
-                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider"><th class="p-3">Ngày Chi</th><th class="p-3">Tên Khoản Chi</th><th class="p-3">Danh Mục</th><th class="p-3">Số Tiền</th><th class="p-3 text-right">Thao Tác</th></tr></thead>
+                            <thead><tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider">
+                                <th class="p-3">Ngày Chi</th>
+                                <th class="p-3">Tên Khoản Chi</th>
+                                <th class="p-3">Danh Mục</th>
+                                <th class="p-3 text-center">Chứng Từ</th>
+                                <th class="p-3">Số Tiền</th>
+                                <th class="p-3 text-right">Thao Tác</th>
+                            </tr></thead>
                             <tbody id="expensesTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
@@ -567,6 +573,7 @@
             </section>
         </main>
     </div>
+    
     <!-- MODAL SO SÁNH TRƯỚC & SAU -->
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex flex-col justify-end md:justify-center items-center pt-12 pb-2 px-2 md:p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] md:h-[95vh] flex flex-col overflow-hidden shadow-2xl scale-95 transition-transform duration-200" id="comparisonBox">
@@ -627,11 +634,14 @@
         </div>
     </div>
 
-    <!-- MODALS THÊM CHI PHÍ -->
+    <!-- MODALS THÊM CHI PHÍ (Cập nhật UI tính năng Chụp ảnh) -->
     <div id="addExpenseModal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-            <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center"><h3 class="font-bold text-sm">Thêm Khoản Chi</h3><button onclick="closeExpenseModal()" class="text-xl leading-none">&times;</button></div>
-            <div class="p-4 space-y-3 text-xs">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-sm">Thêm Khoản Chi</h3>
+                <button onclick="closeExpenseModal()" class="text-xl leading-none">&times;</button>
+            </div>
+            <div class="p-4 space-y-3 text-xs overflow-y-auto hide-scroll flex-1">
                 <input type="date" id="expDate" class="w-full text-[16px] md:text-xs p-2 border rounded text-slate-700 font-semibold" title="Ngày chi">
                 <input type="text" id="expName" placeholder="Tên khoản chi *" class="w-full text-[16px] md:text-xs p-2 border rounded outline-none">
                 <input type="number" id="expAmount" placeholder="Số tiền (VNĐ) *" class="w-full text-[16px] md:text-xs p-2 border rounded outline-none">
@@ -639,12 +649,35 @@
                     <option value="SUPPLY">Vận hành (vật tư, phát sinh,...)</option>
                     <option value="OPERATIONAL">Cố định</option>
                 </select>
-                <div class="flex justify-end gap-2 pt-2"><button onclick="closeExpenseModal()" class="px-4 py-2.5 rounded-lg bg-slate-200 font-bold text-slate-700">Hủy</button><button onclick="saveNewExpense()" class="px-4 py-2.5 rounded-lg bg-red-600 text-white font-bold">Lưu</button></div>
+
+                <!-- KHUNG CHỤP/TẢI ẢNH HÓA ĐƠN -->
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
+                    <label class="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-camera text-red-600"></i> Ảnh Chứng Từ (Nếu có)</span>
+                    </label>
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll w-full" id="expenseImageContainer">
+                        <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-red-400 flex flex-col items-center justify-center cursor-pointer bg-red-50 shrink-0 text-red-700 hover:bg-red-100 transition">
+                            <i class="fa-solid fa-camera text-lg md:text-base"></i>
+                            <span class="text-[8px] font-bold mt-0.5">Chụp Ảnh</span>
+                            <input type="file" accept="image/*" capture="environment" onchange="handleExpenseImageUpload(event)" class="hidden">
+                        </label>
+                        <label class="w-14 h-14 md:w-12 md:h-12 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition">
+                            <i class="fa-solid fa-images text-lg md:text-base"></i>
+                            <span class="text-[8px] font-bold mt-0.5">Tải Lên</span>
+                            <input type="file" accept="image/*" multiple onchange="handleExpenseImageUpload(event)" class="hidden">
+                        </label>
+                        <div id="expenseImagesBox" class="flex gap-2"></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="flex justify-end gap-2 p-4 border-t border-slate-200 shrink-0">
+                <button onclick="closeExpenseModal()" class="px-4 py-2.5 rounded-lg bg-slate-200 font-bold text-slate-700">Hủy</button>
+                <button onclick="saveNewExpense()" id="saveExpenseBtn" class="px-4 py-2.5 rounded-lg bg-red-600 text-white font-bold transition">Lưu</button>
             </div>
         </div>
     </div>
-    
-    <!-- SCRIPT CHÍNH (ĐÃ BẢO MẬT XÁC THỰC BẰNG TOKEN, GỠ BỎ SECRET KEY) -->
+    <!-- SCRIPT CHÍNH (ĐÃ TÍCH HỢP LOGIC CHỤP/TẢI ẢNH CHI PHÍ) -->
     <script>
         // --- HÀM BẢO MẬT CHỐNG MÃ ĐỘC XSS ---
         function escapeHtml(unsafe) {
@@ -660,7 +693,6 @@
         // --- HÀM CHE DỮ LIỆU CÁ NHÂN (PII MASKING) ---
         function maskPhoneNumber(phone) {
             if (!phone || phone.length < 7) return phone;
-            // Giữ lại 3 số đầu và 3 số cuối, che 4 số ở giữa bằng 4 dấu *
             return phone.substring(0, 3) + '****' + phone.substring(phone.length - 3);
         }
 
@@ -668,15 +700,13 @@
             if (!name) return '';
             const parts = name.trim().split(' ');
             if (parts.length <= 1) return name;
-            // Chỉ hiện rõ tên chính (từ cuối cùng), các chữ lót bị che thành dấu ***
             return parts.map((part, idx) => idx === parts.length - 1 ? part : part.charAt(0) + '***').join(' ');
         }
 
-        // --- HÀM TẠO MÃ TRACKING NGẮN & BẢO MẬT (Youtube Style) ---
+        // --- HÀM TẠO MÃ TRACKING NGẮN & BẢO MẬT ---
         function generateShortTrackingId() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             let result = '';
-            // Sử dụng thuật toán mã hóa sinh số ngẫu nhiên an toàn của trình duyệt
             const randomValues = new Uint32Array(11); 
             window.crypto.getRandomValues(randomValues);
             for (let i = 0; i < 11; i++) {
@@ -696,6 +726,9 @@
         let activeCollectingOrderId = null;
         let lastNotifiedOrderId = null;
         let lastPaidNotifiedId = null;
+
+        // BIẾN QUẢN LÝ ẢNH CHI PHÍ (MỚI)
+        let expenseTempImages = [];
 
         // =========================================================================
         // BIẾN QUẢN LÝ PHÂN TRANG VÀ DEBOUNCE TÌM KIẾM
@@ -724,14 +757,10 @@
 
                         if (data && !error) {
                             const fetchedOrders = data.map(mapOrderDbToJs);
-                            
                             fetchedOrders.forEach(fetchedObj => {
                                 const existsIndex = state.orders.findIndex(o => o.id === fetchedObj.id);
-                                if (existsIndex === -1) {
-                                    state.orders.push(fetchedObj);
-                                } else {
-                                    state.orders[existsIndex] = fetchedObj;
-                                }
+                                if (existsIndex === -1) state.orders.push(fetchedObj);
+                                else state.orders[existsIndex] = fetchedObj;
                             });
                         }
                     } catch(err) {
@@ -741,7 +770,6 @@
                         loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
                     }
                 }
-                
                 renderOrdersTable(true);
             }, 600);
         }
@@ -924,18 +952,14 @@
                 setTimeout(() => { window.open(`https://zalo.me/${cleanPhone}`, '_blank'); }, 800);
             }).catch(err => { window.open(`https://zalo.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank'); });
         }
+        
         function closeImageViewer() {
             const modal = document.getElementById('imageViewerModal'); 
             const img = document.getElementById('viewerImage');
-            
-            // Thêm class để tạo hiệu ứng mờ dần và thu nhỏ lại
             modal.classList.add('opacity-0'); 
             img.classList.add('scale-95');
-            
-            // Chờ hiệu ứng CSS kết thúc (300ms) rồi mới ẩn hẳn phần tử
             setTimeout(() => { 
                 modal.classList.add('hidden'); 
-                // Reset lại transform để chuẩn bị cho lần mở sau
                 img.style.transform = 'translateY(0px) scale(0.95)';
             }, 300);
         }
@@ -949,7 +973,6 @@
         function copyTrackingLink(orderId) {
             const order = state.orders.find(o => o.id === orderId);
             const trackingId = order ? (order.tracking_id || order.id) : orderId;
-            
             const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${trackingId}`;
             navigator.clipboard.writeText(trackingUrl).then(() => { showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn đã được sao chép vào bộ nhớ tạm!`); })
             .catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
@@ -965,13 +988,8 @@
                 if (!order) {
                     try {
                         const { data, error } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
-                        
-                        if (data && data.length > 0) {
-                            order = mapOrderDbToJs(data[0]);
-                        }
-                    } catch(e) {
-                        console.error("Lỗi tra cứu đơn hàng từ server:", e);
-                    }
+                        if (data && data.length > 0) order = mapOrderDbToJs(data[0]);
+                    } catch(e) { console.error("Lỗi tra cứu đơn hàng từ server:", e); }
                 }
 
                 const screen = document.getElementById('customerTrackingScreen');
@@ -1111,9 +1129,6 @@
 
         let imgTouchStartY = 0; let imgTouchMoveY = 0;
         
-        // =========================================================================
-        // BẢO MẬT: KIỂM TRA PHIÊN SUPABASE THAY VÌ LOCALSTORAGE
-        // =========================================================================
         async function checkAutoLogin() {
             const loading = document.getElementById('globalLoading');
             loading.style.display = 'flex';
@@ -1152,17 +1167,10 @@
                     document.getElementById('authScreen').style.display = 'flex';
                     setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
                 }
-            } catch (err) {
-                console.error("Lỗi kiểm tra phiên:", err);
-            } finally {
-                loading.style.display = 'none';
-                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
-            }
+            } catch (err) { console.error("Lỗi kiểm tra phiên:", err); } 
+            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; }
         }
 
-        // =========================================================================
-        // BẢO MẬT: ĐĂNG NHẬP BẰNG SUPABASE AUTH
-        // =========================================================================
         async function handleLogin() {
             const email = document.getElementById('loginUsername').value.trim(); 
             const pass = document.getElementById('loginPassword').value.trim();
@@ -1174,11 +1182,7 @@
             loading.querySelector('.text-sm').innerText = 'Đang xác thực bảo mật...';
 
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: pass
-                });
-
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pass });
                 if (error) throw error;
 
                 const { data: userData, error: userError } = await supabaseClient
@@ -1215,9 +1219,6 @@
             }
         }
 
-        // =========================================================================
-        // BẢO MẬT: ĐĂNG XUẤT XÓA SESSION TRÊN SERVER
-        // =========================================================================
         async function handleLogout() {
             if(confirm("Bạn muốn đăng xuất khỏi hệ thống?")) {
                 const loading = document.getElementById('globalLoading');
@@ -1247,9 +1248,6 @@
                 <tr class="border-b hover:bg-slate-50"><td class="p-3 font-bold">${escapeHtml(u.name)} ${u.role==='owner'?'<i class="fa-solid fa-crown text-amber-500 ml-1"></i>':''}</td><td class="p-3 text-sky-700 font-mono">${escapeHtml(u.username)}</td><td class="p-3 font-mono text-slate-500">***</td><td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${u.role==='owner'?'bg-amber-100 text-amber-800':(u.role==='manager'?'bg-blue-100 text-blue-800':'bg-slate-100 text-slate-700')}">${u.role==='owner'?'Chủ Cửa Hàng':(u.role==='manager'?'Quản Lý':'Nhân Viên')}</span></td><td class="p-3 text-right">${u.role==='owner' ? `<span class="text-[10px] text-slate-400">Không thể xóa</span>` : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td></tr>`).join('');
         }
 
-        // =========================================================================
-        // BẢO MẬT: TẠO TÀI KHOẢN MỚI THÔNG QUA SUPABASE AUTH
-        // =========================================================================
         async function addNewAccount() {
             const name = document.getElementById('addUserName').value.trim(); 
             const email = document.getElementById('addUserLogin').value.trim();
@@ -1264,11 +1262,7 @@
             loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
             
             try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: pass,
-                });
-                
+                const { data, error } = await supabaseClient.auth.signUp({ email: email, password: pass });
                 if (error) throw error;
                 
                 const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name };
@@ -1277,18 +1271,11 @@
                 state.users.push(newUser); 
                 renderSettingsUsersTable();
                 
-                document.getElementById('addUserName').value=''; 
-                document.getElementById('addUserLogin').value=''; 
-                document.getElementById('addUserPass').value='';
+                document.getElementById('addUserName').value=''; document.getElementById('addUserLogin').value=''; document.getElementById('addUserPass').value='';
                 alert("Tạo tài khoản thành công!");
                 
-            } catch(error) {
-                console.error(error);
-                alert("Lỗi tạo tài khoản: " + error.message);
-            } finally {
-                loading.style.display = 'none';
-                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
-            }
+            } catch(error) { console.error(error); alert("Lỗi tạo tài khoản: " + error.message); } 
+            finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; }
         }
 
         async function deleteAccount(id) {
@@ -1299,10 +1286,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            
-            // =====================================================================
-            // 1. VÁCH NGĂN BẢO MẬT & REALTIME CHO TRANG TRACKING (DÀNH CHO KHÁCH)
-            // =====================================================================
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none';
                 state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
@@ -1310,10 +1293,8 @@
                 
                 const authScreen = document.getElementById('authScreen');
                 if (authScreen) authScreen.remove();
-                
                 const headerEl = document.querySelector('header');
                 if (headerEl) headerEl.remove();
-                
                 const mainAppEl = document.querySelector('.flex.flex-1.overflow-hidden');
                 if (mainAppEl) mainAppEl.remove();
 
@@ -1321,57 +1302,34 @@
                 const trackBox = document.getElementById('trackingContentBox');
                 if (trackScreen && trackBox) {
                     trackScreen.classList.remove('hidden');
-                    trackBox.innerHTML = `
-                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
-                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500 mb-4"></i>
-                            <span class="font-bold text-sm">Đang kết nối hệ thống...</span>
-                        </div>
-                    `;
+                    trackBox.innerHTML = `<div class="flex flex-col items-center justify-center py-12 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500 mb-4"></i><span class="font-bold text-sm">Đang kết nối hệ thống...</span></div>`;
                 }
 
                 let lastOrderState = ""; 
                 const trackingId = window.location.hash.replace('#track=', '');
                 let trackingInterval;
                 supabaseClient.from('store_settings').select('logo').eq('id', 'main').maybeSingle().then(({data}) => {
-                    if (data && data.logo) {
-                        state.logo = data.logo;
-                        renderLogo(); 
-                    }
+                    if (data && data.logo) { state.logo = data.logo; renderLogo(); }
                 });
 
                 const fetchTrackingData = async () => {
                     try {
                         const { data } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
-                        
                         if (data && data.length > 0) {
-                            const orderData = data[0];
-                            const currentState = JSON.stringify(orderData);
-                            
-                            if (currentState !== lastOrderState) {
-                                lastOrderState = currentState;
-                                state.orders = [mapOrderDbToJs(orderData)];
-                                checkUrlTracking(); 
-                            }
-
-                            if (orderData.status === 'PROCESSED' || orderData.status === 'PAID' || orderData.status === 'DELIVERED') {
-                                clearInterval(trackingInterval);
-                            }
+                            const orderData = data[0]; const currentState = JSON.stringify(orderData);
+                            if (currentState !== lastOrderState) { lastOrderState = currentState; state.orders = [mapOrderDbToJs(orderData)]; checkUrlTracking(); }
+                            if (orderData.status === 'PROCESSED' || orderData.status === 'PAID' || orderData.status === 'DELIVERED') clearInterval(trackingInterval);
                         } else {
-                            if (trackBox && lastOrderState === "") {
-                                trackBox.innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Không tìm thấy đơn hàng! Vui lòng kiểm tra lại đường link.</div>';
-                            }
+                            if (trackBox && lastOrderState === "") { trackBox.innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>Không tìm thấy đơn hàng! Vui lòng kiểm tra lại đường link.</div>'; }
                         }
                     } catch (e) { console.error("Lỗi realtime tracking:", e); }
                 };
 
                 fetchTrackingData();
                 trackingInterval = setInterval(fetchTrackingData, 3000); 
-
                 return; 
             }
-            // =====================================================================
-            // 2. CODE DÀNH RIÊNG CHO HỆ THỐNG POS NỘI BỘ CỬA HÀNG 
-            // =====================================================================
+
             initClock(); 
             initCharts(); 
             document.getElementById('globalLoading').style.display = 'flex';
@@ -1406,7 +1364,6 @@
             adjustPOSLayout(); renderDashboard(); checkUrlTracking();
             
             checkAutoLogin();
-            
             document.getElementById('globalLoading').style.display = 'none';
 
             supabaseClient.channel('tramgiaysach_realtime')
@@ -1455,6 +1412,7 @@
         window.addEventListener('resize', adjustPOSLayout);
 
         function initClock() { setInterval(() => { const now = new Date(); document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN'); document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`; }, 1000); }
+        
         function renderDashboard() {
             const d = new Date(); const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             let grossToday = 0; let revToday = 0; let cReceived = 0; let cProcessing = 0; let cProcessed = 0; let cDelivered = 0;
@@ -1554,7 +1512,6 @@
         
         function renderLogo() {
             const has = !!state.logo;
-            
             const defaultIcon = document.getElementById('defaultLogoIcon');
             const customImg = document.getElementById('customLogoImg');
             if (defaultIcon) defaultIcon.style.display = has ? 'none' : 'block'; 
@@ -1931,17 +1888,12 @@
             for (let id of modifiedOrderIds) { await dbUpdateOrder(id); }
         }
 
-        // =========================================================================
-        // HÀM XỬ LÝ LỌC NHANH THỜI GIAN THEO YÊU CẦU
-        // =========================================================================
         function applyQuickDateFilter() {
             const filter = document.getElementById('quickDateFilter').value;
             const startInput = document.getElementById('filterOrderStart');
             const endInput = document.getElementById('filterOrderEnd');
-            
             const today = new Date();
             
-            // Hàm chuyển đổi format ngày về YYYY-MM-DD
             const formatDate = (date) => {
                 const d = new Date(date);
                 let month = '' + (d.getMonth() + 1);
@@ -1952,34 +1904,15 @@
                 return [year, month, day].join('-');
             };
 
-            if (filter === 'ALL') {
-                startInput.value = '';
-                endInput.value = '';
-            } else if (filter === 'TODAY') {
-                const todayStr = formatDate(today);
-                startInput.value = todayStr;
-                endInput.value = todayStr;
-            } else if (filter === 'YESTERDAY') {
-                const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = formatDate(yesterday);
-                startInput.value = yesterdayStr;
-                endInput.value = yesterdayStr;
-            } else if (filter === 'THIS_WEEK') {
-                // Tuần tính từ Thứ 2 đến Chủ nhật
-                const currentDay = today.getDay();
-                const distance = currentDay === 0 ? 6 : currentDay - 1; 
-                const monday = new Date(today);
-                monday.setDate(monday.getDate() - distance);
-                
-                const sunday = new Date(monday);
-                sunday.setDate(sunday.getDate() + 6);
-                
-                startInput.value = formatDate(monday);
-                endInput.value = formatDate(sunday);
+            if (filter === 'ALL') { startInput.value = ''; endInput.value = ''; } 
+            else if (filter === 'TODAY') { const todayStr = formatDate(today); startInput.value = todayStr; endInput.value = todayStr; } 
+            else if (filter === 'YESTERDAY') { const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); const yesterdayStr = formatDate(yesterday); startInput.value = yesterdayStr; endInput.value = yesterdayStr; } 
+            else if (filter === 'THIS_WEEK') {
+                const currentDay = today.getDay(); const distance = currentDay === 0 ? 6 : currentDay - 1; 
+                const monday = new Date(today); monday.setDate(monday.getDate() - distance);
+                const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+                startInput.value = formatDate(monday); endInput.value = formatDate(sunday);
             }
-            
-            // Render lại bảng với trang số 1
             renderOrdersTable(true);
         }
 
@@ -2030,7 +1963,6 @@
 
             const startIndex = (currentOrderPage - 1) * ORDERS_PER_PAGE;
             const endIndex = startIndex + ORDERS_PER_PAGE;
-            
             const paginatedOrders = filtered.slice(startIndex, endIndex);
 
             document.getElementById('ordersTableBody').innerHTML = paginatedOrders.map(o => {
@@ -2122,9 +2054,7 @@
             document.getElementById('extraFeeModal').classList.remove('hidden');
         }
 
-        function closeExtraFeeModal() {
-            document.getElementById('extraFeeModal').classList.add('hidden');
-        }
+        function closeExtraFeeModal() { document.getElementById('extraFeeModal').classList.add('hidden'); }
 
         async function saveExtraFee() {
             const orderId = document.getElementById('extraFeeOrderId').value;
@@ -2188,15 +2118,11 @@
             if(!confirm("Xác nhận khách thanh toán bằng TIỀN MẶT? Đơn sẽ chuyển sang trạng thái Đã trả khách và tính doanh thu.")) return;
             const o = state.orders.find(x => x.id === orderId);
             if (o) {
-                o.status = 'DELIVERED';
-                o.paymentMethod = 'CASH';
-
+                o.status = 'DELIVERED'; o.paymentMethod = 'CASH';
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED');
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') });
 
-                setOrderWarrantyOnDelivery(o);
-                lastPaidNotifiedId = o.id;
-                
+                setOrderWarrantyOnDelivery(o); lastPaidNotifiedId = o.id;
                 const finalTotal = o.total + (o.extraFeeVal || 0);
                 showNotification("✅ ĐÃ THU TIỀN MẶT", `Khách hàng: ${escapeHtml(o.customer.name)} - ${finalTotal.toLocaleString()}đ`);
                 sendNtfyAlert(`✅ Thu tiền mặt: ${o.customer.name} - ${finalTotal.toLocaleString()}đ`, `SĐT: ${o.customer.phone} | Trạng thái: Đã trả khách`);
@@ -2210,7 +2136,6 @@
             const o = state.orders.find(x => x.id === id); 
             if(o) { 
                 const oldStatus = o.status; o.status = st; 
-
                 let newItemStatus = 'RECEIVED';
                 if (st === 'PROCESSING') newItemStatus = 'PROCESSING';
                 else if (['PROCESSED', 'PAID', 'DELIVERED'].includes(st)) newItemStatus = 'PROCESSED'; 
@@ -2415,20 +2340,91 @@
                 .map((c, idx) => `<tr class="border-b hover:bg-slate-50 transition"><td class="p-3 text-center font-bold ${idx<3 ? 'text-amber-500 text-sm' : 'text-slate-400'}">#${idx+1}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(c.name)}</td><td class="p-3 font-mono text-sky-700">${c.phone}</td><td class="p-3 text-center font-semibold">${c.count}</td><td class="p-3 font-bold text-emerald-600">${c.total.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="document.getElementById('custPhone').value='${c.phone}'; switchTab('pos'); autoFillCustomer('${c.phone}')" class="bg-sky-100 text-sky-700 px-3 py-1.5 rounded-lg text-[11px] font-bold">Tạo Đơn</button></td></tr>`).join('');
         }
 
-        function openAddExpenseModal() { document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; document.getElementById('addExpenseModal').classList.remove('hidden'); }
+        // ==========================================================
+        // CÁC HÀM XỬ LÝ ẢNH CHI PHÍ VÀ LƯU CHI PHÍ
+        // ==========================================================
+        async function handleExpenseImageUpload(e) {
+            const files = Array.from(e.target.files); 
+            if (files.length === 0) return;
+            
+            const saveBtn = document.getElementById('saveExpenseBtn'); 
+            saveBtn.disabled = true; 
+            saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            for (const file of files) {
+                const imgId = Date.now() + Math.random().toString(36).substring(7);
+                const tempImage = { id: imgId, url: URL.createObjectURL(file), status: 'uploading', r2Url: null };
+                expenseTempImages.push(tempImage); 
+                renderExpensePreviewImages();
+
+                try {
+                    const r2Url = await uploadFileToR2(file); 
+                    const targetImg = expenseTempImages.find(img => img.id === imgId);
+                    if (targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderExpensePreviewImages(); }
+                } catch (err) { 
+                    console.error("Lỗi tải ảnh chi phí:", err); 
+                    alert(`Không thể tải ảnh ${file.name} lên server`); 
+                    expenseTempImages = expenseTempImages.filter(img => img.id !== imgId); 
+                    renderExpensePreviewImages(); 
+                }
+            }
+            saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
+        }
+
+        function renderExpensePreviewImages() {
+            const container = document.getElementById('expenseImagesBox');
+            let html = '';
+            expenseTempImages.forEach((imgObj) => { 
+                const isUploading = imgObj.status === 'uploading';
+                const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.url);
+                html += `<div class="image-preview-item border-red-200"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner border-t-red-600"></div></div>` : `<button type="button" onclick="removeExpenseUploadedImage('${imgObj.id || imgObj}')" class="remove-btn bg-red-600"><i class="fa-solid fa-times"></i></button>`}</div>`; 
+            });
+            container.innerHTML = html;
+        }
+
+        function removeExpenseUploadedImage(idOrUrl) { 
+            expenseTempImages = expenseTempImages.filter(img => { if (typeof img === 'string') return img !== idOrUrl; return img.id !== idOrUrl && img.r2Url !== idOrUrl; }); 
+            renderExpensePreviewImages(); 
+        }
+
+        function openAddExpenseModal() { 
+            expenseTempImages = []; renderExpensePreviewImages();
+            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
+            document.getElementById('addExpenseModal').classList.remove('hidden'); 
+        }
+        
         function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
         async function saveNewExpense() {
             const name = document.getElementById('expName').value; const amt = parseInt(document.getElementById('expAmount').value) || 0;
             if(!name || amt<=0) return alert("Nhập đủ thông tin");
             
-            const newExp = { id: Date.now(), date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], name, amount: amt, cat: document.getElementById('expCategory').value };
-            state.expenses.unshift(newExp); saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
+            const isUploading = expenseTempImages.some(img => img.status === 'uploading');
+            if (isUploading) return alert("Vui lòng đợi ảnh tải lên hoàn tất!");
+
+            const finalImageUrls = expenseTempImages.map(img => img.r2Url).filter(url => url !== null);
+
+            const newExp = { 
+                id: Date.now(), 
+                date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], 
+                name, 
+                amount: amt, 
+                cat: document.getElementById('expCategory').value,
+                images: finalImageUrls
+            };
+            
+            state.expenses.unshift(newExp); 
+            saveLocalState(); closeExpenseModal(); updateExpensesView(); updateReportMetrics(); 
+            document.getElementById('expName').value=''; document.getElementById('expAmount').value='';
             await supabaseClient.from('expenses').insert(newExp);
         }
 
         async function deleteExpenseDB(id) {
             if(!confirm("Bạn muốn xóa khoản chi này?")) return;
+            const expToDelete = state.expenses.find(x => x.id === id);
+            if (expToDelete && expToDelete.images) {
+                expToDelete.images.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); });
+            }
             state.expenses = state.expenses.filter(x => x.id !== id);
             saveLocalState(); updateExpensesView(); updateReportMetrics();
             await supabaseClient.from('expenses').delete().eq('id', id);
@@ -2440,8 +2436,25 @@
             const monthFilter = document.getElementById('expenseMonthFilter').value;
             const filtered = state.expenses.filter(e => { if (!monthFilter) return true; return e.date && e.date.startsWith(monthFilter); });
             const tbody = document.getElementById('expensesTableBody');
-            if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Không có khoản chi nào trong tháng này.</td></tr>`; } 
-            else { tbody.innerHTML = filtered.map(e => `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-xs text-slate-500">${e.date}</td><td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td><td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư, phát sinh,...)':'Cố định'}</td><td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td><td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash"></i></button></td></tr>`).join(''); }
+            
+            if (filtered.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Không có khoản chi nào trong tháng này.</td></tr>`; 
+            } else { 
+                tbody.innerHTML = filtered.map(e => {
+                    let imgHtml = '<span class="text-slate-300 italic text-[10px]">Không có</span>';
+                    if (e.images && e.images.length > 0) {
+                        imgHtml = `<div class="flex gap-1 justify-center flex-wrap max-w-[100px] mx-auto">` + e.images.map(img => `<img src="${img}" onclick="openImageViewer('${img}')" class="w-8 h-8 object-cover rounded cursor-pointer border border-slate-200 shadow-sm hover:opacity-80 transition" title="Bấm để xem to">`).join('') + `</div>`;
+                    }
+                    return `<tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-3 text-xs text-slate-500">${e.date}</td>
+                        <td class="p-3 font-bold text-sm md:text-xs">${escapeHtml(e.name)}</td>
+                        <td class="p-3 text-[11px] md:text-[10px]">${e.cat==='SUPPLY'?'Vận hành (vật tư,...)':'Cố định'}</td>
+                        <td class="p-3 text-center align-middle">${imgHtml}</td>
+                        <td class="p-3 font-bold text-red-600">${e.amount.toLocaleString()} đ</td>
+                        <td class="p-3 text-right"><button onclick="deleteExpenseDB(${e.id})" class="text-slate-300 hover:text-red-500 px-2 transition"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+                }).join(''); 
+            }
         }
 
         function initCharts() {
