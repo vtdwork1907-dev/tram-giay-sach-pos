@@ -333,7 +333,7 @@
                     <!-- BỘ LỌC CẬP NHẬT GIAO DIỆN MỚI -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-1.5 text-[11px] md:text-xs">
                         <!-- 1. BỘ LỌC NHANH THỜI GIAN -->
-                        <select id="quickDateFilter" onchange="applyQuickDateFilter()" class="order-1 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        <select id="quickDateFilter" onchange="applyQuickDateFilter()" class="order-1 md:order-none col-span-2 md:col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL">🗓️ Tất cả ngày</option>
                             <option value="TODAY">📅 Hôm nay</option>
                             <option value="YESTERDAY">📅 Hôm qua</option>
@@ -348,7 +348,7 @@
                             <span class="text-[8px] md:text-[10px] text-slate-400 font-bold px-1">ĐẾN</span>
                             <input type="date" id="filterOrderEnd" onchange="document.getElementById('quickDateFilter').value='CUSTOM'; renderOrdersTable(true)" class="text-[10px] md:text-xs py-0.5 px-0.5 bg-transparent outline-none w-full">
                         </div>
-
+                        
                         <!-- 3. TRẠNG THÁI -->
                         <select id="filterOrderStatus" onchange="renderOrdersTable(true)" class="order-3 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL" selected>📋 Tất cả đơn</option>
@@ -361,7 +361,7 @@
                         </select>
                         
                         <!-- 4. LỌC DỊCH VỤ -->
-                        <select id="filterOrderService" onchange="renderOrdersTable(true)" class="order-4 md:order-none col-span-2 md:col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
+                        <select id="filterOrderService" onchange="renderOrdersTable(true)" class="order-4 md:order-none col-span-1 text-[11px] md:text-xs py-1 px-1.5 rounded-lg border border-slate-300 outline-none font-semibold text-slate-700 bg-slate-50 truncate">
                             <option value="ALL">🛠️ Tất cả dịch vụ</option>
                             <option value="CLEAN">🧼 Vệ sinh</option>
                             <option value="SOLE">👟 Thay đế</option>
