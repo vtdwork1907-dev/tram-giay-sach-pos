@@ -3665,21 +3665,35 @@
                     state.qrConfig = settingsRes.data.qr_config || state.qrConfig; 
                     state.logo = settingsRes.data.logo || null; 
                 }
-                if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs); 
+                // CHỈNH SỬA: Lấy dữ liệu từ Cloud
+                if (ordersRes.data) {
+                    state.orders = ordersRes.data.map(mapOrderDbToJs); 
+                }
                 if (expRes.data) state.expenses = expRes.data;
+
+                // =========================================================
+                // BỔ SUNG: GIỮ LẠI CÁC ĐƠN HÀNG OFFLINE CHƯA ĐỒNG BỘ LÊN GIAO DIỆN
+                // =========================================================
+                const pendingSyncs = await idbGetAll('pending_sync');
+                if (pendingSyncs && pendingSyncs.length > 0) {
+                    const pendingOrders = pendingSyncs.filter(p => p.type === 'INSERT_ORDER').map(p => p.data);
+                    const pendingUpdates = pendingSyncs.filter(p => p.type === 'UPDATE_ORDER').map(p => p.data);
+                    
+                    // Đưa đơn mới tạo offline lên đầu bảng
+                    pendingOrders.forEach(po => {
+                        if (!state.orders.find(o => o.id === po.id)) state.orders.unshift(po);
+                    });
+                    
+                    // Áp dụng các thay đổi trạng thái offline
+                    pendingUpdates.forEach(pu => {
+                        const idx = state.orders.findIndex(o => o.id === pu.id);
+                        if (idx !== -1) state.orders[idx] = pu;
+                    });
+                }
                 
                 await saveLocalState(); 
                 
-                renderLogo(); 
-                renderOrdersTable(); 
-                renderDashboard(); 
-                updateReportMetrics(); 
-                renderCustomersTable(); 
-                renderExpensesTable(); 
-                renderCategoryTabs(); 
-                renderServicesGrid(); 
-                renderSettingsServicesTable(); 
-                renderSettingsUsersTable(); 
+                renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable(); renderExpensesTable(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable(); 
                 
                 adjustPOSLayout(); 
                 if (window.location.hash.startsWith('#track=')) checkUrlTracking();
