@@ -1802,7 +1802,16 @@
                 try {
                     const r2Url = await uploadFileToR2(file); const targetImg = state.uploadedImages.find(img => img.id === imgId);
                     if(targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; renderPreviewImages(); }
-                } catch (err) { console.error("Lỗi tải ảnh:", err); alert(`Không thể tải ảnh ${file.name} lên server`); state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId); renderPreviewImages(); }
+                // ... (code trên giữ nguyên)
+            } catch (err) {
+                console.error("Lỗi tải ảnh:", err);
+                
+                // SỬA DÒNG NÀY ĐỂ THẤY LỖI THẬT:
+                alert(`LỖI: ${err.message}`); 
+                
+                state.uploadedImages = state.uploadedImages.filter(img => img.id !== imgId);
+                renderPreviewImages();
+            }
             }
             saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); e.target.value = '';
         }
