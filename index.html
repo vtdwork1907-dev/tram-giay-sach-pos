@@ -749,7 +749,7 @@
                             .from('orders')
                             .select('*')
                             .or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_name.ilike.%${searchVal}%`)
-                            .order('created_at', { ascending: false })
+                            .order('date', { ascending: false })
                             .limit(50); 
 
                         if (data && !error) {
