@@ -1024,21 +1024,37 @@
                     if (!navigator.onLine) break; 
                     
                     try {
-                        // Kiểm tra file có bị rỗng do bộ nhớ iOS lỗi không
-                        if (!item.file) throw new Error("Dữ liệu ảnh bị rỗng");
-                        
                         const r2Url = await uploadFileToR2(item.file);
                         item.status = 'done';
                         item.r2Url = r2Url;
                         await idbPut('upload_queue', item); 
+
+                        // CHÌA KHÓA FIX LỖI: Báo cho giao diện POS biết ảnh đã up xong để tắt vòng xoay
+                        let needsRender = false;
+                        
+                        // 1. Cập nhật ảnh đơn thường
+                        const targetImg = state.uploadedImages.find(img => img.id === item.imgId);
+                        if (targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; needsRender = true; }
+                        
+                        // 2. Cập nhật ảnh nhiều đôi
+                        state.shoes.forEach(shoe => {
+                            const sImg = shoe.images.find(img => img.id === item.imgId);
+                            if (sImg) { sImg.status = 'done'; sImg.r2Url = r2Url; needsRender = true; }
+                        });
+
+                        // 3. Cập nhật ảnh hóa đơn chi phí
+                        const expImg = expenseTempImages.find(img => img.id === item.imgId);
+                        if (expImg) { expImg.status = 'done'; expImg.r2Url = r2Url; renderExpensePreviewImages(); }
+
+                        if (needsRender) {
+                            renderPreviewImages();
+                            renderMultiShoeList();
+                        }
                     } catch (e) {
                         console.error("Lỗi upload ngầm ảnh ID:", item.imgId, e);
-                        
-                        // CƠ CHẾ RETRY: Thử lại tối đa 3 lần, nếu vẫn lỗi thì bỏ qua để không kẹt hệ thống
+                        // Cho phép thử lại 3 lần, tránh kẹt hàng đợi
                         item.retryCount = (item.retryCount || 0) + 1;
-                        if (item.retryCount >= 3) {
-                            item.status = 'error'; 
-                        }
+                        if (item.retryCount >= 3) item.status = 'error'; 
                         await idbPut('upload_queue', item);
                     }
                 }
