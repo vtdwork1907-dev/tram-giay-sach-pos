@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tgs-pos-cache-v3';
+const CACHE_NAME = 'tgs-pos-cache-v4'; // Đổi tên cache để ép máy tải lại
 
 const ASSETS_TO_CACHE = [
     './',
@@ -16,7 +16,6 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Caching assets');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -40,13 +39,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Bắt và giả lập phản hồi cho API nếu mất mạng để tránh văng app (crash)
+    // Chặn API để lừa hệ thống khi mất mạng
     if (url.hostname.includes('supabase.co') || url.hostname.includes('workers.dev')) {
         if (!navigator.onLine) {
             event.respondWith(
-                new Response(JSON.stringify({ error: "Offline mode" }), {
-                    status: 503,
-                    headers: { 'Content-Type': 'application/json' }
+                new Response(JSON.stringify({ error: "Offline mode active" }), {
+                    status: 503, headers: { 'Content-Type': 'application/json' }
                 })
             );
         }
@@ -55,25 +53,29 @@ self.addEventListener('fetch', (event) => {
 
     if (event.request.method !== 'GET') return;
 
+    // CHÌA KHÓA FIX LỖI TẮT APP MẤT MẠNG TRÊN IOS
+    // Yêu cầu điều hướng trang (Mở app lên từ màn hình chính)
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return caches.match('./index.html') || caches.match('/index.html') || caches.match('/');
+            })
+        );
+        return;
+    }
+
+    // Các yêu cầu file tĩnh (JS, CSS, Ảnh)
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200) {
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
                     const clone = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
                 return networkResponse;
             })
-            .catch(async () => {
-                const cache = await caches.open(CACHE_NAME);
-                const cachedResponse = await cache.match(event.request);
-                
-                if (cachedResponse) return cachedResponse;
-
-                // CHÌA KHÓA FIX LỖI OFFLINE: Điều hướng request trang chủ (Navigation) về index.html
-                if (event.request.mode === 'navigate') {
-                    return cache.match('./index.html') || cache.match('/index.html');
-                }
+            .catch(() => {
+                return caches.match(event.request);
             })
     );
 });
