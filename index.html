@@ -1651,8 +1651,16 @@
         }
 
         function setCurrentDateTimeForOrder() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById('orderDateInput').value = now.toISOString().slice(0,16); }
-        function autoFillCustomer(phone) { const cust = state.orders.find(o => o.customer.phone === phone); if(cust) document.getElementById('custName').value = cust.customer.name; }
-
+        function autoFillCustomer(phone) { 
+    // Lọc lấy phần số, bỏ qua các ký tự chữ
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Yêu cầu phải là số điện thoại thật (độ dài từ 9-11 số) thì mới cho phép tự động điền tên
+    if (cleanPhone.length >= 9 && cleanPhone.length <= 11) {
+        const cust = state.orders.find(o => o.customer.phone === phone); 
+        if(cust) document.getElementById('custName').value = cust.customer.name; 
+    }
+}
         function toggleMultiShoeMode(enabled) {
             state.multiShoeMode = enabled;
             const singleSec = document.getElementById('singleShoeSection'); const multiSec = document.getElementById('multiShoeSection');
