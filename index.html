@@ -2503,7 +2503,6 @@
             renderDashboard(); 
             dbUpdateOrder(orderId); 
             e.target.value = '';
-            showNotification("📸 Đã nhận ảnh", "Ảnh hoàn thiện (After) đang được xử lý và đồng bộ ngầm.");
         }
 
         function uploadAfterImageSlot(e, orderId, slotIdx) {
@@ -2530,7 +2529,6 @@
             renderDashboard(); 
             dbUpdateOrder(orderId); 
             e.target.value = '';
-            showNotification("📸 Đã nhận ảnh", "Ảnh hoàn thiện (After) đang được xử lý và đồng bộ ngầm.");
         }
 
         async function cycleItemStatus(orderId, itemIdKey) {
