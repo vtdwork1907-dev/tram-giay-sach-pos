@@ -2705,6 +2705,19 @@
                 clearTimeout(window.syncTimeout); window.syncTimeout = setTimeout(() => { fetchLatestDataFromCloud(false); }, 300); 
             } 
         });
+        // [THÊM MỚI] Xử lý đặc thù cho Safari/iOS khi khôi phục ứng dụng từ bộ nhớ tạm
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted && state.currentUser && !window.isUploadingImages) {
+        fetchLatestDataFromCloud(false);
+    }
+});
+
+// [THÊM MỚI] Tự động đồng bộ ngay khi điện thoại có mạng trở lại (sau khi mất sóng hoặc tắt chế độ máy bay)
+window.addEventListener('online', () => {
+    if (state.currentUser && !window.isUploadingImages) {
+        fetchLatestDataFromCloud(false);
+    }
+});
     </script>
 </body>
 </html>
