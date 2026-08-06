@@ -1021,15 +1021,25 @@
                 updateSyncBadgeUI();
                 
                 for (const item of pendingItems) {
-                    if (!navigator.onLine) break; // Cúp mạng đột ngột thì ngắt
+                    if (!navigator.onLine) break; 
                     
                     try {
+                        // Kiểm tra file có bị rỗng do bộ nhớ iOS lỗi không
+                        if (!item.file) throw new Error("Dữ liệu ảnh bị rỗng");
+                        
                         const r2Url = await uploadFileToR2(item.file);
                         item.status = 'done';
                         item.r2Url = r2Url;
                         await idbPut('upload_queue', item); 
                     } catch (e) {
                         console.error("Lỗi upload ngầm ảnh ID:", item.imgId, e);
+                        
+                        // CƠ CHẾ RETRY: Thử lại tối đa 3 lần, nếu vẫn lỗi thì bỏ qua để không kẹt hệ thống
+                        item.retryCount = (item.retryCount || 0) + 1;
+                        if (item.retryCount >= 3) {
+                            item.status = 'error'; 
+                        }
+                        await idbPut('upload_queue', item);
                     }
                 }
             } finally {
@@ -1038,7 +1048,6 @@
                 if (navigator.onLine) setTimeout(processUploadQueue, 1500); 
             }
         }
-
         // TIẾN TRÌNH NGẦM 2: Đẩy dữ liệu Đơn hàng/Chi phí lên Supabase JSON
         async function syncPendingData() {
             if (isSyncingData || !navigator.onLine) return;
