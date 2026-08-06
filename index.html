@@ -1970,8 +1970,6 @@
             filtered.sort((a, b) => b.date.localeCompare(a.date));
 
             const totalItems = filtered.length;
-
-            const totalItems = filtered.length;
             const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE) || 1;
             
             if (currentOrderPage > totalPages) currentOrderPage = totalPages;
