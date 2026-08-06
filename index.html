@@ -1967,6 +1967,9 @@
                 if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
                 return true;
             });
+            filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+            const totalItems = filtered.length;
 
             const totalItems = filtered.length;
             const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE) || 1;
