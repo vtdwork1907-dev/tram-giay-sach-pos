@@ -857,6 +857,154 @@
                 tx.onerror = (e) => reject(e.target.error);
             });
         }
+        // ============================================================================
+        // CÁC HÀM TIỆN ÍCH BỊ THIẾU (ĐIỀU HƯỚNG, UPLOAD, MAPPER, AUTH)
+        // ============================================================================
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
+            document.getElementById('tab-' + id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => { 
+                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md'); 
+                if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); 
+                else b.classList.add('text-slate-300'); 
+            });
+            const activeBtn = document.getElementById('nav-' + id);
+            if(activeBtn) { 
+                activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); 
+                activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
+            }
+            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
+            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
+            if(id === 'customers') renderCustomersTable(); 
+            if(id === 'payment') updateQRView(); 
+            if(id === 'dashboard') renderDashboard();
+            localStorage.setItem('TRAM_LAST_TAB', id);
+        }
+
+        function showNotification(title, body) {
+            const container = document.getElementById('toastContainer');
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = 'bg-white border-l-4 border-sky-500 shadow-2xl rounded-2xl p-3.5 md:p-4 flex flex-col gap-1 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-auto border border-slate-100';
+                toast.innerHTML = `<strong class="text-xs md:text-sm text-slate-800 flex items-center gap-2"><i class="fa-solid fa-bell text-amber-500"></i> ${escapeHtml(title)}</strong><span class="text-[11px] md:text-xs text-slate-600 whitespace-pre-line">${escapeHtml(body)}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'), 50);
+                setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 5000);
+            }
+        }
+
+        function sendNtfyAlert(title, message) { 
+            fetch(`https://ntfy.sh/Tramgiaysach_news`, { method: 'POST', body: `${title}\n${message}` }).catch(e => {}); 
+        }
+
+        function initClock() { 
+            setInterval(() => { 
+                const now = new Date(); 
+                document.getElementById('clockTime').innerText = now.toLocaleTimeString('vi-VN'); 
+                document.getElementById('clockDate').innerHTML = `<i class="fa-regular fa-calendar-days text-cyanBrand mr-1"></i> ${now.toLocaleDateString('vi-VN')}`; 
+            }, 1000); 
+        }
+
+        function closeImageViewer() { const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage'); modal.classList.add('opacity-0'); img.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); img.style.transform = 'translateY(0px) scale(0.95)'; }, 300); }
+        function openImageViewer(url) { const modal = document.getElementById('imageViewerModal'); const img = document.getElementById('viewerImage'); img.src = url; img.style.transform = 'translateY(0px) scale(0.95)'; img.style.transition = 'transform 0.3s ease'; modal.classList.remove('hidden'); void modal.offsetWidth; modal.classList.remove('opacity-0'); img.classList.remove('scale-95'); }
+
+        function calculate3MonthsLater(dateStr) {
+            try { let d = dateStr ? new Date(dateStr.split(' ')[0] + 'T00:00:00') : new Date(); if (isNaN(d.getTime())) d = new Date(); d.setMonth(d.getMonth() + 3); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; } 
+            catch(e) { let d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; }
+        }
+
+        function setOrderWarrantyOnDelivery(o) {
+            if (!o || !o.items) return; const todayStr = new Date().toISOString().split('T')[0];
+            o.items.forEach(i => { const svcInfo = state.services.find(s => s.id === i.id); const cat = svcInfo ? svcInfo.category : ''; if ((cat === 'SOLE' || cat === 'GLUE') && !i.warrantyDate) { i.warrantyDate = calculate3MonthsLater(todayStr); } });
+        }
+
+        function adjustPOSLayout() { const container = document.getElementById('servicesMainContainer'); if (!container) return; if (window.innerWidth < 1024) document.getElementById('mobileServicesPlaceholder').appendChild(container); else document.getElementById('pcServicesPlaceholder').appendChild(container); }
+        window.addEventListener('resize', adjustPOSLayout);
+
+        // Upload lên R2
+        async function uploadFileToR2(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch(`${WORKER_API_URL}/upload`, { method: 'POST', body: formData });
+            if (!res.ok) throw new Error("Upload failed");
+            const data = await res.json();
+            return data.url;
+        }
+
+        // Ánh xạ dữ liệu Data (Mappers)
+        function mapOrderDbToJs(dbObj) {
+            return {
+                id: dbObj.id, tracking_id: dbObj.tracking_id || dbObj.id, date: dbObj.date,
+                customer: { name: dbObj.customer_name, phone: dbObj.customer_phone, note: dbObj.customer_note },
+                items: dbObj.items || [], shoes: dbObj.shoes || [],
+                images: dbObj.images || [], imagesAfter: dbObj.images_after || [],
+                subtotalVal: dbObj.subtotal_val, discountVal: dbObj.discount_val, total: dbObj.total,
+                status: dbObj.status, paymentMethod: dbObj.payment_method, extraFeeVal: dbObj.extra_fee_val || 0, extraFeeReason: dbObj.extra_fee_reason || ''
+            };
+        }
+
+        function mapOrderJsToDb(jsObj) {
+            return {
+                id: jsObj.id, tracking_id: jsObj.tracking_id, date: jsObj.date,
+                customer_name: jsObj.customer.name, customer_phone: jsObj.customer.phone, customer_note: jsObj.customer.note,
+                items: jsObj.items, shoes: jsObj.shoes || [],
+                images: jsObj.images, images_after: jsObj.imagesAfter,
+                subtotal_val: jsObj.subtotalVal, discount_val: jsObj.discountVal, total: jsObj.total,
+                status: jsObj.status, payment_method: jsObj.paymentMethod, extra_fee_val: jsObj.extraFeeVal, extra_fee_reason: jsObj.extraFeeReason
+            };
+        }
+
+        function mapServiceDbToJs(dbObj) {
+            return { id: dbObj.id, name: dbObj.name, category: dbObj.category, defaultPrice: dbObj.default_price, icon: dbObj.icon, sortOrder: dbObj.sort_order };
+        }
+
+        // Xác thực Đăng Nhập / Phân Quyền
+        async function handleLogin() {
+            const user = document.getElementById('loginUsername').value; const pass = document.getElementById('loginPassword').value;
+            if(!user || !pass) return showNotification("Lỗi", "Vui lòng nhập đủ thông tin!");
+            document.getElementById('globalLoading').style.display = 'flex';
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email: user, password: pass });
+                if (error) throw error;
+                const { data: userData } = await supabaseClient.from('users').select('*').eq('username', user).single();
+                let activeUser = userData;
+                if (!userData) { if (user === 'admin@tramgiaysach.com') activeUser = { id: data.user.id, name: 'Chủ Cửa Hàng', role: 'owner' }; else throw new Error("Tài khoản không hợp lệ!"); }
+                state.currentUser = activeUser;
+                document.getElementById('authScreen').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('authScreen').style.display = 'none', 300);
+                document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name);
+                changeRole(activeUser.role);
+                fetchLatestDataFromCloud(true);
+            } catch(e) { showNotification("Lỗi đăng nhập", "Tài khoản hoặc mật khẩu không đúng!"); } 
+            finally { document.getElementById('globalLoading').style.display = 'none'; }
+        }
+
+        async function handleLogout() {
+            document.getElementById('globalLoading').style.display = 'flex';
+            await supabaseClient.auth.signOut();
+            state.currentUser = null;
+            document.getElementById('authScreen').style.display = 'flex';
+            setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+            document.getElementById('globalLoading').style.display = 'none';
+        }
+
+        function changeRole(role) {
+            state.role = role;
+            if (role === 'staff') {
+                document.querySelectorAll('.role-restricted').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.owner-only').forEach(el => el.style.display = 'none');
+                switchTab('pos');
+            } else if (role === 'manager') {
+                document.querySelectorAll('.role-restricted').forEach(el => el.style.display = '');
+                document.querySelectorAll('.owner-only').forEach(el => el.style.display = 'none');
+                switchTab('dashboard');
+            } else {
+                document.querySelectorAll('.role-restricted').forEach(el => el.style.display = '');
+                document.querySelectorAll('.owner-only').forEach(el => el.style.display = '');
+                switchTab('dashboard');
+            }
+        }
         // 4. HÀM CẬP NHẬT GIAO DIỆN "HUY HIỆU ĐỒNG BỘ" TRÊN HEADER
         function updateSyncUI() {
             const syncBadge = document.getElementById('syncBadge');
