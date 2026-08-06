@@ -842,47 +842,70 @@
             });
         }
 
-        function uploadFileToR2(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) throw new Error("Phiên đăng nhập đã hết hạn. Hãy F5 tải lại trang.");
+       function uploadFileToR2(file) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Lấy session hiện tại
+                    let { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                    if (!session) throw new Error("Không tìm thấy thông tin đăng nhập.");
 
-            // 1. Nén ảnh
-            const compressedFile = await compressImage(file, 500, 1920);
-            
-            // 2. Ép tên file ngắn gọn, an toàn tuyệt đối
-            const originalName = compressedFile.name || file.name || '';
-            let ext = 'jpg';
-            if (originalName.includes('.')) ext = originalName.split('.').pop().toLowerCase();
-            const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.${ext}`;
-            
-            const formData = new FormData(); 
-            formData.append('file', compressedFile, safeFileName);
-            
-            let response;
-            try {
-                // 3. Gửi Request
-                response = await fetch(`${WORKER_API_URL}/upload`, { 
-                    method: 'POST', 
-                    headers: { 'Authorization': `Bearer ${session.access_token}` }, 
-                    body: formData 
-                });
-            } catch (networkError) {
-                // BẮT LỖI MẠNG ĐẶC THÙ TRÊN PC
-                throw new Error("Trình duyệt PC đã chặn kết nối. Hãy tắt Adblock, tiện ích chặn quảng cáo hoặc phần mềm diệt virus rồi thử lại.");
-            }
+                    // Xử lý nén ảnh
+                    const compressedFile = await compressImage(file, 500, 1920);
+                    const originalName = compressedFile.name || file.name || '';
+                    let ext = 'jpg';
+                    if (originalName.includes('.')) ext = originalName.split('.').pop().toLowerCase();
+                    const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.${ext}`;
+                    
+                    const formData = new FormData(); 
+                    formData.append('file', compressedFile, safeFileName);
+                    
+                    // Tạo một hàm gửi ảnh nội bộ để có thể gọi lại (Retry)
+                    const attemptUpload = async (accessToken) => {
+                        const response = await fetch(`${WORKER_API_URL}/upload`, { 
+                            method: 'POST', 
+                            headers: { 'Authorization': `Bearer ${accessToken}` }, 
+                            body: formData 
+                        });
+                        
+                        // Nếu chìa khóa chết (401/403), trả về mã lỗi riêng để code biết đường xử lý
+                        if (response.status === 401 || response.status === 403) {
+                            return { error: 'EXPIRED_TOKEN' };
+                        }
+                        
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || `Server lỗi (${response.status})`);
+                        return { url: data.url };
+                    };
 
-            const data = await response.json();
-            if (!response.ok) { 
-                throw new Error(data.error || `Server từ chối kết nối (Mã lỗi: ${response.status})`); 
-            }
-            resolve(data.url);
-        } catch(err) { 
-            reject(err); 
+                    // THỬ TẢI LÊN LẦN 1
+                    let result = await attemptUpload(session.access_token);
+                    
+                    // NẾU THẤT BẠI DO HẾT HẠN PHIÊN -> TỰ ĐỘNG GIA HẠN VÀ THỬ LẠI
+                    if (result.error === 'EXPIRED_TOKEN') {
+                        console.log("Token cũ đã hết hạn, đang âm thầm xin Token mới...");
+                        
+                        // Yêu cầu Supabase cấp ngay 1 phiên bản quyền mới ngầm dưới background
+                        const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
+                        
+                        if (refreshError || !refreshData.session) {
+                            throw new Error("Phiên bảo mật đã hết hạn hoàn toàn, không thể tự gia hạn. Vui lòng F5 tải lại trang.");
+                        }
+                        
+                        // THỬ TẢI LÊN LẦN 2 (Với Token mới cứng vừa được cấp)
+                        console.log("Đã có Token mới, tiếp tục up ảnh...");
+                        result = await attemptUpload(refreshData.session.access_token);
+                        
+                        // Nếu lần 2 vẫn lỗi thì báo lỗi thực sự
+                        if (result.error) throw new Error("Tải ảnh thất bại sau khi gia hạn bảo mật.");
+                    }
+
+                    // Up thành công, trả link ảnh về
+                    resolve(result.url);
+                } catch(err) { 
+                    reject(err); 
+                }
+            });
         }
-    });
-}
 
         function calculate3MonthsLater(dateStr) {
             try {
