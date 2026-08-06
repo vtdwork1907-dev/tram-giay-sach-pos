@@ -1609,52 +1609,28 @@
         // =========================================================================
         async function checkAutoLogin() {
             const loading = document.getElementById('globalLoading');
-            loading.querySelector('.text-sm').innerText = 'Đang kiểm tra bảo mật...';
+            if (loading) loading.style.display = 'flex';
+
+            // CHẶN NGAY LẬP TỨC NẾU KHÔNG CÓ MẠNG ĐỂ KHÔNG CHO SUPABASE GỌI FETCH GÂY LỖI IOS
+            if (!navigator.onLine) {
+                state.currentUser = { id: 'offline', name: 'Nhân Viên (Offline)', role: 'manager' };
+                const authScreen = document.getElementById('authScreen');
+                if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
+                document.getElementById('currentUserDisplay').innerText = "Offline Mode"; 
+                changeRole('manager');
+                if (loading) loading.style.display = 'none';
+                return;
+            }
 
             try {
-                // CHẶN REQUEST MẠNG KHI OFFLINE ĐỂ TRÁNH IOS CẢNH BÁO
-                if (!navigator.onLine) {
-                    const localData = localStorage.getItem('TRAM_LOCAL_STATE');
-                    if (localData) {
-                        state.currentUser = { id: 'offline', name: 'Đang Offline', role: 'manager' };
-                        document.getElementById('authScreen').style.display = 'none';
-                        document.getElementById('currentUserDisplay').innerText = "Offline Mode"; 
-                        changeRole('manager');
-                        loading.style.display = 'none';
-                        return;
-                    }
-                }
-
-                // NẾU CÓ MẠNG thì mới chạy tiếp kiểm tra Supabase
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
-                
                 if (session) {
-                    const { data: userData, error: userError } = await supabaseClient
-                        .from('users')
-                        .select('*')
-                        .eq('username', session.user.email)
-                        .single();
-                        
-                    let activeUser = userData;
-                    
-                    if (!userData) {
-                        if (session.user.email === 'admin@tramgiaysach.com') {
-                            activeUser = { id: session.user.id, name: 'Chủ Cửa Hàng', role: 'owner' };
-                        } else {
-                            await supabaseClient.auth.signOut();
-                            document.getElementById('authScreen').style.display = 'flex';
-                            setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
-                            alert("Tài khoản của bạn đã bị thu hồi hoặc xóa!");
-                            return; 
-                        }
-                    }
+                    const { data: userData } = await supabaseClient.from('users').select('*').eq('username', session.user.email).single();
+                    let activeUser = userData || { id: session.user.id, name: 'Quản Trị Viên', role: 'owner' };
                     
                     state.currentUser = activeUser;
                     const authScreen = document.getElementById('authScreen'); 
-                    if (authScreen) { 
-                        authScreen.style.display = 'none'; 
-                        authScreen.classList.add('opacity-0'); 
-                    }
+                    if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
                     document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name); 
                     changeRole(activeUser.role);
                 } else {
@@ -1662,10 +1638,13 @@
                     setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
                 }
             } catch (err) { 
-                console.error("Lỗi kiểm tra phiên:", err); 
+                console.error("Lỗi đăng nhập tự động:", err);
+                // Fallback khẩn cấp nếu lỗi mạng đột ngột
+                state.currentUser = { id: 'offline', name: 'Nhân Viên', role: 'manager' };
+                document.getElementById('authScreen')?.style.removeProperty('display');
+                changeRole('manager');
             } finally { 
-                loading.style.display = 'none'; 
-                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; 
+                if (loading) loading.style.display = 'none'; 
             }
         }
 
