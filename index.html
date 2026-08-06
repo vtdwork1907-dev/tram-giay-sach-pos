@@ -2256,7 +2256,7 @@
                 
                 renderOrdersTable(); renderDashboard(); openComparison(orderId);
                 await dbUpdateOrder(orderId);
-            } catch (err) { console.error("Lỗi upload ảnh sau:", err); alert(`LỖI: ${err.message}`); } 
+            } catch (err) { console.error("Lỗi upload ảnh sau vị trí slot:", err); alert(`LỖI: ${err.message}`); }
             finally { loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...'; e.target.value = ''; setTimeout(() => { window.isUploadingImages = false; }, 1000); }
         }
 
