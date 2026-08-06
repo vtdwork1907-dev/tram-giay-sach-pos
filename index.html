@@ -1029,30 +1029,61 @@
                         item.r2Url = r2Url;
                         await idbPut('upload_queue', item); 
 
-                        // CHÌA KHÓA FIX LỖI: Báo cho giao diện POS biết ảnh đã up xong để tắt vòng xoay
+                        // CHÌA KHÓA FIX LỖI IOS: Phải cập nhật link xịn vào thẳng Kho Đơn trong RAM
                         let needsRender = false;
                         
-                        // 1. Cập nhật ảnh đơn thường
+                        // 1. Cập nhật POS Cart (Màn hình tạo đơn)
                         const targetImg = state.uploadedImages.find(img => img.id === item.imgId);
                         if (targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; needsRender = true; }
                         
-                        // 2. Cập nhật ảnh nhiều đôi
+                        // 2. Cập nhật Đơn nhiều đôi (POS)
                         state.shoes.forEach(shoe => {
                             const sImg = shoe.images.find(img => img.id === item.imgId);
                             if (sImg) { sImg.status = 'done'; sImg.r2Url = r2Url; needsRender = true; }
                         });
 
-                        // 3. Cập nhật ảnh hóa đơn chi phí
+                        // 3. Cập nhật trực tiếp KHO ĐƠN (Trị lỗi ảnh biến mất)
+                        state.orders.forEach(o => {
+                            let orderChanged = false;
+                            // Tìm trong ảnh Before
+                            if (o.images && o.images.length > 0) {
+                                const idx = o.images.indexOf(item.localUrl);
+                                if (idx !== -1) { o.images[idx] = r2Url; orderChanged = true; }
+                            }
+                            // Tìm trong ảnh After
+                            if (o.imagesAfter && o.imagesAfter.length > 0) {
+                                const idx = o.imagesAfter.indexOf(item.localUrl);
+                                if (idx !== -1) { o.imagesAfter[idx] = r2Url; orderChanged = true; }
+                            }
+                            // Tìm trong Đơn nhiều đôi (Kho đơn)
+                            if (o.shoes) {
+                                o.shoes.forEach(s => {
+                                    if (s.images) {
+                                        s.images.forEach(sImg => {
+                                            if (sImg.localUrl === item.localUrl || sImg.url === item.localUrl) {
+                                                sImg.r2Url = r2Url; sImg.url = r2Url; sImg.status = 'done'; orderChanged = true;
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            if (orderChanged) needsRender = true;
+                        });
+
+                        // 4. Cập nhật hóa đơn chi phí
                         const expImg = expenseTempImages.find(img => img.id === item.imgId);
                         if (expImg) { expImg.status = 'done'; expImg.r2Url = r2Url; renderExpensePreviewImages(); }
 
                         if (needsRender) {
+                            saveLocalState(); // Lưu trạng thái mới xuống IndexedDB
                             renderPreviewImages();
                             renderMultiShoeList();
+                            renderOrdersTable(); // Vẽ lại Kho đơn ngay lập tức
+                            renderDashboard();
                         }
                     } catch (e) {
                         console.error("Lỗi upload ngầm ảnh ID:", item.imgId, e);
-                        // Cho phép thử lại 3 lần, tránh kẹt hàng đợi
+                        // Cơ chế chống kẹt: Thử lại tối đa 3 lần
                         item.retryCount = (item.retryCount || 0) + 1;
                         if (item.retryCount >= 3) item.status = 'error'; 
                         await idbPut('upload_queue', item);
