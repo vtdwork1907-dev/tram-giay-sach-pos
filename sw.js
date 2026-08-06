@@ -1,55 +1,46 @@
-// Tên bộ nhớ đệm
-const CACHE_NAME = 'tramgiaysach-v1';
+const CACHE_NAME = 'tramgiaysach-pos-v2';
+
+// Danh sách các tệp tĩnh cần tải sẵn xuống ổ cứng máy
 const urlsToCache = [
-  '/',
-  '/index.html',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap'
+  './',
+  './index.html',
+  './manifest.json',
+  'https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png' // Logo app
 ];
 
-// Sự kiện Cài đặt (Install) - Lưu đệm các file tĩnh cần thiết
+// Cài đặt: Tải và lưu giao diện vào Cache
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
-  self.skipWaiting(); // Ép kích hoạt Service Worker ngay lập tức
 });
 
-// Sự kiện Kích hoạt (Activate) - Dọn dẹp cache cũ
+// Kích hoạt: Xóa bộ nhớ đệm cũ (nếu có bản cập nhật v3, v4)
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
+          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
         })
       );
     })
   );
-  self.clients.claim();
 });
 
-// Sự kiện Fetch - Áp dụng chiến lược "Network First, falling back to Cache"
+// Chặn request: Ưu tiên mạng, nếu mất mạng lôi từ ổ cứng ra dùng
 self.addEventListener('fetch', event => {
-  // Chỉ can thiệp các request GET dạng tĩnh hoặc document
+  // Bỏ qua các API fetch data
   if (event.request.method !== 'GET') return;
-  
-  // Bỏ qua các API của Supabase (để trình duyệt tự xử lý network offline error)
-  if (event.request.url.includes('supabase.co')) return;
 
   event.respondWith(
     fetch(event.request).catch(() => {
-      return caches.match(event.request);
+      return caches.match(event.request).then(response => {
+        if (response) return response;
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
+      });
     })
   );
 });
