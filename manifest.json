@@ -1,17 +1,17 @@
 {
   "name": "Trạm Giày Sạch POS",
-  "short_name": "TGS POS",
-  "description": "Hệ thống quản lý POS nội bộ cho Trạm Giày Sạch",
-  "start_url": "/index.html",
+  "short_name": "Trạm Giày",
+  "description": "Hệ thống quản lý nội bộ Trạm Giày Sạch",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a2347",
-  "theme_color": "#0a2347",
-  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#10386C",
   "icons": [
     {
       "src": "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png",
