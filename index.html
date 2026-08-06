@@ -1602,12 +1602,10 @@
             loading.querySelector('.text-sm').innerText = 'Đang kiểm tra bảo mật...';
 
             try {
-                // Kiểm tra Local Storage trước
-                const localData = localStorage.getItem('TRAM_LOCAL_STATE');
-                if (!navigator.onLine && localData) {
-                    const parsed = JSON.parse(localData);
-                    if (parsed.users && parsed.users.length > 0) {
-                        // Giả lập trạng thái Offline 
+                // CHẶN REQUEST MẠNG KHI OFFLINE ĐỂ TRÁNH IOS CẢNH BÁO
+                if (!navigator.onLine) {
+                    const localData = localStorage.getItem('TRAM_LOCAL_STATE');
+                    if (localData) {
                         state.currentUser = { id: 'offline', name: 'Đang Offline', role: 'manager' };
                         document.getElementById('authScreen').style.display = 'none';
                         document.getElementById('currentUserDisplay').innerText = "Offline Mode"; 
@@ -1617,7 +1615,7 @@
                     }
                 }
 
-                // Nếu có mạng, check với Supabase
+                // NẾU CÓ MẠNG thì mới chạy tiếp kiểm tra Supabase
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 
                 if (session) {
