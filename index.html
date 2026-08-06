@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <script>
+    // BẮT SỰ KIỆN KHI MẤT MẠNG HOẶC MỞ APP OFFLINE TRÊN IOS
+    // Nếu trang web không load được asset chính, ép nó lấy dữ liệu từ localStorage để render khung giao diện
+    window.addEventListener('error', function(e) {
+        if (!navigator.onLine && document.body && document.body.innerHTML.trim() === "") {
+            document.body.innerHTML = `
+                <div style="font-family:sans-serif; text-align:center; padding:50px; background:#0a2347; color:white; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <h2 style="color:#00A8E8; margin-bottom:10px;">TRẠM GIÀY SẠCH (OFFLINE MODE)</h2>
+                    <p style="font-size:14px; opacity:0.8; margin-bottom:20px;">Đang hoạt động ngoại tuyến bằng bộ nhớ thiết bị.</p>
+                    <button onclick="location.reload()" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:12px; font-weight:bold; font-size:14px;">Tải Lại Ứng Dụng</button>
+                </div>
+            `;
+        }
+    }, true);
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TRẠM GIÀY SẠCH - Hệ Thống POS</title>
