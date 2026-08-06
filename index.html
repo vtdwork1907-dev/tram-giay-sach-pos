@@ -2435,7 +2435,8 @@
             renderDashboard();
             
             const svcsStr = finalCartItems.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
-            showNotification("📦 ĐÃ LƯU ĐƠN NHANH", `Khách: ${escapeHtml(name)}\nHệ thống đang đồng bộ dữ liệu ngầm.`);
+        const totalAmountStr = (newOrder.total + (newOrder.extraFeeVal || 0)).toLocaleString('vi-VN') + ' đ';
+        showNotification("📦 ĐÃ TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)}\nDịch vụ: ${svcsStr}\nTổng tiền: ${totalAmountStr}`);
             
             // ==========================================
             // GẮN ORDER ID VÀO CÁC ẢNH ĐANG UPLOAD
