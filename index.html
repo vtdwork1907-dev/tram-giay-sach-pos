@@ -1099,18 +1099,36 @@
         }
         
         function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
-                if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); else b.classList.add('text-slate-300');
-            });
-            const activeBtn = document.getElementById('nav-' + id);
-            if(activeBtn) { activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); }
-            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
-            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
-            if(id === 'customers') renderCustomersTable(); if(id === 'payment') updateQRView(); if(id === 'dashboard') renderDashboard();
-            localStorage.setItem('TRAM_LAST_TAB', id);
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
+    document.getElementById('tab-' + id).classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
+        if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); 
+        else b.classList.add('text-slate-300');
+    });
+    
+    const activeBtn = document.getElementById('nav-' + id);
+    if(activeBtn) { 
+        activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); 
+        activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
+    }
+
+    // [THÊM MỚI] Ép tải ngầm dữ liệu mới nhất khi nhân viên bấm vào Báo Cáo, Kho Đơn hoặc Trang Chủ
+    if (id === 'reports' || id === 'orders' || id === 'dashboard') {
+        if (state.currentUser && !window.isUploadingImages) {
+            fetchLatestDataFromCloud(false); 
         }
+    }
+
+    if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
+    if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
+    if(id === 'customers') renderCustomersTable(); 
+    if(id === 'payment') updateQRView(); 
+    if(id === 'dashboard') renderDashboard();
+    
+    localStorage.setItem('TRAM_LAST_TAB', id);
+}
 
         let state = {
             users: [], currentUser: null, logo: null,
