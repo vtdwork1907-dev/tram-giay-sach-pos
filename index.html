@@ -866,7 +866,8 @@
         async function saveSettingsToDB() { 
             await saveLocalState(); 
             if(navigator.onLine) {
-                await supabaseClient.from('store_settings').upsert({ id: 'main', qr_config: state.qrConfig, logo: state.logo, brands: state.brands }); 
+                // Đã bổ sung sole_images để lưu kho ảnh lên mây
+                await supabaseClient.from('store_settings').upsert({ id: 'main', qr_config: state.qrConfig, logo: state.logo, brands: state.brands, sole_images: state.soleImages }); 
             }
         }
 
