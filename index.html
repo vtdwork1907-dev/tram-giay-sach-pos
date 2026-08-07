@@ -1069,17 +1069,27 @@
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) throw new Error("Chưa đăng nhập.");
+
                     const file = dataURLtoFile(base64Data, `img_${Date.now()}.jpg`);
                     const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
-                    const formData = new FormData(); formData.append('file', file, safeFileName);
-                    const response = await fetch(`${WORKER_API_URL}/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
+                    
+                    const formData = new FormData(); 
+                    formData.append('file', file, safeFileName);
+                    
+                    const response = await fetch(`${WORKER_API_URL}/upload`, { 
+                        method: 'POST', 
+                        headers: { 'Authorization': `Bearer ${session.access_token}` }, 
+                        body: formData 
+                    });
+                    
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error || `Server lỗi (${response.status})`);
                     resolve(data.url);
-                } catch(err) { reject(err); }
+                } catch(err) { 
+                    reject(err); 
+                }
             });
         }
-
         async function deleteFileFromR2(fileUrl) {
             try {
                 if (!navigator.onLine) return; 
