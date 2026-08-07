@@ -920,11 +920,11 @@
                         let needsGalleryRender = false;
                         
                         const targetImg = state.uploadedImages.find(img => img.id === item.imgId);
-                        if (targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; needsRender = true; }
+                        if (targetImg) { targetImg.status = 'done'; targetImg.r2Url = r2Url; targetImg.url = r2Url; needsRender = true; }
                         
                         state.shoes.forEach(shoe => {
                             const sImg = shoe.images.find(img => img.id === item.imgId);
-                            if (sImg) { sImg.status = 'done'; sImg.r2Url = r2Url; needsRender = true; }
+                            if (sImg) { sImg.status = 'done'; sImg.r2Url = r2Url; sImg.url = r2Url; needsRender = true; }
                         });
 
                         state.orders.forEach(o => {
@@ -932,11 +932,16 @@
                             if (o.images && o.images.length > 0) { const idx = o.images.indexOf(item.localUrl); if (idx !== -1) { o.images[idx] = r2Url; orderChanged = true; } }
                             if (o.imagesAfter && o.imagesAfter.length > 0) { const idx = o.imagesAfter.indexOf(item.localUrl); if (idx !== -1) { o.imagesAfter[idx] = r2Url; orderChanged = true; } }
                             if (o.shoes) { o.shoes.forEach(s => { if (s.images) { s.images.forEach(sImg => { if (sImg.localUrl === item.localUrl || sImg.url === item.localUrl) { sImg.r2Url = r2Url; sImg.url = r2Url; sImg.status = 'done'; orderChanged = true; } }); } }); }
-                            if (orderChanged) needsRender = true;
+                            
+                            // FIX LỖI "LƯU ĐƠN BỊ MẤT": Phải ra lệnh Database lưu link ảnh mới!
+                            if (orderChanged) {
+                                needsRender = true;
+                                dbUpdateOrder(o.id);
+                            }
                         });
 
                         const expImg = expenseTempImages.find(img => img.id === item.imgId);
-                        if (expImg) { expImg.status = 'done'; expImg.r2Url = r2Url; renderExpensePreviewImages(); }
+                        if (expImg) { expImg.status = 'done'; expImg.r2Url = r2Url; expImg.url = r2Url; renderExpensePreviewImages(); }
 
                         // XỬ LÝ ẢNH KHO ĐẾ TẢI LÊN NGẦM
                         const soleImg = state.soleImages.find(img => img.id === item.imgId);
@@ -945,11 +950,19 @@
                         if (needsRender || needsGalleryRender) {
                             saveLocalState(); 
                             if(needsRender) { renderPreviewImages(); renderMultiShoeList(); renderOrdersTable(); renderDashboard(); }
-                            if(needsGalleryRender) { renderGallerySole(); }
+                            if(needsGalleryRender) { if(currentGalleryTab === 'sole') renderGallerySole(); else renderGalleryLibrary(); }
                         }
                     } catch (e) {
+                        console.error("Lỗi upload ngầm:", e);
                         item.retryCount = (item.retryCount || 0) + 1;
-                        if (item.retryCount >= 3) item.status = 'error'; 
+                        if (item.retryCount >= 3) {
+                            item.status = 'error'; // Nếu lỗi 3 lần, đánh dấu lỗi để ngưng vòng xoay
+                            // Cập nhật giao diện nếu lỗi
+                            const targetImg = state.uploadedImages.find(img => img.id === item.imgId);
+                            if(targetImg) { targetImg.status = 'error'; renderPreviewImages(); }
+                            const soleImg = state.soleImages.find(img => img.id === item.imgId);
+                            if(soleImg) { soleImg.status = 'error'; if(currentGalleryTab === 'sole') renderGallerySole(); else renderGalleryLibrary(); }
+                        } 
                         await idbPut('upload_queue', item);
                     }
                 }
