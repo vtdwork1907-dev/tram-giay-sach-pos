@@ -2053,6 +2053,16 @@
             document.getElementById('totalDisplay').innerText = Math.max(0, sub - disc).toLocaleString('vi-VN') + ' đ';
         }
 
+        function updateCartItemBrand(cartId, brand) {
+            const item = state.cart.find(c => c.cartId === cartId);
+            if(item) { item.brand = brand; saveLocalState(); }
+        }
+        
+        function updateShoeServiceBrand(shoeId, cartId, brand) {
+            const shoe = state.shoes.find(s => s.id === shoeId);
+            if(shoe) { const svc = shoe.services.find(s => s.cartId === cartId); if(svc) { svc.brand = brand; saveLocalState(); } }
+        }
+
         function renderCart() {
             const lst = document.getElementById('cartItemsList'); 
             document.getElementById('cartCountBadge').innerText = state.cart.reduce((s, c) => s + c.qty, 0);
@@ -2060,28 +2070,36 @@
             if(state.cart.length === 0) {
                 lst.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs md:text-sm italic bg-slate-50 border rounded">Chưa chọn dịch vụ</div>`;
             } else {
-                lst.innerHTML = state.cart.map(c => `
+                lst.innerHTML = state.cart.map(c => {
+                    let brandSelectHtml = '';
+                    // CHỈ HIỆN CHỌN HÃNG NẾU LÀ DỊCH VỤ THAY ĐẾ
+                    if (c.category === 'SOLE') {
+                        const brandOptionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+                        brandSelectHtml = `<select onchange="updateCartItemBrand(${c.cartId}, this.value)" class="text-[10px] font-bold px-1.5 py-1 mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[85px] truncate cursor-pointer"><option value="Khác" hidden>Hãng</option>${brandOptionsHtml.replace(`value="${c.brand || 'Khác'}"`, `value="${c.brand || 'Khác'}" selected`)}</select>`;
+                    }
+                    return `
                     <div class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">
                         <div class="flex justify-between font-bold text-slate-800 mb-2 text-sm md:text-xs">
                             <span>${escapeHtml(c.name)}</span>
                             <button onclick="removeCartItem(${c.cartId})" class="text-slate-300 hover:text-red-500 text-base md:text-xs"><i class="fa-solid fa-times"></i></button>
                         </div>
                         <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-3 md:gap-2 bg-slate-100 rounded p-1 md:p-0.5">
+                            <div class="flex items-center bg-slate-100 rounded p-1 md:p-0.5 shadow-inner">
                                 <button onclick="updateCartItemQty(${c.cartId}, -1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">-</button>
-                                <span class="w-6 md:w-4 text-center font-bold text-sm md:text-xs">${c.qty}</span>
+                                <span class="w-6 md:w-5 text-center font-bold text-sm md:text-xs">${c.qty}</span>
                                 <button onclick="updateCartItemQty(${c.cartId}, 1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">+</button>
+                                ${brandSelectHtml}
                             </div>
                             <div class="text-[11px] md:text-[10px] text-slate-500 text-right">
                                 ${c.price.toLocaleString()}đ x ${c.qty}<br>
                                 <span class="text-sky-700 font-bold text-xs md:text-xs">${(c.price * c.qty).toLocaleString()}đ</span>
                             </div>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
             }
             calculateFinalTotal();
         }
-
         function clearCart() {
             state.cart = []; state.uploadedImages = []; state.multiShoeMode = false; state.shoes = []; state.activeShoeId = null;
             const toggle = document.getElementById('multiShoeToggle'); if (toggle) toggle.checked = false; toggleMultiShoeMode(false);
