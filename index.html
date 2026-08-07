@@ -1927,10 +1927,7 @@
 
         function renderMultiShoeList() {
             const listEl = document.getElementById('multiShoeList'); if (!listEl) return;
-            if (state.shoes.length === 0) { 
-                listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border rounded-xl">Chưa có đôi giày nào. Nhấn "+ Thêm đôi giày" để bắt đầu.</div>`; 
-                return; 
-            }
+            if (state.shoes.length === 0) { listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border rounded-xl">Chưa có đôi giày nào. Nhấn "+ Thêm đôi giày" để bắt đầu.</div>`; return; }
 
             const brandOptionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
 
@@ -1941,59 +1938,37 @@
                 let imagesHtml = (shoe.images || []).map((imgObj) => {
                     const isUploading = imgObj.status === 'uploading' || imgObj.status === 'pending'; 
                     const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.localUrl || imgObj.url); 
-                    const imgId = imgObj.id || imgObj;
-                    return `
-                    <div class="image-preview-item">
-                        <img src="${src}" alt="Preview">
-                        ${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeShoeImage('${shoe.id}', '${imgId}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}
-                    </div>`;
+                    return `<div class="image-preview-item"><img src="${src}" alt="Preview">${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeShoeImage('${shoe.id}', '${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}</div>`;
                 }).join('');
 
-                let servicesHtml = shoe.services.length === 0 ? `<div class="text-[11px] text-slate-400 italic py-1">Chưa chọn dịch vụ cho đôi này</div>` : shoe.services.map(s => `
-                    <div class="flex items-center justify-between bg-white p-1.5 rounded-lg border border-slate-200 text-xs mb-1 shadow-sm">
-                        <span class="font-bold text-slate-800 text-[11px] md:text-sm">${escapeHtml(s.name)}</span>
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, -1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
-                            <span class="font-bold text-xs px-1">${s.qty}</span>
-                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, 1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">+</button>
-                            <span class="font-bold text-sky-700 text-[11px] md:text-xs ml-1">${(s.price * s.qty).toLocaleString()}đ</span>
-                            <button type="button" onclick="removeShoeService('${shoe.id}', ${s.cartId})" class="text-red-400 hover:text-red-600 ml-1 text-xs"><i class="fa-solid fa-times"></i></button>
+                let servicesHtml = shoe.services.length === 0 ? `<div class="text-[11px] text-slate-400 italic py-1">Chưa chọn dịch vụ cho đôi này</div>` : shoe.services.map(s => {
+                    let brandSelectHtml = '';
+                    if (s.category === 'SOLE') {
+                        brandSelectHtml = `<select onchange="updateShoeServiceBrand('${shoe.id}', ${s.cartId}, this.value)" class="text-[10px] font-bold px-1.5 py-1 mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[85px] truncate cursor-pointer"><option value="Khác" hidden>Hãng</option>${brandOptionsHtml.replace(`value="${s.brand || 'Khác'}"`, `value="${s.brand || 'Khác'}" selected`)}</select>`;
+                    }
+                    return `
+                    <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 text-xs mb-1.5 shadow-sm">
+                        <span class="font-bold text-slate-800 text-[11px] md:text-sm truncate mr-1">${escapeHtml(s.name)}</span>
+                        <div class="flex items-center bg-slate-100 rounded p-0.5 shadow-inner">
+                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, -1)" class="w-6 h-6 bg-white hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center shadow-sm">-</button>
+                            <span class="font-bold text-xs w-4 text-center">${s.qty}</span>
+                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, 1)" class="w-6 h-6 bg-white hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center shadow-sm">+</button>
+                            ${brandSelectHtml}
+                            <span class="font-bold text-sky-700 text-[11px] md:text-xs ml-1.5 mr-1">${(s.price * s.qty).toLocaleString()}đ</span>
+                            <button type="button" onclick="removeShoeService('${shoe.id}', ${s.cartId})" class="text-slate-300 hover:text-red-500 ml-1 text-base px-1"><i class="fa-solid fa-times"></i></button>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
 
                 return `
                 <div class="p-3 rounded-xl border ${isActive ? 'border-sky-500 bg-sky-50/40 ring-2 ring-sky-400/20 shadow-sm' : 'border-slate-200 bg-white'} transition relative space-y-2">
                     <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2 flex-1">
-                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}">#${idx + 1}</span>
-                            <input type="text" value="${escapeHtml(shoe.note || '')}" onchange="updateShoeNote('${shoe.id}', this.value)" placeholder="Tên/Mô tả (VD: Nike AF1)" class="text-xs md:text-sm font-bold px-2 py-1 rounded border border-slate-200 focus:border-sky-500 outline-none w-full bg-white">
-                        </div>
+                        <div class="flex items-center gap-2 flex-1"><span class="text-xs font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}">#${idx + 1}</span><input type="text" value="${escapeHtml(shoe.note || '')}" onchange="updateShoeNote('${shoe.id}', this.value)" placeholder="Tên/Mô tả (VD: Nike AF1)" class="text-xs md:text-sm font-bold px-2 py-1 rounded border border-slate-200 focus:border-sky-500 outline-none w-full bg-white"></div>
                         <button type="button" onclick="removeShoeItem('${shoe.id}')" class="text-slate-400 hover:text-red-500 p-1 text-sm"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    
-                    <div class="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-200 mt-1">
-                        <label class="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-1"><i class="fa-solid fa-tag text-sky-600"></i> Hãng:</label>
-                        <select onchange="updateShoeBrand('${shoe.id}', this.value)" class="text-[11px] md:text-xs font-bold px-2 py-1 rounded border border-slate-300 text-slate-800 outline-none bg-white">
-                            ${brandOptionsHtml.replace(`value="${shoe.brand || 'Khác'}"`, `value="${shoe.brand || 'Khác'}" selected`)}
-                        </select>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-1">
-                        <button type="button" onclick="selectActiveShoe('${shoe.id}')" class="text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition ${isActive ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${isActive ? '<i class="fa-solid fa-check-circle mr-1"></i>Đang chọn dịch vụ cho đôi này' : 'Bấm để chọn dịch vụ cho đôi này'}</button>
-                        <span class="text-[10px] md:text-xs font-bold text-slate-500">${svcsCount} dịch vụ</span>
-                    </div>
-                    <div class="pt-1">
-                        <div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1 flex items-center justify-between"><span><i class="fa-solid fa-camera text-sky-600 mr-1"></i>Ảnh trước (Before)</span></div>
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll">
-                            <label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Chụp</span><input type="file" accept="image/*" capture="environment" onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label>
-                            <label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Tải lên</span><input type="file" accept="image/*" multiple onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label>
-                            <div class="flex gap-1.5">${imagesHtml}</div>
-                        </div>
-                    </div>
-                    <div class="pt-1">
-                        <div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1"><i class="fa-solid fa-list-check text-sky-600 mr-1"></i>Dịch vụ áp dụng</div>
-                        <div class="space-y-1">${servicesHtml}</div>
-                    </div>
+                    <div class="flex items-center justify-between pt-1"><button type="button" onclick="selectActiveShoe('${shoe.id}')" class="text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition ${isActive ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${isActive ? '<i class="fa-solid fa-check-circle mr-1"></i>Đang chọn dịch vụ cho đôi này' : 'Bấm để chọn dịch vụ cho đôi này'}</button><span class="text-[10px] md:text-xs font-bold text-slate-500">${svcsCount} dịch vụ</span></div>
+                    <div class="pt-1"><div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1 flex items-center justify-between"><span><i class="fa-solid fa-camera text-sky-600 mr-1"></i>Ảnh trước (Before)</span></div><div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll"><label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Chụp</span><input type="file" accept="image/*" capture="environment" onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label><label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Tải lên</span><input type="file" accept="image/*" multiple onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label><div class="flex gap-1.5">${imagesHtml}</div></div></div>
+                    <div class="pt-1"><div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1"><i class="fa-solid fa-list-check text-sky-600 mr-1"></i>Dịch vụ áp dụng</div><div class="space-y-1">${servicesHtml}</div></div>
                 </div>`;
             }).join('');
         }
