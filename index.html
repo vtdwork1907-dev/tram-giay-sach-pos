@@ -1057,9 +1057,15 @@
             });
         }
         function dataURLtoFile(dataurl, filename) {
-            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-            while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-            return new File([u8arr], filename, {type:mime});
+            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+            
+            // 🔥 TRỊ DỨT ĐIỂM LỖI TÊN ẢNH ZALO/FB TRÊN MÁY TÍNH
+            // Ép tên file thành dạng tiếng Anh không dấu ngẫu nhiên (vd: tgs_178...jpg)
+            const safeFileName = 'tgs_' + Date.now() + '_' + Math.random().toString(36).substring(2,6) + '.jpg';
+            
+            return new File([u8arr], safeFileName, {type: mime || 'image/jpeg'});
         }
 
         function uploadFileToR2(base64Data) {
