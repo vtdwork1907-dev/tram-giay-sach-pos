@@ -3375,7 +3375,8 @@
                 if (settingsRes.data) { 
                     state.qrConfig = settingsRes.data.qr_config || state.qrConfig; 
                     state.logo = settingsRes.data.logo || null; 
-                    state.brands = settingsRes.data.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác']; // Lấy Hãng từ mây
+                    state.brands = settingsRes.data.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+                    state.soleImages = settingsRes.data.sole_images || []; // Lấy kho ảnh từ mây
                 }
                 if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs); 
                 if (expRes.data) state.expenses = expRes.data;
