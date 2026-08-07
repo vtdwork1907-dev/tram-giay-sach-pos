@@ -1027,30 +1027,26 @@
                     const img = new Image(); 
                     img.onload = () => {
                         let width = img.width; let height = img.height;
-                        
-                        // Bước 1: Nén kích thước khung hình nếu ảnh quá to (ví dụ: > 1920px)
                         if (width > maxWidth || height > maxWidth) {
                             if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
                             else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
                         }
-                        
                         const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Bước 2: Nén dung lượng (Giữ chất lượng khởi điểm cao 90%)
                         let quality = 0.9; 
                         let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        
-                        // Vòng lặp hạ chất lượng từ từ cho đến khi dung lượng < 500KB
                         let loopCount = 0;
                         while (dataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.1 && loopCount < 10) { 
                             quality -= 0.1; 
                             dataUrl = canvas.toDataURL('image/jpeg', quality); 
                             loopCount++;
                         }
-                        resolve(dataUrl);
+                        
+                        // FIX QUAN TRỌNG: Phải bọc qua dataURLtoFile để trả về đúng đối tượng FILE cho hàm Upload
+                        resolve(dataURLtoFile(dataUrl, file.name));
                     };
-                    img.onerror = () => resolve(e.target.result);
+                    img.onerror = () => resolve(file);
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
