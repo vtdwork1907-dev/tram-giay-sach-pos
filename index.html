@@ -1847,6 +1847,417 @@
             } 
         }
         // =========================================================================
+        // 16. POS: TẠO ĐƠN & GIỎ HÀNG (CART) & MULTI-SHOE MODE
+        // =========================================================================
+        function setCurrentDateTimeForOrder() { 
+            const now = new Date(); 
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); 
+            document.getElementById('orderDateInput').value = now.toISOString().slice(0,16); 
+        }
+
+        function autoFillCustomer(phone) { 
+            const cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length >= 9 && cleanPhone.length <= 11) {
+                const cust = state.orders.find(o => o.customer.phone === phone); 
+                if(cust) document.getElementById('custName').value = cust.customer.name; 
+            }
+        }
+
+        function toggleMultiShoeMode(enabled) {
+            state.multiShoeMode = enabled;
+            const singleSec = document.getElementById('singleShoeSection'); 
+            const multiSec = document.getElementById('multiShoeSection');
+            
+            if (enabled) { 
+                singleSec.classList.add('hidden'); 
+                multiSec.classList.remove('hidden'); 
+                if (state.shoes.length === 0) addShoeItem(); 
+                else renderMultiShoeList(); 
+            } else { 
+                singleSec.classList.remove('hidden'); 
+                multiSec.classList.add('hidden'); 
+            }
+            recalculateSubtotalInput();
+        }
+
+        function addShoeItem() {
+            const shoeId = 'shoe_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
+            const shoeNum = state.shoes.length + 1;
+            state.shoes.push({ id: shoeId, name: `Đôi #${shoeNum}`, note: '', brand: 'Khác', services: [], images: [] });
+            state.activeShoeId = shoeId; 
+            renderMultiShoeList(); 
+            recalculateSubtotalInput();
+        }
+
+        function removeShoeItem(shoeId) {
+            if (state.shoes.length <= 1) return alert("Đơn nhiều đôi phải có ít nhất 1 đôi giày! Nếu muốn quay lại đơn thường, hãy bỏ tích chọn.");
+            state.shoes = state.shoes.filter(s => s.id !== shoeId); 
+            if (state.activeShoeId === shoeId) state.activeShoeId = state.shoes[0].id;
+            renderMultiShoeList(); 
+            recalculateSubtotalInput();
+        }
+
+        function selectActiveShoe(shoeId) { 
+            state.activeShoeId = shoeId; 
+            renderMultiShoeList(); 
+        }
+
+        function updateShoeNote(shoeId, val) { 
+            const shoe = state.shoes.find(s => s.id === shoeId); 
+            if (shoe) shoe.note = val.trim(); 
+        }
+
+        function updateShoeBrand(shoeId, val) {
+            const shoe = state.shoes.find(s => s.id === shoeId); 
+            if (shoe) shoe.brand = val; 
+        }
+
+        function updateShoeServiceQty(shoeId, cartId, chg) {
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return;
+            const svc = shoe.services.find(s => s.cartId === cartId);
+            if (svc) { 
+                svc.qty += chg; 
+                if (svc.qty <= 0) shoe.services = shoe.services.filter(s => s.cartId !== cartId); 
+                renderMultiShoeList(); 
+                recalculateSubtotalInput(); 
+            }
+        }
+
+        function removeShoeService(shoeId, cartId) {
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return;
+            shoe.services = shoe.services.filter(s => s.cartId !== cartId); 
+            renderMultiShoeList(); 
+            recalculateSubtotalInput();
+        }
+
+        function renderMultiShoeList() {
+            const listEl = document.getElementById('multiShoeList'); if (!listEl) return;
+            if (state.shoes.length === 0) { 
+                listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs italic bg-slate-50 border rounded-xl">Chưa có đôi giày nào. Nhấn "+ Thêm đôi giày" để bắt đầu.</div>`; 
+                return; 
+            }
+
+            const brandOptionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+
+            listEl.innerHTML = state.shoes.map((shoe, idx) => {
+                const isActive = shoe.id === state.activeShoeId; 
+                const svcsCount = shoe.services.reduce((acc, s) => acc + s.qty, 0);
+                
+                let imagesHtml = (shoe.images || []).map((imgObj) => {
+                    const isUploading = imgObj.status === 'uploading' || imgObj.status === 'pending'; 
+                    const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.localUrl || imgObj.url); 
+                    const imgId = imgObj.id || imgObj;
+                    return `
+                    <div class="image-preview-item">
+                        <img src="${src}" alt="Preview">
+                        ${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeShoeImage('${shoe.id}', '${imgId}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}
+                    </div>`;
+                }).join('');
+
+                let servicesHtml = shoe.services.length === 0 ? `<div class="text-[11px] text-slate-400 italic py-1">Chưa chọn dịch vụ cho đôi này</div>` : shoe.services.map(s => `
+                    <div class="flex items-center justify-between bg-white p-1.5 rounded-lg border border-slate-200 text-xs mb-1 shadow-sm">
+                        <span class="font-bold text-slate-800 text-[11px] md:text-sm">${escapeHtml(s.name)}</span>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, -1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">-</button>
+                            <span class="font-bold text-xs px-1">${s.qty}</span>
+                            <button type="button" onclick="updateShoeServiceQty('${shoe.id}', ${s.cartId}, 1)" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-xs flex items-center justify-center">+</button>
+                            <span class="font-bold text-sky-700 text-[11px] md:text-xs ml-1">${(s.price * s.qty).toLocaleString()}đ</span>
+                            <button type="button" onclick="removeShoeService('${shoe.id}', ${s.cartId})" class="text-red-400 hover:text-red-600 ml-1 text-xs"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </div>`).join('');
+
+                return `
+                <div class="p-3 rounded-xl border ${isActive ? 'border-sky-500 bg-sky-50/40 ring-2 ring-sky-400/20 shadow-sm' : 'border-slate-200 bg-white'} transition relative space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 flex-1">
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-700'}">#${idx + 1}</span>
+                            <input type="text" value="${escapeHtml(shoe.note || '')}" onchange="updateShoeNote('${shoe.id}', this.value)" placeholder="Tên/Mô tả (VD: Nike AF1)" class="text-xs md:text-sm font-bold px-2 py-1 rounded border border-slate-200 focus:border-sky-500 outline-none w-full bg-white">
+                        </div>
+                        <button type="button" onclick="removeShoeItem('${shoe.id}')" class="text-slate-400 hover:text-red-500 p-1 text-sm"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-200 mt-1">
+                        <label class="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-1"><i class="fa-solid fa-tag text-sky-600"></i> Hãng:</label>
+                        <select onchange="updateShoeBrand('${shoe.id}', this.value)" class="text-[11px] md:text-xs font-bold px-2 py-1 rounded border border-slate-300 text-slate-800 outline-none bg-white">
+                            ${brandOptionsHtml.replace(`value="${shoe.brand || 'Khác'}"`, `value="${shoe.brand || 'Khác'}" selected`)}
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <button type="button" onclick="selectActiveShoe('${shoe.id}')" class="text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition ${isActive ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${isActive ? '<i class="fa-solid fa-check-circle mr-1"></i>Đang chọn dịch vụ cho đôi này' : 'Bấm để chọn dịch vụ cho đôi này'}</button>
+                        <span class="text-[10px] md:text-xs font-bold text-slate-500">${svcsCount} dịch vụ</span>
+                    </div>
+                    <div class="pt-1">
+                        <div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1 flex items-center justify-between"><span><i class="fa-solid fa-camera text-sky-600 mr-1"></i>Ảnh trước (Before)</span></div>
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scroll">
+                            <label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-sky-400 flex flex-col items-center justify-center cursor-pointer bg-sky-50 shrink-0 text-sky-700 hover:bg-sky-100 transition"><i class="fa-solid fa-camera text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Chụp</span><input type="file" accept="image/*" capture="environment" onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label>
+                            <label class="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer bg-white shrink-0 text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-images text-xs md:text-sm"></i><span class="text-[7px] md:text-[9px] font-bold mt-0.5">Tải lên</span><input type="file" accept="image/*" multiple onchange="handleShoeImageUpload(event, '${shoe.id}')" class="hidden"></label>
+                            <div class="flex gap-1.5">${imagesHtml}</div>
+                        </div>
+                    </div>
+                    <div class="pt-1">
+                        <div class="text-[10px] md:text-xs font-bold text-slate-600 mb-1"><i class="fa-solid fa-list-check text-sky-600 mr-1"></i>Dịch vụ áp dụng</div>
+                        <div class="space-y-1">${servicesHtml}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function addToCart(svcId) {
+            const svc = state.services.find(s => s.id === svcId); if (!svc) return;
+            if (state.multiShoeMode) {
+                if (!state.activeShoeId && state.shoes.length > 0) state.activeShoeId = state.shoes[0].id;
+                const shoe = state.shoes.find(s => s.id === state.activeShoeId);
+                if (!shoe) return alert("Vui lòng thêm hoặc chọn một đôi giày trước khi chọn dịch vụ!");
+                
+                const exist = shoe.services.find(s => s.id === svc.id);
+                if (exist) exist.qty += 1; 
+                else shoe.services.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED' });
+                
+                renderMultiShoeList();
+            } else {
+                const exist = state.cart.find(c => c.id === svc.id);
+                if(exist) exist.qty += 1; 
+                else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED' });
+                
+                renderCart();
+            }
+            recalculateSubtotalInput();
+        }
+
+        function updateCartItemQty(id, chg) { 
+            const item = state.cart.find(c => c.cartId === id); 
+            if(item) { 
+                item.qty += chg; 
+                if(item.qty <= 0) state.cart = state.cart.filter(c => c.cartId !== id); 
+                recalculateSubtotalInput(); 
+                renderCart(); 
+            } 
+        }
+
+        function removeCartItem(id) { 
+            state.cart = state.cart.filter(c => c.cartId !== id); 
+            recalculateSubtotalInput(); 
+            renderCart(); 
+        }
+        
+        function recalculateSubtotalInput() { 
+            let sub = 0;
+            if (state.multiShoeMode) {
+                state.shoes.forEach(s => { s.services.forEach(c => { sub += (c.price * c.qty); }); });
+            } else {
+                sub = state.cart.reduce((s, c) => s + (c.price * c.qty), 0);
+            }
+            document.getElementById('subtotalInput').value = sub; 
+            calculateFinalTotal(); 
+        }
+        
+        function calculateFinalTotal() {
+            const sub = parseInt(document.getElementById('subtotalInput').value) || 0; 
+            const disc = parseInt(document.getElementById('discountInput').value) || 0;
+            document.getElementById('totalDisplay').innerText = Math.max(0, sub - disc).toLocaleString('vi-VN') + ' đ';
+        }
+
+        function renderCart() {
+            const lst = document.getElementById('cartItemsList'); 
+            document.getElementById('cartCountBadge').innerText = state.cart.reduce((s, c) => s + c.qty, 0);
+            
+            if(state.cart.length === 0) {
+                lst.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs md:text-sm italic bg-slate-50 border rounded">Chưa chọn dịch vụ</div>`;
+            } else {
+                lst.innerHTML = state.cart.map(c => `
+                    <div class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">
+                        <div class="flex justify-between font-bold text-slate-800 mb-2 text-sm md:text-xs">
+                            <span>${escapeHtml(c.name)}</span>
+                            <button onclick="removeCartItem(${c.cartId})" class="text-slate-300 hover:text-red-500 text-base md:text-xs"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3 md:gap-2 bg-slate-100 rounded p-1 md:p-0.5">
+                                <button onclick="updateCartItemQty(${c.cartId}, -1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">-</button>
+                                <span class="w-6 md:w-4 text-center font-bold text-sm md:text-xs">${c.qty}</span>
+                                <button onclick="updateCartItemQty(${c.cartId}, 1)" class="w-8 h-8 md:w-6 md:h-6 bg-white rounded font-bold shadow-sm text-base md:text-sm active:bg-slate-200">+</button>
+                            </div>
+                            <div class="text-[11px] md:text-[10px] text-slate-500 text-right">
+                                ${c.price.toLocaleString()}đ x ${c.qty}<br>
+                                <span class="text-sky-700 font-bold text-xs md:text-xs">${(c.price * c.qty).toLocaleString()}đ</span>
+                            </div>
+                        </div>
+                    </div>`).join('');
+            }
+            calculateFinalTotal();
+        }
+
+        function clearCart() {
+            state.cart = []; state.uploadedImages = []; state.multiShoeMode = false; state.shoes = []; state.activeShoeId = null;
+            const toggle = document.getElementById('multiShoeToggle'); if (toggle) toggle.checked = false; toggleMultiShoeMode(false);
+            
+            ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            document.getElementById('cartOrderStatus').value = 'RECEIVED'; 
+            
+            setCurrentDateTimeForOrder(); renderCart(); renderPreviewImages();
+        }
+
+        // =========================================================================
+        // 17. POS: XỬ LÝ ẢNH TRƯỚC (BEFORE) KHI TẠO ĐƠN
+        // =========================================================================
+        function handleImageUpload(e, isCamera) {
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            
+            for (const file of files) {
+                const imgId = 'img_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
+                const localUrl = URL.createObjectURL(file);
+                
+                state.uploadedImages.push({ id: imgId, url: localUrl, status: 'uploading', r2Url: null, localUrl: localUrl }); 
+                renderPreviewImages();
+                
+                compressImage(file).then(compressed => { 
+                    idbPut('upload_queue', { imgId, file: compressed, localUrl, status: 'pending' }).then(() => processUploadQueue()); 
+                });
+            } 
+            e.target.value = '';
+        }
+
+        function handleShoeImageUpload(e, shoeId) {
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return;
+            const files = Array.from(e.target.files); if (files.length === 0) return;
+            
+            for (const file of files) {
+                const imgId = 'img_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
+                const localUrl = URL.createObjectURL(file);
+                
+                shoe.images.push({ id: imgId, url: localUrl, status: 'uploading', r2Url: null, localUrl: localUrl }); 
+                renderMultiShoeList();
+                
+                compressImage(file).then(compressed => { 
+                    idbPut('upload_queue', { imgId, file: compressed, localUrl, status: 'pending' }).then(() => processUploadQueue()); 
+                });
+            } 
+            e.target.value = '';
+        }
+
+        function removeUploadedImage(idOrUrl) { 
+            state.uploadedImages = state.uploadedImages.filter(img => { 
+                if(typeof img === 'string') return img !== idOrUrl; 
+                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
+            }); 
+            renderPreviewImages(); 
+        }
+
+        function removeShoeImage(shoeId, imgIdOrUrl) { 
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return; 
+            shoe.images = shoe.images.filter(img => { 
+                if (typeof img === 'string') return img !== imgIdOrUrl; 
+                return img.id !== imgIdOrUrl && img.localUrl !== imgIdOrUrl; 
+            }); 
+            renderMultiShoeList(); 
+        }
+
+        function renderPreviewImages() { 
+            const c = document.getElementById('renderedImagesBox'); 
+            let html = ''; 
+            
+            state.uploadedImages.forEach((imgObj) => { 
+                const isUploading = imgObj.status === 'uploading' || imgObj.status === 'pending'; 
+                const src = typeof imgObj === 'string' ? imgObj : (imgObj.r2Url || imgObj.localUrl || imgObj.url); 
+                
+                html += `
+                <div class="image-preview-item">
+                    <img src="${src}" alt="Preview">
+                    ${isUploading ? `<div class="upload-overlay"><div class="upload-spinner"></div></div>` : `<button type="button" onclick="removeUploadedImage('${imgObj.id || imgObj}')" class="remove-btn"><i class="fa-solid fa-times"></i></button>`}
+                </div>`; 
+            }); 
+            c.innerHTML = html; 
+        }
+
+        // =========================================================================
+        // 18. ZERO-LATENCY SAVE: LƯU ĐƠN NHANH
+        // =========================================================================
+        async function processOrder() {
+            let finalCartItems = []; 
+            let finalImageUrls = []; 
+            let mainBrand = 'Khác';
+            const dateStr = document.getElementById('orderDateInput').value;
+
+            if (state.multiShoeMode) {
+                if (state.shoes.length === 0) return alert("Vui lòng thêm ít nhất một đôi giày!");
+                let hasServices = false;
+                
+                state.shoes.forEach((s) => {
+                    if (s.services.length > 0) hasServices = true; 
+                    const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
+                    
+                    s.services.forEach(svc => { 
+                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: s.brand || 'Khác' }); 
+                    });
+                    s.images.forEach(img => { 
+                        const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
+                        if (url) finalImageUrls.push(url); 
+                    });
+                });
+                if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
+                if(state.shoes.length > 0) mainBrand = state.shoes[0].brand || 'Khác';
+            } else {
+                if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
+                const singleBrandSelect = document.getElementById('singleShoeBrand');
+                mainBrand = singleBrandSelect ? singleBrandSelect.value : 'Khác';
+
+                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: mainBrand }));
+                finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
+            }
+            
+            const name = document.getElementById('custName').value.trim(); 
+            const phone = document.getElementById('custPhone').value.trim();
+            if(!phone || !name) return alert("Vui lòng nhập đầy đủ Tên và Số điện thoại khách hàng!");
+
+            const sub = parseInt(document.getElementById('subtotalInput').value) || 0; 
+            const disc = parseInt(document.getElementById('discountInput').value) || 0; 
+            const initStatus = document.getElementById('cartOrderStatus').value;
+            
+            const newOrder = { 
+                id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
+                tracking_id: generateShortTrackingId(), 
+                date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '), 
+                customer: {name, phone, note: document.getElementById('custNote').value}, 
+                brand: mainBrand,
+                items: finalCartItems, images: finalImageUrls, imagesAfter: [], 
+                subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), 
+                status: initStatus, shoes: state.multiShoeMode ? JSON.parse(JSON.stringify(state.shoes)) : null, 
+                paymentMethod: null, extraFeeVal: 0, extraFeeReason: '' 
+            };
+            
+            if (['DELIVERED', 'PAID'].includes(initStatus)) setOrderWarrantyOnDelivery(newOrder);
+
+            state.orders.unshift(newOrder); 
+            clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
+            
+            const svcsStr = finalCartItems.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
+            const totalAmountStr = (newOrder.total + (newOrder.extraFeeVal || 0)).toLocaleString('vi-VN') + ' đ';
+            showNotification("📦 ĐÃ TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)}\nDịch vụ: ${svcsStr}\nTổng tiền: ${totalAmountStr}`);
+            
+            const uploads = await idbGetAll('upload_queue');
+            for (const url of finalImageUrls) { 
+                const match = uploads.find(u => u.localUrl === url); 
+                if (match) { match.orderId = newOrder.id; await idbPut('upload_queue', match); } 
+            }
+            
+            await dbInsertOrder(newOrder);
+            if (navigator.onLine) { sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`); }
+        }
+        
+        function renderPOSBrandSelects() {
+            if(!state.brands || state.brands.length === 0) state.brands = ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+            const optionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}" ${b==='Khác'?'selected':''}>${escapeHtml(b)}</option>`).join('');
+            
+            const singleSelect = document.getElementById('singleShoeBrand');
+            if(singleSelect) {
+                const currentVal = singleSelect.value;
+                singleSelect.innerHTML = optionsHtml;
+                if(currentVal && state.brands.includes(currentVal)) singleSelect.value = currentVal;
+            }
+            
+            if(state.multiShoeMode) renderMultiShoeList();
+        }
+        // =========================================================================
         // 19. KHO ĐƠN & SO SÁNH ẢNH (ORDER MANAGEMENT & COMPARISON)
         // =========================================================================
         function uploadAfterImage(e, orderId) {
