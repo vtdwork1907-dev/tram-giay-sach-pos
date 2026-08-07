@@ -2036,10 +2036,10 @@
             } else {
                 lst.innerHTML = state.cart.map(c => {
                     let brandSelectHtml = '';
-                    // CHỈ HIỆN CHỌN HÃNG NẾU LÀ DỊCH VỤ THAY ĐẾ
                     if (c.category === 'SOLE') {
                         const brandOptionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
-                        brandSelectHtml = `<select onchange="updateCartItemBrand(${c.cartId}, this.value)" class="text-[10px] font-bold px-1.5 py-1 mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[85px] truncate cursor-pointer"><option value="Khác" hidden>Hãng</option>${brandOptionsHtml.replace(`value="${c.brand || 'Khác'}"`, `value="${c.brand || 'Khác'}" selected`)}</select>`;
+                        // Đã thêm hidden md:inline-block để ẩn trên điện thoại
+                        brandSelectHtml = `<select onchange="updateCartItemBrand(${c.cartId}, this.value)" class="hidden md:inline-block text-[10px] font-bold px-1.5 py-1 mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[85px] truncate cursor-pointer"><option value="Khác" hidden>Hãng</option>${brandOptionsHtml.replace(`value="${c.brand || 'Khác'}"`, `value="${c.brand || 'Khác'}" selected`)}</select>`;
                     }
                     return `
                     <div class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">
