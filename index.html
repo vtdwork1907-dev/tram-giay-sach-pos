@@ -866,7 +866,8 @@
         async function saveSettingsToDB() { 
             await saveLocalState(); 
             if(navigator.onLine) {
-                await supabaseClient.from('store_settings').upsert({ id: 'main', qr_config: state.qrConfig, logo: state.logo, brands: state.brands, sole_images: state.soleImages }); 
+                // Tách biệt hoàn toàn: Chỉ đẩy QR và Logo lên Cloud. Hãng giày (brands) và Kho đế (soleImages) giữ độc quyền ở Local IndexedDB
+                await supabaseClient.from('store_settings').upsert({ id: 'main', qr_config: state.qrConfig, logo: state.logo }); 
             }
         }
 
