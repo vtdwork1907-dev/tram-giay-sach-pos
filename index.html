@@ -1977,8 +1977,8 @@
                 let servicesHtml = shoe.services.length === 0 ? `<div class="text-[11px] text-slate-400 italic py-1">Chưa chọn dịch vụ cho đôi này</div>` : shoe.services.map(s => {
                     let brandSelectHtml = '';
                     if (s.category === 'SOLE') {
-                        // Đã thêm hidden md:inline-block
-                        brandSelectHtml = `<select onchange="updateShoeServiceBrand('${shoe.id}', ${s.cartId}, this.value)" class="hidden md:inline-block text-[10px] font-bold px-1.5 py-1 mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[85px] truncate cursor-pointer"><option value="Khác" hidden>Hãng</option>${brandOptionsHtml.replace(`value="${s.brand || 'Khác'}"`, `value="${s.brand || 'Khác'}" selected`)}</select>`;
+                        // Đã bỏ chữ "Hãng" và cho phép hiện trên điện thoại
+                        brandSelectHtml = `<select onchange="updateShoeServiceBrand('${shoe.id}', ${s.cartId}, this.value)" class="inline-block text-[10px] font-bold px-1 py-1 mx-0.5 md:mx-1.5 rounded border border-sky-300 text-sky-800 outline-none bg-sky-50 shadow-sm max-w-[65px] md:max-w-[85px] truncate cursor-pointer">${brandOptionsHtml.replace(`value="${s.brand || 'Khác'}"`, `value="${s.brand || 'Khác'}" selected`)}</select>`;
                     }
                     return `
                     <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 text-xs mb-1.5 shadow-sm">
