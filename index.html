@@ -1031,30 +1031,28 @@
                 if (!file) { resolve(null); return; }
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const img = new Image(); 
+                    const img = new Image();
+                    img.src = e.target.result;
                     img.onload = () => {
                         let width = img.width; let height = img.height;
                         if (width > maxWidth || height > maxWidth) {
                             if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
                             else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
                         }
-                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        const canvas = document.createElement('canvas'); 
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d'); 
+                        ctx.drawImage(img, 0, 0, width, height);
                         
-                        let quality = 0.9; 
+                        let quality = 0.8;
                         let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        let loopCount = 0;
-                        while (dataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.1 && loopCount < 10) { 
-                            quality -= 0.1; 
-                            dataUrl = canvas.toDataURL('image/jpeg', quality); 
-                            loopCount++;
+                        while (dataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.3) {
+                            quality -= 0.15;
+                            dataUrl = canvas.toDataURL('image/jpeg', quality);
                         }
-                        
-                        // FIX QUAN TRỌNG: Phải bọc qua dataURLtoFile để trả về đúng đối tượng FILE cho hàm Upload
-                        resolve(dataURLtoFile(dataUrl, file.name));
+                        resolve(dataUrl); // Trả về chuỗi Base64 sống vĩnh viễn trong IndexedDB
                     };
-                    img.onerror = () => resolve(file);
-                    img.src = e.target.result;
+                    img.onerror = () => resolve(e.target.result);
                 };
                 reader.readAsDataURL(file);
             });
