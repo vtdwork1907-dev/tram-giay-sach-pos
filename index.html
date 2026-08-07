@@ -1346,7 +1346,6 @@
                 return `
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group relative">
                     <div class="h-32 md:h-40 w-full relative bg-slate-100">
-                        <!-- Đã sửa thành object-contain -->
                         <img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer hover:opacity-90' : 'opacity-50'} transition">
                         ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-6 h-6 border-2 border-sky-500 border-t-transparent"></div></div>` : ''}
                         ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-times text-[10px]"></i></button>` : ''}
