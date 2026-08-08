@@ -1042,7 +1042,13 @@
         }
 
         window.addEventListener('online', () => { showNotification("📶 ĐÃ KẾT NỐI MẠNG", "Hệ thống đang tự động đẩy dữ liệu lên Cloud..."); processUploadQueue(); });
-        window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && navigator.onLine) processUploadQueue(); });
+        window.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'visible' && navigator.onLine) {
+                // FIX: Chủ động đánh thức Supabase để làm mới khóa (Token) ngay khi mở tab/mở màn hình máy tính
+                supabaseClient.auth.getSession();
+                processUploadQueue(); 
+            } 
+        });
         window.addEventListener('pageshow', (e) => { if (e.persisted && navigator.onLine) processUploadQueue(); });
 
         // =========================================================================
