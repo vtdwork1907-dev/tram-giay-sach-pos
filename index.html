@@ -2969,10 +2969,18 @@
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-2 md:p-3 text-center align-top pt-2.5 md:pt-3"><input type="checkbox" class="order-select-cb w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
                     <td class="hidden md:table-cell p-2 md:p-3 align-top min-w-[85px] md:min-w-[110px]"><span class="font-mono text-sky-700 font-bold text-[11px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<span class="hidden md:inline"> - </span>${dStr}</span></td>
-                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px]">
-                        <div class="font-bold text-[11px] md:text-sm whitespace-normal break-words" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
-                        <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
-                        <div class="md:hidden mt-1.5 pt-1.5 border-t border-slate-200/70"><span class="font-mono text-sky-700 font-bold text-[10px] block leading-tight">${o.id}</span><span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span></div>
+                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px] group">
+                        <div class="flex justify-between items-start gap-1">
+                            <div>
+                                <div class="font-bold text-[11px] md:text-sm whitespace-normal break-words" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
+                                <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
+                            </div>
+                            <button onclick="editCustomerInfo('${o.id}')" class="text-slate-300 hover:text-sky-600 transition p-1" title="Sửa thông tin khách"><i class="fa-solid fa-pen-to-square text-xs md:text-sm"></i></button>
+                        </div>
+                        <div class="md:hidden mt-1.5 pt-1.5 border-t border-slate-200/70">
+                            <span class="font-mono text-sky-700 font-bold text-[10px] block leading-tight">${o.id}</span>
+                            <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
+                        </div>
                     </td>
                     <td class="p-2 md:p-3 align-top min-w-[120px] md:min-w-[160px]"><div class="text-[10px] md:text-xs text-slate-600 italic mb-1 whitespace-normal leading-tight" title="${escapeHtml(o.customer.note || '')}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${escapeHtml(o.customer.note || 'Không có')}</div><div class="flex items-center gap-1 mt-1 mb-1 flex-wrap">${imgHtml}</div><div class="flex w-full items-center">${actionHtml}</div></td>
                     <td class="p-2 md:p-3 text-[10px] md:text-xs whitespace-normal align-top min-w-[140px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
