@@ -3761,9 +3761,14 @@
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="hidden md:table-cell p-2 md:p-3 align-top"><span class="font-mono text-sky-700 font-bold text-[10px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<span class="hidden md:inline"> - </span>${dStr}</span></td>
-                    <td class="p-2 md:p-3 align-top">
-                        <div class="font-bold text-[11px] md:text-sm truncate max-w-[80px] md:max-w-[150px]" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
-                        <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
+                    <td class="p-2 md:p-3 align-top group">
+                        <div class="flex justify-between items-start gap-1">
+                            <div>
+                                <div class="font-bold text-[11px] md:text-sm truncate max-w-[80px] md:max-w-[150px]" title="${escapeHtml(o.customer.name)}">${escapeHtml(o.customer.name)}</div>
+                                <div class="text-[9px] md:text-xs text-slate-500 font-mono mt-0.5">${escapeHtml(o.customer.phone)}</div>
+                            </div>
+                            <button onclick="editCustomerInfo('${o.id}')" class="text-slate-300 hover:text-sky-600 transition p-1" title="Sửa thông tin khách"><i class="fa-solid fa-pen-to-square text-xs md:text-sm"></i></button>
+                        </div>
                         <div class="md:hidden mt-1.5 pt-1.5 border-t border-slate-200/70">
                             <span class="font-mono text-sky-700 font-bold text-[10px] block leading-tight">${o.id}</span>
                             <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
