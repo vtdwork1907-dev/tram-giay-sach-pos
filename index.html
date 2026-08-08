@@ -2332,8 +2332,8 @@
         }
         
         function renderPOSBrandSelects() {
-            if(!state.brands || state.brands.length === 0) state.brands = ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
-            const optionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}" ${b==='Khác'?'selected':''}>${escapeHtml(b)}</option>`).join('');
+            if(!state.brands || state.brands.length === 0) state.brands = ['Asics', 'Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+            const optionsHtml = state.brands.map(b => `<option value="${escapeHtml(b)}" ${b==='Asics'?'selected':''}>${escapeHtml(b)}</option>`).join('');
             
             const singleSelect = document.getElementById('singleShoeBrand');
             if(singleSelect) {
