@@ -1742,18 +1742,27 @@
         // 13.5 CÀI ĐẶT: QUẢN LÝ HÃNG GIÀY (BRANDS)
         // =========================================================================
         function renderSettingsBrandsTable() {
-            if(!state.brands || state.brands.length === 0) state.brands = ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
-            document.getElementById('settingsBrandsTable').innerHTML = state.brands.map((b, idx) => `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-3"><input type="text" value="${escapeHtml(b)}" onchange="updateBrandName(${idx}, this.value)" ${b === 'Khác' ? 'disabled' : ''} class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-emerald-300 focus:border-emerald-500 outline-none bg-transparent focus:bg-white transition" title="${b === 'Khác' ? 'Hãng mặc định không thể sửa' : 'Bấm vào để sửa tên hãng'}"></td>
-                    <td class="p-3 text-right">
-                        ${b === 'Khác' ? `<span class="text-[10px] text-slate-400 italic">Mặc định</span>` : `<button onclick="deleteBrand(${idx})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa hãng này"><i class="fa-solid fa-trash"></i></button>`}
+            const tbody = document.getElementById('settingsBrandsTableBody');
+            if (!tbody) return;
+            if (!state.brands || state.brands.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-500 text-xs italic">Chưa có hãng nào</td></tr>';
+                return;
+            }
+            tbody.innerHTML = state.brands.map((b, idx) => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <td class="p-2 md:p-3 font-bold text-slate-700 text-xs md:text-sm flex items-center gap-3">
+                        <div class="flex flex-col gap-0.5">
+                            <button type="button" onclick="moveBrand(${idx}, -1)" class="${idx === 0 ? 'text-slate-200 cursor-not-allowed' : 'text-sky-500 hover:text-sky-700'} p-0.5" ${idx === 0 ? 'disabled' : ''}><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                            <button type="button" onclick="moveBrand(${idx}, 1)" class="${idx === state.brands.length - 1 ? 'text-slate-200 cursor-not-allowed' : 'text-sky-500 hover:text-sky-700'} p-0.5" ${idx === state.brands.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                        </div>
+                        ${escapeHtml(b)}
+                    </td>
+                    <td class="p-2 md:p-3 text-right">
+                        <button type="button" onclick="editBrand(${idx})" class="text-amber-500 hover:text-amber-600 px-2 py-1 text-xs md:text-sm"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" onclick="deleteBrand(${idx})" class="text-red-400 hover:text-red-600 px-2 py-1 text-xs md:text-sm"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
-            
-            renderPOSBrandSelects();
-            if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
         }
 
         async function addNewBrand() {
