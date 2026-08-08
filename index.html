@@ -905,13 +905,20 @@
         }
 
         async function processUploadQueue() {
+            // FIX CỐT LÕI: Đưa chốt khóa lên đầu tiên, chạy đồng bộ (synchronous) để chặn đứng luồng gọi kép từ macOS
             if (isUploadingQueue || !navigator.onLine) return;
+            isUploadingQueue = true; 
+            
             try {
                 const queue = await idbGetAll('upload_queue');
                 const pendingItems = queue.filter(q => q.status === 'pending');
-                if (pendingItems.length === 0) { updateSyncBadgeUI(); if (navigator.onLine) syncPendingData(); return; }
+                if (pendingItems.length === 0) { 
+                    updateSyncBadgeUI(); 
+                    if (navigator.onLine) syncPendingData(); 
+                    return; // Lệnh finally ở cuối sẽ tự động mở khóa
+                }
                 
-                isUploadingQueue = true; updateSyncBadgeUI();
+                updateSyncBadgeUI();
                 
                 for (const item of pendingItems) {
                     if (!navigator.onLine) break; 
@@ -931,14 +938,12 @@
                             if (sImg) { sImg.status = 'done'; sImg.r2Url = r2Url; sImg.url = r2Url; needsRender = true; }
                         });
 
-                        // Dùng vòng lặp for...of thay vì forEach để có thể dùng await bên trong, tránh xung đột đơn hàng
                         for (const o of state.orders) {
                             let orderChanged = false;
                             if (o.images && o.images.length > 0) { const idx = o.images.indexOf(item.localUrl); if (idx !== -1) { o.images[idx] = r2Url; orderChanged = true; } }
                             if (o.imagesAfter && o.imagesAfter.length > 0) { const idx = o.imagesAfter.indexOf(item.localUrl); if (idx !== -1) { o.imagesAfter[idx] = r2Url; orderChanged = true; } }
                             if (o.shoes) { o.shoes.forEach(s => { if (s.images) { s.images.forEach(sImg => { if (sImg.localUrl === item.localUrl || sImg.url === item.localUrl) { sImg.r2Url = r2Url; sImg.url = r2Url; sImg.status = 'done'; orderChanged = true; } }); } }); }
                             
-                            // FIX: Ép hệ thống phải đợi lưu Database xong mới được chạy tiếp, không dùng mẹo setTimeout 2s rủi ro nữa
                             if (orderChanged) { 
                                 needsRender = true; 
                                 await dbUpdateOrder(o.id); 
@@ -953,7 +958,6 @@
                             state.soleImages[soleImgIdx].url = r2Url; 
                             state.soleImages[soleImgIdx].status = 'done'; 
                             needsGalleryRender = true; 
-                            // FIX CỐT LÕI: Phải có lệnh await ở đây để bắt M1 Max chờ Supabase xác nhận, chống ghi đè dữ liệu.
                             await saveSettingsToDB(); 
                         }
 
@@ -971,7 +975,7 @@
                         item.retryCount = (item.retryCount || 0) + 1;
                         if (item.retryCount >= 3) {
                             item.status = 'error'; 
-                            showNotification("❌ Tải ảnh thất bại", "Có ảnh không thể gửi lên máy chủ (do mạng hoặc file quá lớn). Vui lòng xóa khung bị lỗi và tải lại.");
+                            showNotification("❌ Tải ảnh thất bại", "Hệ thống đã chặn quá trình tải vì sự cố kết nối hoặc Cloudflare từ chối nhận file.");
                             
                             const targetImgIdx = state.uploadedImages.findIndex(img => img.id === item.imgId);
                             if(targetImgIdx !== -1) { state.uploadedImages[targetImgIdx].status = 'error'; renderPreviewImages(); }
@@ -986,7 +990,12 @@
                         await idbPut('upload_queue', item);
                     }
                 }
-            } finally { isUploadingQueue = false; updateSyncBadgeUI(); if (navigator.onLine) setTimeout(processUploadQueue, 1500); }
+            } finally { 
+                // Bắt buộc nhả khóa khi xử lý xong hoặc bị lỗi
+                isUploadingQueue = false; 
+                updateSyncBadgeUI(); 
+                if (navigator.onLine) setTimeout(processUploadQueue, 1500); 
+            }
         }
 
         async function syncPendingData() {
