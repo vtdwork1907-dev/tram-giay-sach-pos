@@ -2598,44 +2598,107 @@
         }
 
         // TÍNH NĂNG MỚI: Thuật toán Tự Động Hoàn Thành Đơn khi đủ ảnh
+        // TÍNH NĂNG ĐỘT PHÁ: TỰ ĐỘNG ĐÚC VÀ LƯU VĨNH VIỄN ẢNH GHÉP VÀO KHO ẢNH KHI ĐƠN HOÀN THÀNH
+        async function autoBakeGalleryForOrder(orderId) {
+            const o = state.orders.find(x => x.id === orderId);
+            // Bỏ qua nếu đơn đã được đúc rồi, hoặc nếu không có ảnh
+            if (!o || o.isGalleryBaked) return; 
+            
+            let pairsToBake = [];
+            if(o.shoes && o.shoes.length > 0) {
+                o.shoes.forEach((shoe) => {
+                    const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE');
+                    if(soleSvcs.length === 0) return;
+                    const shoeName = shoe.name + (shoe.note ? ` (${shoe.note})` : '');
+                    const brand = soleSvcs[0].brand || 'Asics';
+                    let flatShoeIndexStart = 0;
+                    for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndexStart += Math.max((o.shoes[i].images || []).length, 1); }
+                    const numImgs = Math.max((shoe.images || []).length, 1);
+                    for(let k = 0; k < numImgs; k++) {
+                        const b = shoe.images ? shoe.images[k] : null;
+                        const a = o.imagesAfter ? o.imagesAfter[flatShoeIndexStart + k] : null;
+                        const beforeUrl = b ? (b.r2Url || b.localUrl || b.url || (typeof b === 'string' ? b : null)) : null;
+                        if(beforeUrl && a && a.trim() !== '') { pairsToBake.push({ brand, shoeName, before: beforeUrl, after: a }); }
+                    }
+                });
+            } else {
+                const soleSvcs = o.items.filter(item => item.category === 'SOLE');
+                if(soleSvcs.length > 0 && o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                    const brand = soleSvcs[0].brand || 'Asics';
+                    for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
+                        const b = o.images[i]; const a = o.imagesAfter[i];
+                        const beforeUrl = typeof b === 'string' ? b : (b ? (b.r2Url || b.localUrl || b.url) : null);
+                        if (beforeUrl && a && a.trim() !== '') { pairsToBake.push({ brand, shoeName: 'Giày', before: beforeUrl, after: a }); }
+                    }
+                }
+            }
+
+            if (pairsToBake.length === 0) return;
+
+            // Đúc ảnh ghép và đẩy vào danh sách upload vĩnh viễn (state.soleImages)
+            for (const pair of pairsToBake) {
+                const combinedBase64 = await createSinglePairCombinedImageBase64(pair.before, pair.after);
+                if (combinedBase64) {
+                    const imgId = 'gal_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
+                    const newImg = { 
+                        id: imgId, brand: pair.brand, note: '', status: 'uploading', 
+                        localUrl: combinedBase64, url: combinedBase64, isLibrary: true,
+                        autoBakedOrderId: o.id, customerName: o.customer.name, shoeName: pair.shoeName
+                    };
+                    state.soleImages.unshift(newImg); 
+                    await idbPut('upload_queue', { imgId, file: combinedBase64, localUrl: combinedBase64, status: 'pending' });
+                }
+            }
+            
+            o.isGalleryBaked = true;
+            await dbUpdateOrder(o.id);
+            await saveSettingsToDB();
+            processUploadQueue();
+            if(currentGalleryTab === 'library') renderGalleryLibrary();
+        }
+
         function checkAndAutoUpdateOrderStatus(orderId) {
             const o = state.orders.find(x => x.id === orderId);
             if (!o || ['PAID', 'DELIVERED'].includes(o.status)) return; 
-
-            // Tính toán tổng số lượng ảnh Before cần bù đắp
-            let requiredAfterCount = 0;
-            if (o.shoes && o.shoes.length > 0) {
-                requiredAfterCount = o.shoes.reduce((acc, s) => acc + Math.max((s.images || []).length, 1), 0);
-            } else {
-                requiredAfterCount = Math.max((o.images || []).length, 1);
-            }
-
-            // Đếm số lượng ảnh After đã có
+            let requiredAfterCount = o.shoes && o.shoes.length > 0 ? o.shoes.reduce((acc, s) => acc + Math.max((s.images || []).length, 1), 0) : Math.max((o.images || []).length, 1);
             const validAfterCount = (o.imagesAfter || []).filter(url => url && url.trim() !== '').length;
 
-            // Nếu số ảnh tải lên đủ với số ảnh gốc
             if (validAfterCount >= requiredAfterCount && requiredAfterCount > 0) {
                 let changed = false;
-                
-                // Cập nhật trạng thái tổng
                 if (o.status !== 'PROCESSED') { o.status = 'PROCESSED'; changed = true; }
-                
-                // Cập nhật trạng thái từng dịch vụ con
-                if (o.items) {
-                    o.items.forEach(i => { if (i.status !== 'PROCESSED') { i.status = 'PROCESSED'; changed = true; } });
-                }
-                if (o.shoes) {
-                    o.shoes.forEach(s => {
-                        if (s.services) {
-                            s.services.forEach(i => { if (i.status !== 'PROCESSED') { i.status = 'PROCESSED'; changed = true; } });
-                        }
-                    });
-                }
+                if (o.items) o.items.forEach(i => { if (i.status !== 'PROCESSED') { i.status = 'PROCESSED'; changed = true; } });
+                if (o.shoes) o.shoes.forEach(s => { if (s.services) s.services.forEach(i => { if (i.status !== 'PROCESSED') { i.status = 'PROCESSED'; changed = true; } }); });
                 
                 if (changed) {
-                    showNotification("✅ Tự động cập nhật", `Đơn hàng ${o.id} đã tự động đổi trạng thái thành "Đã xong" vì đủ ảnh After!`);
+                    showNotification("✅ Tự động cập nhật", `Đơn hàng ${o.id} đã hoàn thành vì đủ ảnh After!`);
+                    autoBakeGalleryForOrder(o.id); // Tự động Đúc ảnh lưu kho vĩnh viễn
                 }
             }
+        }
+
+        async function updateOrderStatus(id, st) { 
+            const o = state.orders.find(x => x.id === id); 
+            if(o) { 
+                const oldStatus = o.status; o.status = st; 
+                let newItemStatus = 'RECEIVED'; 
+                if (st === 'PROCESSING') newItemStatus = 'PROCESSING'; 
+                else if (['PROCESSED', 'PAID', 'DELIVERED'].includes(st)) newItemStatus = 'PROCESSED'; 
+                
+                if (o.items) { o.items.forEach(item => item.status = newItemStatus); } 
+                if (o.shoes) { o.shoes.forEach(shoe => { if (shoe.services) shoe.services.forEach(item => item.status = newItemStatus); }); } 
+                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o); 
+                
+                if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') { 
+                    lastPaidNotifiedId = o.id; 
+                    const finalTotal = o.total + (o.extraFeeVal || 0); 
+                    showNotification("✅ ĐÃ THU TIỀN", `Khách: ${escapeHtml(o.customer.name)} - ${finalTotal.toLocaleString()}đ`); 
+                } 
+                if (['PROCESSED', 'PAID', 'DELIVERED'].includes(st)) {
+                    autoBakeGalleryForOrder(id); // Nếu bấm thủ công, cũng tự động Đúc ảnh
+                }
+                renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); 
+                await dbUpdateOrder(id); 
+            } 
         }
 
         function uploadAfterImage(e, orderId) {
