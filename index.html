@@ -1971,7 +1971,7 @@
             try {
                 const bImg = new Image(); bImg.crossOrigin = "Anonymous";
                 const aImg = new Image(); aImg.crossOrigin = "Anonymous";
-                const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; // Nguồn Logo
+                const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; 
                 
                 await Promise.all([
                     new Promise(r => { bImg.onload = r; bImg.onerror = r; bImg.src = beforeUrl; }),
@@ -1992,7 +1992,6 @@
                 
                 ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, targetHeight - 50, bWidth, 50);
                 
-                // ĐÃ ĐỔI MÀU: Nền "Sau khi làm" màu xanh dương hệ thống
                 ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(bWidth, targetHeight - 50, aWidth, 50);
                 
                 ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -2001,11 +2000,10 @@
                 
                 ctx.beginPath(); ctx.moveTo(bWidth, 0); ctx.lineTo(bWidth, targetHeight); ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
 
-                // VẼ LOGO GÓC TRÊN TRÁI (THU NHỎ & BO TRÒN)
                 if (logoImg.width > 0) {
-                    const logoSize = 75; // Đã thu nhỏ từ 120 xuống 75
+                    const logoSize = 75; 
                     const margin = 20;
-                    const radius = 12; // Độ bo tròn góc
+                    const radius = 12; 
 
                     ctx.save();
                     ctx.beginPath();
