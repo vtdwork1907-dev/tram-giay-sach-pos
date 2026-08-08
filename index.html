@@ -1949,10 +1949,12 @@
             try {
                 const bImg = new Image(); bImg.crossOrigin = "Anonymous";
                 const aImg = new Image(); aImg.crossOrigin = "Anonymous";
+                const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; // Nguồn Logo
                 
                 await Promise.all([
                     new Promise(r => { bImg.onload = r; bImg.onerror = r; bImg.src = beforeUrl; }),
-                    new Promise(r => { aImg.onload = r; aImg.onerror = r; aImg.src = afterUrl; })
+                    new Promise(r => { aImg.onload = r; aImg.onerror = r; aImg.src = afterUrl; }),
+                    new Promise(r => { logoImg.onload = r; logoImg.onerror = r; logoImg.src = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png"; })
                 ]);
 
                 const canvas = document.createElement('canvas');
@@ -1967,13 +1969,22 @@
                 ctx.drawImage(aImg, bWidth, 0, aWidth, targetHeight);
                 
                 ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, targetHeight - 50, bWidth, 50);
-                ctx.fillStyle = "rgba(16, 185, 129, 0.8)"; ctx.fillRect(bWidth, targetHeight - 50, aWidth, 50);
+                
+                // ĐÃ ĐỔI MÀU: Nền "Sau khi làm" màu xanh dương hệ thống
+                ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(bWidth, targetHeight - 50, aWidth, 50);
                 
                 ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText("TRƯỚC KHI LÀM", bWidth / 2, targetHeight - 25);
                 ctx.fillText("SAU KHI LÀM", bWidth + (aWidth / 2), targetHeight - 25);
                 
                 ctx.beginPath(); ctx.moveTo(bWidth, 0); ctx.lineTo(bWidth, targetHeight); ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
+
+                // VẼ LOGO GÓC TRÊN TRÁI
+                if (logoImg.width > 0) { // Kiểm tra nếu logo load thành công
+                    const logoSize = 120;
+                    const margin = 20;
+                    ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
+                }
 
                 canvas.toBlob(async (blob) => {
                     if(!blob) throw new Error("Canvas toBlob failed");
