@@ -478,18 +478,6 @@
 
                 <!-- KHU VỰC RIÊNG CHO DỊCH VỤ THAY ĐẾ (GIỮ NGUYÊN CẤU TRÚC CŨ) -->
                 <div id="soleSpecificUI" class="flex flex-col gap-4">
-                    <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
-                        <button onclick="switchGallerySubTab('sole')" id="gal-btn-sole" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-sky-600 text-white shadow-sm transition">Kho Đế Cửa Hàng</button>
-                        <button onclick="switchGallerySubTab('library')" id="gal-btn-library" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition">Thư Viện Before/After</button>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                        <div class="text-[10px] font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1"><i class="fa-solid fa-filter"></i> Lọc Theo Hãng</div>
-                        <div id="galleryBrandFilter" class="flex gap-2 overflow-x-auto hide-scroll pb-1"></div>
-                    </div>
-                </div>
-
-                <!-- KHUNG HIỂN THỊ KHO ĐẾ (CHỈ HIỆN KHI CHỌN THAY ĐẾ -> KHO ĐẾ) -->
-                <div id="soleSpecificUI" class="flex flex-col gap-4">
                     <div class="flex gap-2 bg-white p-2 rounded-[1.5rem] shadow-sm border border-slate-200">
                         <button onclick="switchGallerySubTab('sole')" id="gal-btn-sole" class="flex-1 py-2.5 text-[11px] md:text-sm font-bold rounded-full bg-[#083A9C] text-white shadow-[0_4px_12px_rgba(8,58,156,0.3)] transition">Kho Đế Cửa Hàng</button>
                         <button onclick="switchGallerySubTab('library')" id="gal-btn-library" class="flex-1 py-2.5 text-[11px] md:text-sm font-bold rounded-full bg-transparent text-slate-500 hover:bg-slate-50 transition">Thư Viện Before/After</button>
@@ -499,11 +487,25 @@
                         <div id="galleryBrandFilter" class="flex gap-2 overflow-x-auto hide-scroll pb-1"></div>
                     </div>
                 </div>
+
+                <!-- KHUNG HIỂN THỊ KHO ĐẾ (CHỈ HIỆN KHI CHỌN THAY ĐẾ -> KHO ĐẾ) -->
+                <div id="gal-sole-content" class="flex flex-col gap-4">
+                    <div class="bg-slate-50 p-3 md:p-4 rounded-[1.5rem] border border-slate-100 flex flex-wrap justify-between items-center shadow-sm gap-2">
+                        <span class="font-bold text-[11px] md:text-sm text-slate-700" id="gal-sole-brand-title">Hãng: Asics</span>
+                        <div class="flex gap-1.5 md:gap-2">
+                            <button onclick="promptAddShoeLine()" class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-[10px] md:text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer shadow-[0_4px_12px_rgba(79,70,229,0.3)] active:scale-95 transition flex items-center gap-1.5"><i class="fa-solid fa-folder-plus"></i> Thêm Dòng</button>
+                            <label class="bg-gradient-to-r from-[#0B192C] to-[#083A9C] text-white text-[10px] md:text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer shadow-[0_4px_12px_rgba(8,58,156,0.3)] active:scale-95 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Ảnh Chung<input type="file" accept="image/*" multiple onchange="uploadGallerySole(event, null)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                    <div id="gal-sole-lines" class="flex flex-col gap-3"></div>
+                </div>
                 <!-- KHUNG HIỂN THỊ THƯ VIỆN B/A TỔNG HỢP (DÙNG CHUNG CHO TẤT CẢ DỊCH VỤ) -->
                 <div id="gal-library-content" class="hidden flex-col gap-4">
-                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex justify-between items-center shadow-inner">
+                    <div class="bg-emerald-50/80 p-3 md:p-4 rounded-[1.5rem] border border-emerald-100 flex flex-wrap justify-between items-center shadow-sm gap-2">
                         <span class="font-bold text-sm text-emerald-800" id="gal-lib-title">Thư Viện Before/After</span>
-                        <label class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow active:scale-95 transition flex items-center gap-1.5">
+                        <label class="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-[10px] md:text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer shadow-[0_4px_12px_rgba(16,185,129,0.3)] active:scale-95 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-plus"></i> Tải B/A Thủ Công<input type="file" accept="image/*" multiple onchange="uploadGalleryLibrary(event)" class="hidden">
                         </label>
                     </div>
