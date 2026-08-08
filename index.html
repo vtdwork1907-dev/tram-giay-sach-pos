@@ -1085,7 +1085,7 @@
                 reader.readAsDataURL(file);
             });
         }
-        function uploadFileToR2(base64Data, isRetry = false) {
+        function uploadFileToR2(base64Data, isRetry = false, prefix = 'temp_img_') {
             return new Promise(async (resolve, reject) => {
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
@@ -1096,42 +1096,28 @@
                     while(n--) { u8arr[n] = bstr.charCodeAt(n); }
                     const blob = new Blob([u8arr], { type: mime });
 
-                    const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
+                    // Dán nhãn prefix (temp_ hoặc perm_) vào tên file
+                    const safeFileName = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
                     const formData = new FormData(); 
                     formData.append('file', blob, safeFileName);
                     
-                    const response = await fetch(`${WORKER_API_URL}/upload`, { 
-                        method: 'POST', 
-                        headers: { 'Authorization': `Bearer ${session.access_token}` }, 
-                        body: formData 
-                    });
+                    const response = await fetch(`${WORKER_API_URL}/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
                     
                     if (!response.ok) {
-                        // FIX: Cơ chế Tự Chữa Lành Token khi bị lỗi 401
                         if (response.status === 401) {
                             if (!isRetry) {
-                                // Nếu là lần lỗi đầu tiên, gọi Supabase âm thầm cấp khóa mới
                                 const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
                                 if (!refreshError && refreshData.session) {
-                                    // Có khóa mới -> Gọi lại chính hàm tải ảnh này lần nữa (Đệ quy)
-                                    const retryUrl = await uploadFileToR2(base64Data, true);
+                                    const retryUrl = await uploadFileToR2(base64Data, true, prefix);
                                     return resolve(retryUrl);
                                 }
                             }
-                            // Nếu đã cố chữa lành mà vẫn lỗi, lúc này mới bắt người dùng đăng nhập lại
                             throw new Error("Phiên đăng nhập đã hết hạn. HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
                         }
-                        
-                        const errText = await response.text();
-                        throw new Error(`HTTP ${response.status} - ${errText.includes('<html') ? 'Bị Cloudflare chặn bảo mật' : errText}`);
+                        const errText = await response.text(); throw new Error(`HTTP ${response.status} - ${errText.includes('<html') ? 'Bị Cloudflare chặn bảo mật' : errText}`);
                     }
-                    
-                    const data = await response.json();
-                    if (data.error) throw new Error(data.error);
-                    resolve(data.url);
-                } catch(err) { 
-                    reject(err); 
-                }
+                    const data = await response.json(); if (data.error) throw new Error(data.error); resolve(data.url);
+                } catch(err) { reject(err); }
             });
         }
         async function deleteFileFromR2(fileUrl) {
