@@ -2003,11 +2003,28 @@
                 
                 ctx.beginPath(); ctx.moveTo(bWidth, 0); ctx.lineTo(bWidth, targetHeight); ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
 
-                // VẼ LOGO GÓC TRÊN TRÁI
-                if (logoImg.width > 0) { // Kiểm tra nếu logo load thành công
-                    const logoSize = 120;
+                // VẼ LOGO GÓC TRÊN TRÁI (THU NHỎ & BO TRÒN)
+                if (logoImg.width > 0) {
+                    const logoSize = 75; // Đã thu nhỏ từ 120 xuống 75
                     const margin = 20;
+                    const radius = 12; // Độ bo tròn góc
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(margin + radius, margin);
+                    ctx.lineTo(margin + logoSize - radius, margin);
+                    ctx.quadraticCurveTo(margin + logoSize, margin, margin + logoSize, margin + radius);
+                    ctx.lineTo(margin + logoSize, margin + logoSize - radius);
+                    ctx.quadraticCurveTo(margin + logoSize, margin + logoSize, margin + logoSize - radius, margin + logoSize);
+                    ctx.lineTo(margin + radius, margin + logoSize);
+                    ctx.quadraticCurveTo(margin, margin + logoSize, margin, margin + logoSize - radius);
+                    ctx.lineTo(margin, margin + radius);
+                    ctx.quadraticCurveTo(margin, margin, margin + radius, margin);
+                    ctx.closePath();
+                    ctx.clip();
+
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
+                    ctx.restore();
                 }
 
                 canvas.toBlob(async (blob) => {
