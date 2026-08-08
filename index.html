@@ -40,7 +40,6 @@
         }
     </script>
     <style>
-        
         @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
         
         body { 
@@ -138,11 +137,6 @@
         #viewerImage, #comparisonBox, #collectPaymentModal > div, #extraFeeModal > div, #addExpenseModal > div {
             will-change: transform, opacity;
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-        }
-        #viewerImage, #comparisonBox, .fixed.inset-0 img {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
         }
     </style>
 </head>
@@ -4570,81 +4564,6 @@ function updateExpenseCharts() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
-       // =========================================================================
-        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (PHIÊN BẢN CHUẨN ỔN ĐỊNH CHO SAFARI)
-        // =========================================================================
-        function initSwipeDownToDismiss(modalId, boxId, closeCallback) {
-            const modal = document.getElementById(modalId);
-            const box = document.getElementById(boxId);
-            if (!modal || !box) return;
-
-            let startY = 0, currentY = 0, isDragging = false;
-
-            const onTouchStart = (e) => {
-                isDragging = true;
-                startY = e.touches ? e.touches[0].clientY : e.clientY;
-                currentY = startY;
-                box.style.transition = 'none';
-            };
-
-            const onTouchMove = (e) => {
-                if (!isDragging) return;
-                currentY = e.touches ? e.touches[0].clientY : e.clientY;
-                const deltaY = currentY - startY;
-                
-                // Chỉ xử lý khi người dùng kéo xuống dưới
-                if (deltaY > 0) {
-                    box.style.transform = `translate3d(0, ${deltaY}px, 0)`;
-                    const opacity = Math.max(0.2, 1 - deltaY / 350);
-                    modal.style.opacity = opacity;
-                }
-            };
-
-            const onTouchEnd = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                const deltaY = currentY - startY;
-
-                box.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease';
-                modal.style.transition = 'opacity 0.25s ease';
-
-                if (deltaY > 90) {
-                    // Vuốt đủ sâu -> Trượt hẳn xuống và đóng modal mượt mà
-                    box.style.transform = `translate3d(0, 100vh, 0)`;
-                    modal.style.opacity = '0';
-                    setTimeout(() => {
-                        box.style.transform = '';
-                        box.style.opacity = '';
-                        modal.style.opacity = '';
-                        closeCallback();
-                    }, 250);
-                } else {
-                    // Vuốt chưa đủ -> Bật trả về vị trí cũ
-                    box.style.transform = 'translate3d(0, 0, 0)';
-                    modal.style.opacity = '1';
-                }
-            };
-
-            // Gắn sự kiện an toàn cho cả cảm ứng điện thoại và chuột máy tính
-            box.ontouchstart = onTouchStart;
-            box.ontouchmove = onTouchMove;
-            box.ontouchend = onTouchEnd;
-
-            box.onmousedown = onTouchStart;
-            window.onmousemove = onTouchMove;
-            window.onmouseup = onTouchEnd;
-        }
-
-        // TỰ ĐỘNG KÍCH HOẠT SAU KHI GIAO DIỆN TẢI XONG
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                initSwipeDownToDismiss('imageViewerModal', 'viewerImage', closeImageViewer);
-                initSwipeDownToDismiss('comparisonModal', 'comparisonBox', closeComparisonModal);
-                initSwipeDownToDismiss('collectPaymentModal', 'collectPaymentBox', closeCollectPaymentModal);
-                initSwipeDownToDismiss('extraFeeModal', 'extraFeeBox', closeExtraFeeModal);
-                initSwipeDownToDismiss('addExpenseModal', 'addExpenseBox', closeExpenseModal);
-            }, 500);
-        });
     </script>
 </body>
 </html>
