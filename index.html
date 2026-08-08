@@ -1616,7 +1616,9 @@
         }
 
         function uploadGallerySole(e, lineName) { uploadGalleryImagesBase(e, false, lineName); }
-        function uploadGalleryLibrary(e) { uploadGalleryImagesBase(e, true, null); }
+        function uploadGalleryLibrary(e) { 
+    uploadGalleryImagesBase(e, true, null, currentGalleryCategory); 
+}
 
         function uploadGalleryImagesBase(e, isLibrary, lineName) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
