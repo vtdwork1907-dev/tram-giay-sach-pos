@@ -1480,7 +1480,7 @@
                     let pairs = [];
                     if(o.shoes && o.shoes.length > 0) {
                         o.shoes.forEach((shoe) => {
-                            const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Khác') === currentGalleryBrand);
+                            const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Asics') === currentGalleryBrand);
                             if(soleSvcs.length === 0) return;
                             const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
                             let afterImg = null; let flatShoeIndex = 0;
