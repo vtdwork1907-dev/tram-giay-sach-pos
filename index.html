@@ -1786,13 +1786,12 @@
             renderSettingsBrandsTable();
         }
 
-        async function deleteBrand(idx) {
-            const brandName = state.brands[idx];
-            if(brandName === 'Khác') return alert("Không thể xóa hãng mặc định!");
-            if(confirm(`Bạn có chắc muốn xóa hãng ${brandName}? Các ảnh trong kho của hãng này có thể bị mất định dạng.`)) {
+        function deleteBrand(idx) {
+            if(confirm("Bạn có chắc muốn xóa hãng '" + state.brands[idx] + "'?")) {
                 state.brands.splice(idx, 1);
-                await saveSettingsToDB();
+                saveSettingsToDB(); // QUAN TRỌNG
                 renderSettingsBrandsTable();
+                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
             }
         }
 
