@@ -1595,7 +1595,7 @@
         }
 
         const combinedImageCache = {};
-        // CÔNG CỤ VẼ ẢNH CẮT CÚP TỰ ĐỘNG ĐỂ VỪA KHUNG (COVER)
+       // CÔNG CỤ VẼ ẢNH CẮT CÚP TỰ ĐỘNG ĐỂ VỪA KHUNG
         function drawImageCover(ctx, img, x, y, w, h) {
             if (!img) { ctx.fillStyle = "#e2e8f0"; ctx.fillRect(x, y, w, h); return; }
             const imgRatio = img.width / img.height;
@@ -1609,8 +1609,8 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        // THUẬT TOÁN GHÉP ẢNH (HỖ TRỢ 1 CẶP HOẶC 2 CẶP CÙNG LÚC)
-        async function createMultiCombinedImageBase64(pairsChunk) {
+        // THUẬT TOÁN GHÉP ẢNH LINH HOẠT (1 CẶP HOẶC 2 CẶP TÙY Ý CỦA 1 ĐÔI GIÀY)
+        async function createFlexibleCombinedImageBase64(pairsChunk) {
             if (!pairsChunk || pairsChunk.length === 0) return null;
             const cacheKey = pairsChunk.map(p => p.before + '|' + p.after).join('||');
             if (combinedImageCache[cacheKey]) return combinedImageCache[cacheKey];
@@ -1625,146 +1625,171 @@
                     img.src = src;
                 });
 
+                // Kiểm tra xem đôi giày này có mấy cặp ảnh (Linh hoạt 1 hoặc 2)
                 const isDouble = pairsChunk.length >= 2;
                 const colW = 600; const rowH = 600; const bannerH = 60;
-                const canvasW = colW * 2; // 1200px
-                const canvasH = (isDouble ? rowH * 2 : rowH) + bannerH;
+                const canvasW = colW * 2; // Rộng cố định 1200px
+                const canvasH = (isDouble ? rowH * 2 : rowH) + bannerH; // Chiều cao co giãn
 
                 const canvas = document.createElement('canvas');
                 canvas.width = canvasW; canvas.height = canvasH;
                 const ctx = canvas.getContext('2d');
 
-                // Load và vẽ từng cặp ảnh
                 for (let i = 0; i < Math.min(pairsChunk.length, 2); i++) {
                     const yPos = i * rowH;
                     const bImg = await loadImg(pairsChunk[i].before);
                     const aImg = await loadImg(pairsChunk[i].after);
                     
-                    drawImageCover(ctx, bImg, 0, yPos, colW, rowH); // Ảnh Before cột trái
-                    drawImageCover(ctx, aImg, colW, yPos, colW, rowH); // Ảnh After cột phải
+                    drawImageCover(ctx, bImg, 0, yPos, colW, rowH); 
+                    drawImageCover(ctx, aImg, colW, yPos, colW, rowH); 
                     
-                    // Vẽ đường kẻ ngang phân cách nếu có 2 cặp ảnh
+                    // Kẻ vạch ngang phân cách nếu là lưới 2x2
                     if (i === 0 && isDouble) {
                         ctx.beginPath(); ctx.moveTo(0, rowH); ctx.lineTo(canvasW, rowH);
                         ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
                     }
                 }
 
-                // Vẽ thanh Banner nhãn bên dưới cùng
-                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, canvasH - bannerH, colW, bannerH);
-                ctx.fillStyle = "rgba(16, 185, 129, 0.9)"; ctx.fillRect(colW, canvasH - bannerH, colW, bannerH);
+                // Thanh Banner nhãn bên dưới cùng
+                const yBanner = isDouble ? rowH * 2 : rowH;
+                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, yBanner, colW, bannerH);
+                ctx.fillStyle = "rgba(16, 185, 129, 0.9)"; ctx.fillRect(colW, yBanner, colW, bannerH);
                 
                 ctx.fillStyle = "white"; ctx.font = "bold 26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText("TRƯỚC KHI LÀM", colW / 2, canvasH - (bannerH / 2));
-                ctx.fillText("SAU KHI LÀM", colW + (colW / 2), canvasH - (bannerH / 2));
+                ctx.fillText("TRƯỚC KHI LÀM", colW / 2, yBanner + (bannerH / 2));
+                ctx.fillText("SAU KHI LÀM", colW + (colW / 2), yBanner + (bannerH / 2));
                 
-                // Vẽ đường kẻ dọc chia đôi Before / After
+                // Đường kẻ dọc chia đôi Before / After
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
                 return dataUrl;
-            } catch(e) { console.error("Lỗi tạo ảnh ghép", e); return pairsChunk[0].after; }
+            } catch(e) { console.error("Lỗi tạo ảnh ghép", e); return pairsChunk[0].after || pairsChunk[0].before; }
         }
 
         async function renderGalleryLibrary() {
             const grid = document.getElementById('gal-library-grid'); if(!grid) return;
-            grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-10 gap-2"><div class="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div><span class="text-xs text-slate-500 font-bold">Đang tải và ghép ảnh...</span></div>';
+            grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-10 gap-2"><div class="w-6 h-6 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div><span class="text-[9px] md:text-[10px] text-slate-500 font-bold">Đang tải và ghép ảnh...</span></div>';
             
             try {
                 let orderGroups = {};
                 state.orders.forEach(o => {
                     if(!['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status)) return;
-                    let pairs = [];
+                    let groupsForOrder = []; 
                     
                     if(o.shoes && o.shoes.length > 0) {
                         o.shoes.forEach((shoe) => {
                             const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Asics') === currentGalleryBrand);
                             if(soleSvcs.length === 0) return;
-                            const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
-                            let afterImg = null; let flatShoeIndex = 0;
-                            for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndex += Math.max((o.shoes[i].images || []).length, 1); }
-                            if(o.imagesAfter && o.imagesAfter[flatShoeIndex] && o.imagesAfter[flatShoeIndex].trim() !== '') afterImg = o.imagesAfter[flatShoeIndex];
-                            if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
+                            
+                            const shoeName = shoe.name + (shoe.note ? ` (${shoe.note})` : '');
+                            let flatShoeIndexStart = 0;
+                            for(let i=0; i<o.shoes.length; i++) { 
+                                if(o.shoes[i].id === shoe.id) break; 
+                                flatShoeIndexStart += Math.max((o.shoes[i].images || []).length, 1); 
+                            }
+                            
+                            let shoePairs = [];
+                            const numImgs = Math.max((shoe.images || []).length, 1);
+                            // Bắt toàn bộ các cặp ảnh của 1 đôi giày
+                            for(let k = 0; k < numImgs; k++) {
+                                const b = shoe.images ? shoe.images[k] : null;
+                                const a = o.imagesAfter ? o.imagesAfter[flatShoeIndexStart + k] : null;
+                                const beforeUrl = b ? (b.r2Url || b.localUrl || b.url || (typeof b === 'string' ? b : null)) : null;
+                                if(beforeUrl && a && a.trim() !== '') {
+                                    shoePairs.push({ shoeName: shoeName, before: beforeUrl, after: a });
+                                }
+                            }
+                            if (shoePairs.length > 0) groupsForOrder.push(shoePairs);
                         });
                     } else {
                         const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Asics') === currentGalleryBrand);
-                        if(soleSvcs.length === 0) return;
-                        if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                        if(soleSvcs.length > 0 && o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                            let shoePairs = [];
                             for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
                                 const b = o.images[i]; const a = o.imagesAfter[i];
-                                if(b && a && a.trim() !== '') pairs.push({ shoeName: 'Giày', before: typeof b === 'string' ? b : (b.r2Url || b.localUrl || b.url), after: a });
+                                const beforeUrl = typeof b === 'string' ? b : (b ? (b.r2Url || b.localUrl || b.url) : null);
+                                if (beforeUrl && a && a.trim() !== '') {
+                                    shoePairs.push({ shoeName: 'Giày', before: beforeUrl, after: a });
+                                }
                             }
+                            if (shoePairs.length > 0) groupsForOrder.push(shoePairs);
                         }
                     }
-                    if(pairs.length > 0) orderGroups[o.id] = { customerName: o.customer.name, pairs: pairs };
+                    
+                    if(groupsForOrder.length > 0) {
+                        orderGroups[o.id] = { customerName: o.customer.name, groupsForOrder };
+                    }
                 });
 
                 const manualItems = (state.soleImages || []).filter(img => img.brand === currentGalleryBrand && img.isLibrary);
-                if(Object.keys(orderGroups).length === 0 && manualItems.length === 0) { grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 italic text-xs bg-slate-50 rounded-xl border border-slate-200">Chưa có ảnh Before/After thay đế nào cho hãng này.</div>`; return; }
+                if(Object.keys(orderGroups).length === 0 && manualItems.length === 0) { grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 italic text-[10px] bg-slate-50 rounded-lg border border-slate-200">Chưa có ảnh thay đế nào cho hãng này.</div>`; return; }
 
                 let html = '';
                 
-                // TẠO GIAO DIỆN COMPACT CHO ĐƠN HÀNG TỰ ĐỘNG
+                // GIAO DIỆN SIÊU NÉN CHO ĐƠN TỰ ĐỘNG
                 for (const orderId in orderGroups) {
                     const grp = orderGroups[orderId];
-                    // Tách các cặp ảnh thành từng nhóm (Mỗi nhóm tối đa 2 cặp ảnh)
-                    const chunks = [];
-                    for (let i = 0; i < grp.pairs.length; i += 2) { chunks.push(grp.pairs.slice(i, i + 2)); }
-                    
-                    for (const chunk of chunks) {
-                        const combinedDataUrl = await createMultiCombinedImageBase64(chunk);
-                        const shoeNames = chunk.map(p => escapeHtml(p.shoeName)).join(' & ');
+                    for (const shoePairs of grp.groupsForOrder) {
+                        const chunks = [];
+                        // Băm nhỏ thành từng khối tối đa 2 cặp ảnh để đẩy vào thuật toán linh hoạt
+                        for (let i = 0; i < shoePairs.length; i += 2) { chunks.push(shoePairs.slice(i, i + 2)); }
                         
-                        html += `
-                        <div class="col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col mb-1">
-                            <div class="bg-emerald-50 border-b border-emerald-100 p-2 flex justify-between items-center gap-2">
-                                <h3 class="font-bold text-emerald-900 text-[10px] md:text-xs truncate flex-1 leading-tight"><i class="fa-solid fa-box-open mr-1 text-emerald-600"></i> ${orderId} - Khách: ${escapeHtml(grp.customerName)}</h3>
-                                <span class="text-[8px] md:text-[9px] text-emerald-700 font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border border-emerald-100 truncate max-w-[40%] text-right">${shoeNames}</span>
-                            </div>
-                            <div class="relative bg-slate-100 w-full">
-                                <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto object-contain cursor-pointer hover:opacity-90 transition">
-                            </div>
-                            <div class="p-1.5 flex justify-end bg-slate-50 border-t border-slate-100">
-                                <button onclick="shareImage('${combinedDataUrl}', 'Before/After - ${currentGalleryBrand}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[9px] md:text-xs font-bold px-3 py-1 md:py-1.5 rounded flex items-center gap-1.5 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
-                            </div>
-                        </div>`;
+                        for (const chunk of chunks) {
+                            const combinedDataUrl = await createFlexibleCombinedImageBase64(chunk);
+                            const shoeNameDisplay = chunk[0].shoeName;
+                            
+                            html += `
+                            <div class="col-span-1 bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                                <div class="bg-emerald-50 border-b border-emerald-100 p-1 flex justify-between items-center gap-1">
+                                    <h3 class="font-bold text-emerald-900 text-[8px] md:text-[9px] truncate flex-1 leading-none" title="${orderId} - ${escapeHtml(grp.customerName)}"><i class="fa-solid fa-box-open mr-0.5 text-emerald-600"></i> ${orderId} - ${escapeHtml(grp.customerName)}</h3>
+                                    <span class="text-[7px] md:text-[8px] text-emerald-700 font-bold bg-white px-1 py-0.5 rounded shadow-sm border border-emerald-100 truncate max-w-[40%] text-right" title="${escapeHtml(shoeNameDisplay)}">${escapeHtml(shoeNameDisplay)}</span>
+                                </div>
+                                <div class="relative bg-slate-100 w-full flex-1 flex items-center justify-center p-0.5">
+                                    <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto max-h-[100px] md:max-h-[140px] lg:max-h-[160px] object-contain cursor-pointer hover:opacity-90 transition rounded-sm shadow-sm">
+                                </div>
+                                <div class="p-1 flex justify-end bg-slate-50 border-t border-slate-100">
+                                    <button onclick="shareImage('${combinedDataUrl}', 'Before/After - ${currentGalleryBrand}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[7px] md:text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
+                                </div>
+                            </div>`;
+                        }
                     }
                 }
 
-                // TẠO GIAO DIỆN COMPACT CHO ẢNH TẢI LÊN THỦ CÔNG
+                // GIAO DIỆN SIÊU NÉN CHO ẢNH THỦ CÔNG
                 if (manualItems.length > 0) {
-                    html += `<div class="col-span-full bg-slate-100 border border-slate-200 rounded-lg p-2 shadow-sm mt-3 mb-1 flex items-center justify-between"><h3 class="font-bold text-slate-700 text-[10px] md:text-xs uppercase"><i class="fa-solid fa-upload mr-1 text-slate-500"></i> Ảnh ghép thủ công</h3><span class="text-[9px] font-bold bg-white text-slate-500 px-1.5 py-0.5 rounded border shadow-sm">${manualItems.length} ảnh</span></div>`;
+                    html += `<div class="col-span-full bg-slate-100 border border-slate-200 rounded p-1 shadow-sm mt-2 mb-0.5 flex items-center justify-between"><h3 class="font-bold text-slate-700 text-[8px] md:text-[10px] uppercase"><i class="fa-solid fa-upload mr-1 text-slate-500"></i> Ảnh ghép thủ công</h3><span class="text-[7px] font-bold bg-white text-slate-500 px-1 py-0.5 rounded border shadow-sm">${manualItems.length} ảnh</span></div>`;
                     manualItems.forEach(img => {
                         const src = typeof img.url === 'string' ? img.url : (img.r2Url || img.localUrl);
                         const isUploading = img.status === 'uploading' || img.status === 'pending';
                         const isError = img.status === 'error';
                         html += `
-                        <div class="col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col mb-1 relative group">
-                            <div class="relative bg-slate-100 w-full aspect-[4/3] md:aspect-video flex items-center justify-center">
+                        <div class="col-span-1 bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col relative group">
+                            <div class="relative bg-slate-100 w-full h-[100px] md:h-[140px] flex items-center justify-center p-0.5">
                                 ${isError ? 
-                                    `<div class="text-red-500 flex flex-col items-center"><i class="fa-solid fa-triangle-exclamation text-xl mb-1"></i><span class="text-[9px] font-bold">Lỗi ảnh</span></div>` 
+                                    `<div class="text-red-500 flex flex-col items-center"><i class="fa-solid fa-triangle-exclamation text-base mb-1"></i><span class="text-[7px] font-bold">Lỗi ảnh</span></div>` 
                                 : 
-                                    `<img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer' : 'opacity-50'} transition">`
+                                    `<img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer hover:opacity-90' : 'opacity-50'} transition rounded-sm shadow-sm">`
                                 }
-                                ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-5 h-5 border-2 border-emerald-500 border-t-transparent"></div></div>` : ''}
-                                ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-1.5 right-1.5 bg-red-500/90 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md active:scale-95 transition text-[9px]"><i class="fa-solid fa-times"></i></button>` : ''}
+                                ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-4 h-4 border-2 border-emerald-500 border-t-transparent"></div></div>` : ''}
+                                ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-1 right-1 bg-red-500/90 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-md active:scale-95 transition text-[6px]"><i class="fa-solid fa-times"></i></button>` : ''}
                             </div>
-                            <div class="p-1.5 flex flex-col gap-1.5 bg-slate-50 border-t border-slate-100">
-                                <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Ghi chú ảnh..." class="w-full text-[9px] md:text-[10px] font-bold p-1 border border-slate-200 rounded outline-none focus:border-emerald-500 bg-white text-center shadow-inner">
-                                ${(!isUploading && !isError) ? `<button onclick="shareImage('${src}', 'Before/After thủ công')" class="w-full bg-emerald-100 text-emerald-800 text-[9px] md:text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1.5 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>` : ''}
+                            <div class="p-1 flex flex-col gap-1 bg-slate-50 border-t border-slate-100">
+                                <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Ghi chú..." class="w-full text-[7px] md:text-[8px] font-bold p-0.5 border border-slate-200 rounded outline-none focus:border-emerald-500 bg-white text-center shadow-inner">
+                                ${(!isUploading && !isError) ? `<button onclick="shareImage('${src}', 'Before/After thủ công')" class="w-full bg-emerald-100 text-emerald-800 text-[7px] md:text-[8px] font-bold py-0.5 rounded flex items-center justify-center gap-1 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia sẻ</button>` : ''}
                             </div>
                         </div>`;
                     });
                 }
                 
-                // Đẩy vào Layout dạng Grid (2 cột cho máy tính, 1 cột cho điện thoại)
-                grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4";
+                // MẬT ĐỘ LƯỚI KHỦNG: Điện thoại 2 cột nhỏ, Máy tính 4-8 cột siêu mịn
+                grid.className = "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1.5 md:gap-2";
                 grid.innerHTML = html;
             } catch(error) {
                 console.error("Lỗi vẽ thư viện ảnh:", error);
-                grid.innerHTML = `<div class="col-span-full text-center py-8 text-red-500 text-xs bg-red-50 rounded-xl border border-red-200">Đã xảy ra lỗi khi tải ảnh. Vui lòng tải lại trang.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-6 text-red-500 text-[10px] bg-red-50 rounded-lg border border-red-200">Đã xảy ra lỗi khi tải ảnh. Vui lòng tải lại trang.</div>`;
             }
         }
 
