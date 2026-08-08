@@ -1392,7 +1392,7 @@
     if(id === 'customers') renderCustomersTable(); 
     if(id === 'payment') updateQRView(); 
     if(id === 'dashboard') renderDashboard();
-    if(id === 'gallery') { switchGalleryTab(currentGalleryTab); }
+    if(id === 'gallery') { renderGalleryCategoryTabs(); switchGalleryCategory(currentGalleryCategory); }
     
     localStorage.setItem('TRAM_LAST_TAB', id);
 }
