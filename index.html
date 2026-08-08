@@ -3389,15 +3389,15 @@
 
                 const servicesBadgeHtml = displayItems.map(i => {
                     const st = i.status || 'RECEIVED'; 
-                    let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700'; 
-                    let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>'; 
+                    let badgeClass = 'bg-slate-100 border-slate-200 text-slate-700'; 
+                    let iconHtml = '<i class="fa-solid fa-box mr-1 text-slate-400"></i>'; 
                     
                     if (st === 'PROCESSING') { 
-                        badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm'; 
-                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>'; 
+                        badgeClass = 'bg-gradient-to-r from-amber-400 to-amber-500 border-none text-white shadow-[0_4px_10px_rgba(245,158,11,0.3)]'; 
+                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1"></i>'; 
                     } else if (st === 'PROCESSED') { 
-                        badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm'; 
-                        iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>'; 
+                        badgeClass = 'bg-gradient-to-r from-emerald-400 to-emerald-500 border-none text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]'; 
+                        iconHtml = '<i class="fa-solid fa-circle-check mr-1"></i>'; 
                     }
                     
                     const itemIdKey = i.cartId || i.id; 
@@ -3409,11 +3409,11 @@
                     if (isWarrantyEligible && isPaidOrDeliveredFilter) { 
                         if (!i.warrantyDate) i.warrantyDate = calculate3MonthsLater(o.date); 
                         const isExpired = i.warrantyDate < new Date().toISOString().split('T')[0]; 
-                        const warrantyBoxClass = isExpired ? 'bg-red-50 border-red-200 text-red-700' : 'bg-purple-50 border-purple-200 text-purple-800'; 
-                        warrantyHtml = `<div class="mt-1 p-0.5 rounded border ${warrantyBoxClass} text-[9px] md:text-[10px] inline-flex items-center gap-0.5 shadow-sm"><span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span><input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent border-b border-purple-300 font-mono font-bold outline-none text-[9px] md:text-[10px] cursor-pointer"></div>`; 
+                        const warrantyBoxClass = isExpired ? 'bg-red-50 border-red-200 text-red-700' : 'bg-indigo-50 border-indigo-200 text-indigo-800'; 
+                        warrantyHtml = `<div class="mt-1.5 p-1 px-2 rounded-full border ${warrantyBoxClass} text-[9px] md:text-[10px] inline-flex items-center gap-1 shadow-sm"><span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span><input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent font-mono font-bold outline-none text-[9px] md:text-[10px] cursor-pointer"></div>`; 
                     }
                     
-                    return `<div class="mb-1"><span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} border px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[10px] md:text-xs">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>${warrantyHtml}</div>`;
+                    return `<div class="mb-1.5"><span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} px-2.5 py-1 md:px-3 md:py-1.5 rounded-full mr-1 inline-flex items-center cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-[11px] font-bold">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>${warrantyHtml}</div>`;
                 }).join('');
 
                 let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-1.5 w-full text-[9px] md:text-[11px] font-bold bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-700 p-1 md:p-1.5 rounded-lg outline-none flex items-center justify-center gap-1 transition shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Phát sinh</button>`;
