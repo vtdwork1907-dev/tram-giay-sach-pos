@@ -1765,16 +1765,16 @@
             `).join('');
         }
 
-        async function addNewBrand() {
-            const name = document.getElementById('addBrandName').value.trim();
-            if(!name) return alert("Vui lòng nhập tên hãng!");
-            if(state.brands.some(b => b.toLowerCase() === name.toLowerCase())) return alert("Tên hãng này đã tồn tại!");
-            
-            state.brands.unshift(name);
-            await saveSettingsToDB();
-            renderSettingsBrandsTable();
-            document.getElementById('addBrandName').value = '';
-            showNotification("✅ Thêm thành công", `Đã thêm hãng ${name} vào hệ thống.`);
+        function addNewBrand() {
+            const b = prompt("Nhập tên Hãng giày mới:");
+            if(b && b.trim()) {
+                if(!state.brands) state.brands = [];
+                if(state.brands.includes(b.trim())) return alert("Hãng này đã tồn tại!");
+                state.brands.push(b.trim());
+                saveSettingsToDB(); // QUAN TRỌNG: Đẩy lên mây để đồng bộ
+                renderSettingsBrandsTable();
+                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
+            }
         }
 
         async function updateBrandName(idx, newName) {
