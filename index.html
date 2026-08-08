@@ -1675,7 +1675,7 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        // THUẬT TOÁN GHÉP ẢNH LINH HOẠT (ĐÃ THÊM BỘ LỌC TÀNG HÌNH)
+       // THUẬT TOÁN GHÉP ẢNH LINH HOẠT (ĐÃ THÊM BỘ LỌC TÀNG HÌNH & LOGO BO TRÒN)
         async function createFlexibleCombinedImageBase64(pairsChunk) {
             if (!pairsChunk || pairsChunk.length === 0) return null;
             const cacheKey = pairsChunk.map(p => p.before + '|' + p.after).join('||');
@@ -1687,8 +1687,6 @@
                     const img = new Image();
                     if (src.startsWith('http')) img.crossOrigin = "Anonymous";
                     img.onload = () => resolve(img);
-                    
-                    // Lỗi 404 do Cloudflare xoá sẽ nhảy vào đây và trả về null
                     img.onerror = () => resolve(null); 
                     img.src = src;
                 });
@@ -1707,7 +1705,6 @@
                     const bImg = await loadImg(pairsChunk[i].before);
                     const aImg = await loadImg(pairsChunk[i].after);
                     
-                    // NẾU ẢNH BỊ XOÁ (BỊ NULL) -> HUỶ LUÔN VIỆC TẠO ẢNH GHÉP
                     if (!bImg || !aImg) return null;
                     
                     drawImageCover(ctx, bImg, 0, yPos, colW, rowH); 
@@ -1730,15 +1727,14 @@
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
 
-                // VẼ THÊM LOGO GÓC TRÊN TRÁI (THU NHỎ & BO TRÒN)
                 const logoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/img_1786208707514_sq4h.jpg";
                 const logoImg = await loadImg(logoUrl);
                 if (logoImg) {
-                    const logoSize = 75; // Đã thu nhỏ từ 120 xuống 75
-                    const margin = 20;   // Khoảng cách từ lề
-                    const radius = 12;   // Độ bo tròn góc (12px)
+                    const logoSize = 75; 
+                    const margin = 20;   
+                    const radius = 12;   
 
-                    ctx.save(); // Lưu trạng thái canvas
+                    ctx.save(); 
                     ctx.beginPath();
                     ctx.moveTo(margin + radius, margin);
                     ctx.lineTo(margin + logoSize - radius, margin);
@@ -1750,16 +1746,18 @@
                     ctx.lineTo(margin, margin + radius);
                     ctx.quadraticCurveTo(margin, margin, margin + radius, margin);
                     ctx.closePath();
-                    ctx.clip(); // Thực hiện cắt khung bo tròn
+                    ctx.clip(); 
 
-                    // Vẽ ảnh logo vào trong khung đã cắt
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
-                    ctx.restore(); // Trả lại trạng thái bình thường cho canvas
+                    ctx.restore(); 
                 }
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
                 return dataUrl;
+            } catch(e) { 
+                console.error("Lỗi tạo ảnh ghép", e); 
+                return null; 
             } 
         }
 
