@@ -1354,33 +1354,40 @@
         }
         
         function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
-            document.getElementById('tab-' + id).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
-                if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); else b.classList.add('text-slate-300');
-            });
-            
-            const activeBtn = document.getElementById('nav-' + id);
-            if(activeBtn) { 
-                activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); 
-                activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
-            }
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
+    document.getElementById('tab-' + id).classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
+        if(b.id === 'nav-payment') b.classList.add('text-emerald-400', 'md:text-emerald-400'); else b.classList.add('text-slate-300');
+    });
+    
+    const activeBtn = document.getElementById('nav-' + id);
+    if(activeBtn) { 
+        activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'md:text-emerald-400'); 
+        activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
+    }
 
-            if (id === 'reports' || id === 'orders' || id === 'dashboard') {
-                if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
-            }
+    if (id === 'reports' || id === 'orders' || id === 'dashboard') {
+        if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
+    }
 
-            if(id === 'reports') { updateReportMetrics(true); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
-            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
-            if(id === 'customers') renderCustomersTable(); 
-            if(id === 'payment') updateQRView(); 
-            if(id === 'dashboard') renderDashboard();
-            if(id === 'gallery') { switchGalleryTab(currentGalleryTab); }
-            
-            localStorage.setItem('TRAM_LAST_TAB', id);
-        }
+    if(id === 'reports') { 
+        updateReportMetrics(true); 
+        setTimeout(() => { 
+            if(barChartInst) barChartInst.resize(); 
+            if(pieChartInst) pieChartInst.resize(); 
+            if(expReportPieInst) expReportPieInst.resize(); 
+        }, 100); 
+    }
+    if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
+    if(id === 'customers') renderCustomersTable(); 
+    if(id === 'payment') updateQRView(); 
+    if(id === 'dashboard') renderDashboard();
+    if(id === 'gallery') { switchGalleryTab(currentGalleryTab); }
+    
+    localStorage.setItem('TRAM_LAST_TAB', id);
+}
 
         // =========================================================================
         // 11.5. QUẢN LÝ KHO ẢNH (GALLERY) & GHÉP ẢNH TỰ ĐỘNG
