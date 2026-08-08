@@ -1135,7 +1135,7 @@
         }
 
         function mapOrderDbToJs(db) {
-            let extractedBrand = 'Khác';
+            let extractedBrand = 'Asics';
             if (db.items && db.items.length > 0 && db.items[0].brand) extractedBrand = db.items[0].brand;
             return {
                 id: db.id, tracking_id: db.tracking_id || db.id, date: db.date,
