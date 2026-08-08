@@ -1743,9 +1743,16 @@
         // =========================================================================
         function renderSettingsBrandsTable() {
             if(!state.brands || state.brands.length === 0) state.brands = ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+            const total = state.brands.length;
             document.getElementById('settingsBrandsTable').innerHTML = state.brands.map((b, idx) => `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-3"><input type="text" value="${escapeHtml(b)}" onchange="updateBrandName(${idx}, this.value)" ${b === 'Khác' ? 'disabled' : ''} class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-emerald-300 focus:border-emerald-500 outline-none bg-transparent focus:bg-white transition" title="${b === 'Khác' ? 'Hãng mặc định không thể sửa' : 'Bấm vào để sửa tên hãng'}"></td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="moveBrandUp(${idx})" ${idx === 0 || b === 'Khác' ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 rounded-lg transition active:scale-95"'} title="Chuyển lên"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                            <button onclick="moveBrandDown(${idx})" ${idx >= total - 1 || b === 'Khác' || state.brands[idx + 1] === 'Khác' ? 'disabled class="opacity-20 cursor-not-allowed p-1.5 text-slate-400"' : 'class="p-1.5 bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 rounded-lg transition active:scale-95"'} title="Chuyển xuống"><i class="fa-solid fa-arrow-down text-xs"></i></button>
+                        </div>
+                    </td>
                     <td class="p-3 text-right">
                         ${b === 'Khác' ? `<span class="text-[10px] text-slate-400 italic">Mặc định</span>` : `<button onclick="deleteBrand(${idx})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa hãng này"><i class="fa-solid fa-trash"></i></button>`}
                     </td>
