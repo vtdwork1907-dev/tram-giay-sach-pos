@@ -1489,7 +1489,7 @@
                             if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
                         });
                     } else {
-                        const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Khác') === currentGalleryBrand);
+                        const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Asics') === currentGalleryBrand);
                         if(soleSvcs.length === 0) return;
                         if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
                             for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
