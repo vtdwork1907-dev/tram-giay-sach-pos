@@ -923,7 +923,10 @@
                 for (const item of pendingItems) {
                     if (!navigator.onLine) break; 
                     try {
-                        const r2Url = await uploadFileToR2(item.file);
+                        // Xác định xem đây là ảnh vĩnh viễn (Kho ảnh) hay ảnh tạm (Kho đơn)
+                        const isPermanent = item.imgId.startsWith('gal_');
+                        const prefix = isPermanent ? 'perm_gal_' : 'temp_img_';
+                        const r2Url = await uploadFileToR2(item.file, false, prefix);
                         item.status = 'done'; item.r2Url = r2Url;
                         await idbPut('upload_queue', item); 
 
