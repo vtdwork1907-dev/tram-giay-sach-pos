@@ -40,10 +40,7 @@
         }
     </script>
     <style>
-        #viewerImage {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-        }
+        
         @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
         
         body { 
@@ -141,6 +138,11 @@
         #viewerImage, #comparisonBox, #collectPaymentModal > div, #extraFeeModal > div, #addExpenseModal > div {
             will-change: transform, opacity;
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        }
+        #viewerImage, #comparisonBox, .fixed.inset-0 img {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
     </style>
 </head>
