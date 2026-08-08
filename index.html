@@ -804,6 +804,7 @@
         };
 
         let activeCategory = 'ALL'; 
+        let currentGalleryCategory = localStorage.getItem('TRAM_GALLERY_CAT') || 'SOLE'; // Mặc định là Thay đế
         let currentGalleryTab = localStorage.getItem('TRAM_GALLERY_TAB') || 'sole'; 
         let currentGalleryBrand = localStorage.getItem('TRAM_GALLERY_BRAND') || 'Asics';
         let expandedLines = JSON.parse(localStorage.getItem('TRAM_GALLERY_LINES') || '{}');
