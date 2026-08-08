@@ -1736,18 +1736,27 @@
 
         async function renderGalleryLibrary() {
             const grid = document.getElementById('gal-library-grid'); if(!grid) return;
-            grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-10 gap-2"><div class="w-6 h-6 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div><span class="text-[9px] md:text-[10px] text-slate-500 font-bold">Đang tải và ghép ảnh...</span></div>';
+            grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-10 gap-2"><div class="w-6 h-6 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div><span class="text-[9px] md:text-[10px] text-slate-500 font-bold">Đang tải và ghép ảnh tự động...</span></div>';
             
             try {
                 let orderGroups = {};
+                
+                // 1. QUÉT ĐƠN TỰ ĐỘNG THEO DỊCH VỤ ĐANG CHỌN
                 state.orders.forEach(o => {
                     if(!['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status)) return;
                     let groupsForOrder = []; 
                     
                     if(o.shoes && o.shoes.length > 0) {
                         o.shoes.forEach((shoe) => {
-                            const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Asics') === currentGalleryBrand);
-                            if(soleSvcs.length === 0) return;
+                            // Lọc dịch vụ tương ứng với Tab đang mở
+                            const matchedSvcs = shoe.services.filter(svc => {
+                                if (currentGalleryCategory === 'SOLE') {
+                                    return svc.category === 'SOLE' && (svc.brand || 'Asics') === currentGalleryBrand;
+                                }
+                                return svc.category === currentGalleryCategory;
+                            });
+                            
+                            if(matchedSvcs.length === 0) return;
                             
                             const shoeName = shoe.name + (shoe.note ? ` (${shoe.note})` : '');
                             let flatShoeIndexStart = 0;
@@ -1758,7 +1767,6 @@
                             
                             let shoePairs = [];
                             const numImgs = Math.max((shoe.images || []).length, 1);
-                            // Bắt toàn bộ các cặp ảnh của 1 đôi giày
                             for(let k = 0; k < numImgs; k++) {
                                 const b = shoe.images ? shoe.images[k] : null;
                                 const a = o.imagesAfter ? o.imagesAfter[flatShoeIndexStart + k] : null;
@@ -1770,8 +1778,15 @@
                             if (shoePairs.length > 0) groupsForOrder.push(shoePairs);
                         });
                     } else {
-                        const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Asics') === currentGalleryBrand);
-                        if(soleSvcs.length > 0 && o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                        // Áp dụng cho đơn 1 giày
+                        const matchedSvcs = o.items.filter(item => {
+                            if (currentGalleryCategory === 'SOLE') {
+                                return item.category === 'SOLE' && (item.brand || 'Asics') === currentGalleryBrand;
+                            }
+                            return item.category === currentGalleryCategory;
+                        });
+                        
+                        if(matchedSvcs.length > 0 && o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
                             let shoePairs = [];
                             for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
                                 const b = o.images[i]; const a = o.imagesAfter[i];
@@ -1789,17 +1804,28 @@
                     }
                 });
 
-                const manualItems = (state.soleImages || []).filter(img => img.brand === currentGalleryBrand && img.isLibrary);
-                if(Object.keys(orderGroups).length === 0 && manualItems.length === 0) { grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 italic text-[10px] bg-slate-50 rounded-lg border border-slate-200">Chưa có ảnh thay đế nào cho hãng này.</div>`; return; }
+                // 2. LỌC ẢNH ĐÃ LƯU THỦ CÔNG THEO DỊCH VỤ
+                const manualItems = (state.soleImages || []).filter(img => {
+                    if (!img.isLibrary) return false;
+                    const imgCat = img.category || 'SOLE'; // Mặc định dữ liệu cũ là Thay Đế
+                    if (currentGalleryCategory === 'SOLE') {
+                        return imgCat === 'SOLE' && img.brand === currentGalleryBrand;
+                    }
+                    return imgCat === currentGalleryCategory;
+                });
+
+                if(Object.keys(orderGroups).length === 0 && manualItems.length === 0) { 
+                    grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 italic text-[11px] bg-slate-50 rounded-xl border border-slate-200">Chưa có ảnh Before/After nào cho mục này. Hệ thống sẽ tự động ghép khi có đơn hàng Đã Xong.</div>`; 
+                    return; 
+                }
 
                 let html = '';
                 
-                // GIAO DIỆN SIÊU NÉN CHO ĐƠN TỰ ĐỘNG
+                // HIỂN THỊ ẢNH TỰ ĐỘNG
                 for (const orderId in orderGroups) {
                     const grp = orderGroups[orderId];
                     for (const shoePairs of grp.groupsForOrder) {
                         const chunks = [];
-                        // Băm nhỏ thành từng khối tối đa 2 cặp ảnh để đẩy vào thuật toán linh hoạt
                         for (let i = 0; i < shoePairs.length; i += 2) { chunks.push(shoePairs.slice(i, i + 2)); }
                         
                         for (const chunk of chunks) {
@@ -1807,54 +1833,91 @@
                             const shoeNameDisplay = chunk[0].shoeName;
                             
                             html += `
-                            <div class="col-span-1 bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                                <div class="bg-emerald-50 border-b border-emerald-100 p-1 flex justify-between items-center gap-1">
-                                    <h3 class="font-bold text-emerald-900 text-[8px] md:text-[9px] truncate flex-1 leading-none" title="${orderId} - ${escapeHtml(grp.customerName)}"><i class="fa-solid fa-box-open mr-0.5 text-emerald-600"></i> ${orderId} - ${escapeHtml(grp.customerName)}</h3>
-                                    <span class="text-[7px] md:text-[8px] text-emerald-700 font-bold bg-white px-1 py-0.5 rounded shadow-sm border border-emerald-100 truncate max-w-[40%] text-right" title="${escapeHtml(shoeNameDisplay)}">${escapeHtml(shoeNameDisplay)}</span>
+                            <div class="col-span-1 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:border-emerald-300 transition">
+                                <div class="bg-emerald-50 border-b border-emerald-100 p-1.5 flex justify-between items-center gap-1">
+                                    <h3 class="font-bold text-emerald-900 text-[9px] md:text-[10px] truncate flex-1 leading-none"><i class="fa-solid fa-box-open mr-0.5 text-emerald-600"></i> ${orderId} - ${escapeHtml(grp.customerName)}</h3>
+                                    <span class="text-[8px] md:text-[9px] text-emerald-700 font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border border-emerald-100 truncate max-w-[40%] text-right">${escapeHtml(shoeNameDisplay)}</span>
                                 </div>
                                 <div class="relative bg-slate-100 w-full flex-1 flex items-center justify-center p-0.5">
-                                    <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto max-h-[100px] md:max-h-[140px] lg:max-h-[160px] object-contain cursor-pointer hover:opacity-90 transition rounded-sm shadow-sm">
+                                    <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto max-h-[120px] md:max-h-[160px] object-contain cursor-pointer hover:opacity-90 transition rounded-sm shadow-sm">
                                 </div>
-                                <div class="p-1 flex justify-end bg-slate-50 border-t border-slate-100">
-                                    <button onclick="shareImage('${combinedDataUrl}', 'Before/After - ${currentGalleryBrand}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[7px] md:text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
+                                <!-- NÚT LƯU VĨNH VIỄN VÀ CHIA SẺ -->
+                                <div class="p-1.5 flex justify-end gap-1.5 bg-slate-50 border-t border-slate-100">
+                                    <button onclick="saveCombinedToLibrary('${combinedDataUrl}', '${currentGalleryCategory === 'SOLE' ? currentGalleryBrand : 'Chung'}')" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[8px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition active:scale-95 shadow-sm border border-sky-200" title="Lưu ảnh này vĩnh viễn không bị xóa"><i class="fa-solid fa-cloud-arrow-up"></i> Lưu Portfolio</button>
+                                    <button onclick="shareImage('${combinedDataUrl}', 'Before/After')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[8px] md:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
                                 </div>
                             </div>`;
                         }
                     }
                 }
 
-                // GIAO DIỆN SIÊU NÉN CHO ẢNH THỦ CÔNG
+                // HIỂN THỊ ẢNH THỦ CÔNG ĐÃ LƯU VĨNH VIỄN
                 if (manualItems.length > 0) {
-                    html += `<div class="col-span-full bg-slate-100 border border-slate-200 rounded p-1 shadow-sm mt-2 mb-0.5 flex items-center justify-between"><h3 class="font-bold text-slate-700 text-[8px] md:text-[10px] uppercase"><i class="fa-solid fa-upload mr-1 text-slate-500"></i> Ảnh ghép thủ công</h3><span class="text-[7px] font-bold bg-white text-slate-500 px-1 py-0.5 rounded border shadow-sm">${manualItems.length} ảnh</span></div>`;
+                    html += `<div class="col-span-full bg-navy-800 text-white rounded-lg p-2 shadow-sm mt-3 mb-1 flex items-center justify-between"><h3 class="font-bold text-[10px] md:text-xs uppercase tracking-wider"><i class="fa-solid fa-star text-amber-400 mr-1.5"></i> Kho Portfolio Đã Lưu (Vĩnh Viễn)</h3><span class="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded-full">${manualItems.length} ảnh</span></div>`;
                     manualItems.forEach(img => {
                         const src = typeof img.url === 'string' ? img.url : (img.r2Url || img.localUrl);
                         const isUploading = img.status === 'uploading' || img.status === 'pending';
                         const isError = img.status === 'error';
                         html += `
-                        <div class="col-span-1 bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col relative group">
-                            <div class="relative bg-slate-100 w-full h-[100px] md:h-[140px] flex items-center justify-center p-0.5">
+                        <div class="col-span-1 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col relative group">
+                            <div class="relative bg-slate-100 w-full h-[120px] md:h-[160px] flex items-center justify-center p-0.5">
                                 ${isError ? 
-                                    `<div class="text-red-500 flex flex-col items-center"><i class="fa-solid fa-triangle-exclamation text-base mb-1"></i><span class="text-[7px] font-bold">Lỗi ảnh</span></div>` 
+                                    `<div class="text-red-500 flex flex-col items-center"><i class="fa-solid fa-triangle-exclamation text-base mb-1"></i><span class="text-[8px] font-bold">Lỗi ảnh</span></div>` 
                                 : 
                                     `<img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer hover:opacity-90' : 'opacity-50'} transition rounded-sm shadow-sm">`
                                 }
-                                ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-4 h-4 border-2 border-emerald-500 border-t-transparent"></div></div>` : ''}
-                                ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-1 right-1 bg-red-500/90 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-md active:scale-95 transition text-[6px]"><i class="fa-solid fa-times"></i></button>` : ''}
+                                ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-6 h-6 border-2 border-emerald-500 border-t-transparent"></div></div>` : ''}
+                                ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-1.5 right-1.5 bg-red-500/90 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-md active:scale-95 transition text-[8px]"><i class="fa-solid fa-times"></i></button>` : ''}
                             </div>
-                            <div class="p-1 flex flex-col gap-1 bg-slate-50 border-t border-slate-100">
-                                <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Ghi chú..." class="w-full text-[7px] md:text-[8px] font-bold p-0.5 border border-slate-200 rounded outline-none focus:border-emerald-500 bg-white text-center shadow-inner">
-                                ${(!isUploading && !isError) ? `<button onclick="shareImage('${src}', 'Before/After thủ công')" class="w-full bg-emerald-100 text-emerald-800 text-[7px] md:text-[8px] font-bold py-0.5 rounded flex items-center justify-center gap-1 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia sẻ</button>` : ''}
+                            <div class="p-1.5 flex flex-col gap-1.5 bg-slate-50 border-t border-slate-100">
+                                <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Ghi chú thành quả..." class="w-full text-[9px] md:text-[10px] font-bold p-1 border border-slate-200 rounded outline-none focus:border-amber-500 bg-white text-center shadow-inner text-slate-700">
+                                ${(!isUploading && !isError) ? `<button onclick="shareImage('${src}', 'Portfolio Trạm Giày Sạch')" class="w-full bg-amber-100 text-amber-800 hover:bg-amber-200 text-[9px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1.5 shadow-sm border border-amber-200 transition active:scale-95"><i class="fa-solid fa-share-nodes"></i> Chia sẻ với Khách</button>` : ''}
                             </div>
                         </div>`;
                     });
                 }
                 
-                // MẬT ĐỘ LƯỚI KHỦNG: Điện thoại 2 cột nhỏ, Máy tính 4-8 cột siêu mịn
-                grid.className = "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1.5 md:gap-2";
+                grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3";
                 grid.innerHTML = html;
             } catch(error) {
                 console.error("Lỗi vẽ thư viện ảnh:", error);
-                grid.innerHTML = `<div class="col-span-full text-center py-6 text-red-500 text-[10px] bg-red-50 rounded-lg border border-red-200">Đã xảy ra lỗi khi tải ảnh. Vui lòng tải lại trang.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-6 text-red-500 text-[11px] bg-red-50 rounded-xl border border-red-200">Đã xảy ra lỗi khi tải ảnh. Vui lòng tải lại trang.</div>`;
+            }
+        }
+
+        // HÀM LƯU VĨNH VIỄN (TẠO FILE ĐỘC LẬP VÀ ĐẨY LÊN CLOUDFLARE)
+        async function saveCombinedToLibrary(base64Data, brandName) {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'flex';
+            loading.querySelector('.text-sm').innerText = 'Đang lưu ảnh vĩnh viễn...';
+            
+            try {
+                // Tải ảnh lên R2 với tiền tố 'gallery' để Cloudflare KHÔNG XÓA sau 4 tháng
+                const r2Url = await uploadFileToR2(base64Data, 'gallery');
+                
+                const imgId = 'gal_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
+                const newImg = { 
+                    id: imgId, 
+                    brand: brandName, 
+                    category: currentGalleryCategory, // Lưu đúng danh mục Vệ sinh/Tẩy ố/Thay đế
+                    note: 'Lưu từ đơn tự động', 
+                    status: 'done', 
+                    localUrl: r2Url, 
+                    url: r2Url, 
+                    r2Url: r2Url,
+                    isLibrary: true 
+                };
+                
+                if(!state.soleImages) state.soleImages = [];
+                state.soleImages.unshift(newImg);
+                
+                await saveSettingsToDB(); // Đồng bộ lên server
+                renderGalleryLibrary(); // Vẽ lại lưới ảnh
+                showNotification("✅ Đã lưu Portfolio", "Ảnh đã được chuyển xuống mục Vĩnh Viễn an toàn!");
+            } catch (err) {
+                alert("Lỗi khi lưu ảnh: " + err.message);
+            } finally {
+                loading.style.display = 'none';
             }
         }
 
