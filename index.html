@@ -2079,13 +2079,15 @@
                 
                 const exist = shoe.services.find(s => s.id === svc.id);
                 if (exist) exist.qty += 1; 
-                else shoe.services.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED', category: svc.category, brand: 'Khác' });
+                // Đã đổi brand mặc định thành Asics
+                else shoe.services.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED', category: svc.category, brand: 'Asics' });
                 
                 renderMultiShoeList();
             } else {
                 const exist = state.cart.find(c => c.id === svc.id);
                 if(exist) exist.qty += 1; 
-                else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED', category: svc.category, brand: 'Khác' });
+                // Đã đổi brand mặc định thành Asics
+                else state.cart.push({ cartId: Date.now(), id: svc.id, name: svc.name, price: svc.defaultPrice, qty: 1, status: 'RECEIVED', category: svc.category, brand: 'Asics' });
                 
                 renderCart();
             }
