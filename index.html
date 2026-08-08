@@ -59,16 +59,17 @@
         .text-navy-800, .text-sky-600 { color: #083A9C !important; }
         .text-sky-700 { color: #0B192C !important; }
         
-        /* HIỆU ỨNG CHUYỂN TAB: Mượt mà, trượt nhẹ lên và hiện dần */
+        /* TỐI ƯU CHO ĐIỆN THOẠI: Dùng hiệu ứng mờ dần thuần túy (không dịch chuyển) để chống giật lag */
         .tab-content:not(.hidden) {
-            animation: smoothTabFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: mobilePureFade 0.15s ease-out forwards;
+            will-change: opacity;
         }
-        @keyframes smoothTabFade {
-            0% { opacity: 0; transform: translateY(6px); }
-            100% { opacity: 1; transform: translateY(0); }
+        @keyframes mobilePureFade {
+            0% { opacity: 0.2; }
+            100% { opacity: 1; }
         }
 
-        /* THANH ĐIỀU HƯỚNG: Cố định tuyệt đối, KHÔNG CÓ ANIMATION, tránh mọi hiện tượng nháy khung/icon */
+        /* THANH ĐIỀU HƯỚNG: Cố định tuyệt đối, không có bất kỳ animation nào */
         .nav-btn { 
             box-shadow: none !important; 
             background-color: transparent !important; 
