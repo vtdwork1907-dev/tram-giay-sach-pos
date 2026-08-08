@@ -2594,7 +2594,7 @@
         function renderCategoryTabs() {
             const cats = [{k: 'ALL', n: 'Tất Cả'}, {k: 'CLEAN', n: 'Vệ Sinh'}, {k: 'SOLE', n: 'Thay Đế'}, {k: 'STAIN', n: 'Tẩy Ố'}, {k: 'REPAINT', n: 'Repaint'}, {k: 'GLUE', n: 'Dán Đế'}];
             document.getElementById('categoryFilterContainer').innerHTML = cats.map(c => `
-                <button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white' : 'bg-white text-slate-700'} px-3 py-1 md:px-4 md:py-1.5 rounded-lg text-[10px] md:text-[11px] font-bold whitespace-nowrap border border-slate-300 shadow-sm shrink-0">${c.n}</button>
+                <button onclick="filterCategory('${c.k}')" class="cat-btn ${activeCategory === c.k ? 'bg-navy-800 text-white shadow-[0_4px_12px_rgba(8,58,156,0.25)]' : 'bg-white text-slate-500 hover:bg-slate-50 shadow-sm'} px-4 py-2 rounded-full text-[10px] md:text-[11px] font-bold whitespace-nowrap border border-white shrink-0 transition active:scale-95">${c.n}</button>
             `).join('');
         }
         
@@ -2603,10 +2603,12 @@
         function renderServicesGrid() {
             const filtered = activeCategory === 'ALL' ? state.services : state.services.filter(s => s.category === activeCategory);
             document.getElementById('servicesGrid').innerHTML = filtered.map(s => `
-                <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-sky-50 border border-slate-200 rounded-xl md:rounded-2xl cursor-pointer transition flex flex-col items-center justify-center p-1.5 md:p-3 text-center shadow-sm active:scale-95 shrink-0 min-h-[80px] md:min-h-[100px]">
-                    <i class="fa-solid ${s.icon || 'fa-tag'} text-navy-800 text-2xl md:text-4xl mb-1 md:mb-2 opacity-90 transition"></i>
-                    <h4 class="font-bold text-[9px] md:text-xs text-slate-800 leading-tight line-clamp-2">${escapeHtml(s.name)}</h4>
-                    <span class="text-[8px] md:text-[9px] font-semibold text-slate-500 mt-0.5 md:mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
+                <div onclick="addToCart('${s.id}')" class="bg-white hover:bg-blue-50/50 border border-white rounded-[24px] cursor-pointer transition flex flex-col items-center justify-center p-3 text-center shadow-[0_8px_20px_rgba(11,25,44,0.04)] active:scale-95 shrink-0 min-h-[105px]">
+                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mb-2 shadow-inner border border-slate-100">
+                        <i class="fa-solid ${s.icon || 'fa-tag'} text-[#083A9C] text-lg opacity-90 transition"></i>
+                    </div>
+                    <h4 class="font-bold text-[9px] md:text-xs text-slate-700 leading-tight line-clamp-2 px-1">${escapeHtml(s.name)}</h4>
+                    <span class="text-[10px] font-extrabold text-[#083A9C] mt-1">${s.defaultPrice.toLocaleString('vi-VN')} đ</span>
                 </div>`).join('');
         }
 
