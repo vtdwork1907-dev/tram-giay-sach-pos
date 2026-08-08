@@ -3788,7 +3788,15 @@
                         const newO = mapOrderDbToJs(newRec); const idx = state.orders.findIndex(o => o.id === newO.id); 
                         if (idx !== -1) { state.orders[idx] = newO; } else { state.orders.unshift(newO); } 
                     } else if (eventType === 'DELETE') { state.orders = state.orders.filter(o => o.id !== oldRec.id); }
-                    saveLocalState(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
+                    
+                    saveLocalState(); 
+                    renderOrdersTable(); 
+                    renderDashboard(); 
+                    updateReportMetrics(); 
+                    renderCustomersTable();
+                    
+                    // FIX: Bổ sung lệnh re-render Thư viện B/A để ảnh ghép hiện lên ngay lập tức qua Realtime
+                    if (currentGalleryTab === 'library') renderGalleryLibrary();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, payload => {
                     const { eventType, new: newRec, old: oldRec } = payload;
