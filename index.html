@@ -1646,13 +1646,66 @@
             e.target.value = '';
         }
 
-        async function deleteGalleryImage(imgId) {
-            if(!confirm("Bạn muốn xóa ảnh này khỏi kho?")) return;
-            const img = state.soleImages.find(i => i.id === imgId);
-            if(img && img.url && img.url.startsWith('http')) deleteFileFromR2(img.url);
-            state.soleImages = state.soleImages.filter(i => i.id !== imgId);
-            saveLocalState(); saveSettingsToDB();
-            if(img && img.isLibrary) renderGalleryLibrary(); else renderGallerySole();
+        // HÀM XOÁ ẢNH KHO & PORTFOLIO VĨNH VIỄN (ĐÃ FIX LỖI SẬP ĐỒNG BỘ)
+        window.deleteGalleryImage = async function(imgId) {
+            // Ngăn sự kiện bấm nhầm/bấm đúp
+            if (window.event) window.event.stopPropagation();
+            if (!confirm("Bạn chắc chắn muốn xóa ảnh này vĩnh viễn khỏi hệ thống?")) return;
+
+            // Bật màn hình Loading khóa cảm ứng để chờ máy chủ xử lý
+            const loading = document.getElementById('globalLoading');
+            if (loading) {
+                loading.style.display = 'flex';
+                loading.querySelector('.text-sm').innerText = 'Đang xoá khỏi máy chủ...';
+            }
+
+            try {
+                // 1. Tìm ảnh trong bộ nhớ
+                const imgIndex = state.soleImages.findIndex(i => i.id === imgId);
+                if (imgIndex === -1) throw new Error("Không tìm thấy dữ liệu ảnh này!");
+                
+                const img = state.soleImages[imgIndex];
+                
+                // 2. Xóa file cứng trên Cloudflare R2 (Làm ngầm, không ảnh hưởng tốc độ)
+                if (img.url && img.url.startsWith('http')) {
+                    deleteFileFromR2(img.url).catch(e => console.log("Bỏ qua lỗi R2:", e));
+                }
+                
+                // 3. Xóa ảnh khỏi mảng dữ liệu hệ thống
+                state.soleImages.splice(imgIndex, 1);
+                
+                // 4. Lưu cục bộ
+                await saveLocalState();
+
+                // 5. BẮT BUỘC ĐỒNG BỘ LÊN MÁY CHỦ (ÉP CHỜ TỚI KHI XONG)
+                if (navigator.onLine) {
+                    const { error } = await supabaseClient.from('store_settings').upsert({ 
+                        id: 'main', 
+                        qr_config: state.qrConfig, 
+                        logo: state.logo, 
+                        brands: state.brands, 
+                        sole_images: state.soleImages 
+                    });
+                    
+                    // Nếu máy chủ từ chối, lập tức báo lỗi để xử lý
+                    if (error) throw error; 
+                }
+                
+                // 6. Cập nhật lại giao diện ngay tức thì
+                if (currentGalleryTab === 'library') {
+                    renderGalleryLibrary();
+                } else {
+                    renderGallerySole();
+                }
+                
+                showNotification("✅ Thành công", "Đã xoá ảnh vĩnh viễn!");
+            } catch (error) {
+                console.error("Lỗi khi xoá:", error);
+                alert("Máy chủ báo lỗi không thể xoá: " + error.message);
+            } finally {
+                // Tắt màn hình Loading để trả lại giao diện
+                if (loading) loading.style.display = 'none';
+            }
         }
 
         function updateGalleryNote(imgId, val) {
