@@ -1620,7 +1620,7 @@
     uploadGalleryImagesBase(e, true, null, currentGalleryCategory); 
 }
 
-        function uploadGalleryImagesBase(e, isLibrary, lineName) {
+        function uploadGalleryImagesBase(e, isLibrary, lineName, specificCategory = 'SOLE') {
             const files = Array.from(e.target.files); if (files.length === 0) return;
             if(!state.soleImages) state.soleImages = [];
             
@@ -1628,14 +1628,23 @@
                 const imgId = 'gal_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
                 const localUrl = URL.createObjectURL(file);
                 
-                const newImg = { id: imgId, brand: currentGalleryBrand, note: '', status: 'uploading', localUrl: localUrl, url: localUrl, isLibrary: isLibrary };
-                if (!isLibrary && lineName) newImg.line = lineName; // Gán ảnh vào đúng dòng
+                const newImg = { 
+                    id: imgId, 
+                    brand: currentGalleryBrand, 
+                    category: specificCategory, // Thêm trường category
+                    note: '', 
+                    status: 'uploading', 
+                    localUrl: localUrl, 
+                    url: localUrl, 
+                    isLibrary: isLibrary 
+                };
+                if (!isLibrary && lineName) newImg.line = lineName;
                 
                 state.soleImages.unshift(newImg); 
-                compressImage(file).then(compressed => { idbPut('upload_queue', { imgId, file: compressed, localUrl, status: 'pending' }).then(() => processUploadQueue()); });
+                // Sử dụng prefix 'gallery' để cloudflare không xóa
+                compressImage(file).then(compressed => { idbPut('upload_queue', { imgId, file: compressed, localUrl, status: 'pending', prefix: 'gallery' }).then(() => processUploadQueue()); });
             }
             
-            // Tự động mở bung thư mục ra khi vừa tải ảnh lên
             if (!isLibrary) {
                 const targetLine = lineName || 'Chung';
                 expandedLines[targetLine] = true;
