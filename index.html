@@ -2271,8 +2271,7 @@
                     const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
                     
                     s.services.forEach(svc => { 
-                        // FIX: Lấy đúng hãng đã chọn trong dịch vụ (svc.brand) thay vì ép theo s.brand
-                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || s.brand || 'Khác' }); 
+                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || 'Khác' }); 
                     });
                     s.images.forEach(img => { 
                         const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
@@ -2280,13 +2279,13 @@
                     });
                 });
                 if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
-                if(state.shoes.length > 0) mainBrand = state.shoes[0].brand || 'Khác';
+                // Lấy hãng của dịch vụ đầu tiên làm hãng đại diện
+                if(state.shoes.length > 0 && state.shoes[0].services.length > 0) mainBrand = state.shoes[0].services[0].brand || 'Khác';
             } else {
                 if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
-                const singleBrandSelect = document.getElementById('singleShoeBrand');
-                mainBrand = singleBrandSelect ? singleBrandSelect.value : 'Khác';
+                // Bỏ qua tìm kiếm singleShoeBrand, lấy trực tiếp hãng của dịch vụ đầu tiên
+                mainBrand = state.cart[0].brand || 'Khác';
 
-                // FIX: Lấy đúng hãng i.brand trong cart, không được ghi đè bằng mainBrand
                 finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: i.brand || mainBrand }));
                 finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
             }
