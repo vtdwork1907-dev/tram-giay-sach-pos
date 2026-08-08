@@ -4570,8 +4570,8 @@ function updateExpenseCharts() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
-        // =========================================================================
-        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (TỐI ƯU CHỐNG LƯU VẾT/LẶP HÌNH)
+       // =========================================================================
+        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (PHIÊN BẢN CHUẨN ỔN ĐỊNH CHO SAFARI)
         // =========================================================================
         function initSwipeDownToDismiss(modalId, boxId, closeCallback) {
             const modal = document.getElementById(modalId);
@@ -4582,18 +4582,18 @@ function updateExpenseCharts() {
 
             const onTouchStart = (e) => {
                 isDragging = true;
-                startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                startY = e.touches ? e.touches[0].clientY : e.clientY;
                 currentY = startY;
                 box.style.transition = 'none';
             };
 
             const onTouchMove = (e) => {
                 if (!isDragging) return;
-                currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                currentY = e.touches ? e.touches[0].clientY : e.clientY;
                 const deltaY = currentY - startY;
                 
+                // Chỉ xử lý khi người dùng kéo xuống dưới
                 if (deltaY > 0) {
-                    // Sử dụng translate3d để ép GPU xử lý mượt, ngăn chặn hiện tượng lặp khung hình
                     box.style.transform = `translate3d(0, ${deltaY}px, 0)`;
                     const opacity = Math.max(0.2, 1 - deltaY / 350);
                     modal.style.opacity = opacity;
@@ -4609,31 +4609,42 @@ function updateExpenseCharts() {
                 modal.style.transition = 'opacity 0.25s ease';
 
                 if (deltaY > 90) {
-                    // Kéo đủ lực -> Trượt hẳn xuống dưới và làm mờ
+                    // Vuốt đủ sâu -> Trượt hẳn xuống và đóng modal mượt mà
                     box.style.transform = `translate3d(0, 100vh, 0)`;
                     modal.style.opacity = '0';
                     setTimeout(() => {
-                        // QUAN TRỌNG: Xóa sạch inline style để xóa bỏ bộ đệm layer cũ, không bị lưu hình ảnh
                         box.style.transform = '';
                         box.style.opacity = '';
                         modal.style.opacity = '';
                         closeCallback();
                     }, 250);
                 } else {
-                    // Kéo chưa đủ -> Bật trở lại vị trí cũ
+                    // Vuốt chưa đủ -> Bật trả về vị trí cũ
                     box.style.transform = 'translate3d(0, 0, 0)';
                     modal.style.opacity = '1';
                 }
             };
 
-            box.addEventListener('touchstart', onTouchStart, { passive: true });
-            box.addEventListener('touchmove', onTouchMove, { passive: true });
-            box.addEventListener('touchend', onTouchEnd);
+            // Gắn sự kiện an toàn cho cả cảm ứng điện thoại và chuột máy tính
+            box.ontouchstart = onTouchStart;
+            box.ontouchmove = onTouchMove;
+            box.ontouchend = onTouchEnd;
 
-            box.addEventListener('mousedown', onTouchStart);
-            window.addEventListener('mousemove', onTouchMove);
-            window.addEventListener('mouseup', onTouchEnd);
+            box.onmousedown = onTouchStart;
+            window.onmousemove = onTouchMove;
+            window.onmouseup = onTouchEnd;
         }
+
+        // TỰ ĐỘNG KÍCH HOẠT SAU KHI GIAO DIỆN TẢI XONG
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                initSwipeDownToDismiss('imageViewerModal', 'viewerImage', closeImageViewer);
+                initSwipeDownToDismiss('comparisonModal', 'comparisonBox', closeComparisonModal);
+                initSwipeDownToDismiss('collectPaymentModal', 'collectPaymentBox', closeCollectPaymentModal);
+                initSwipeDownToDismiss('extraFeeModal', 'extraFeeBox', closeExtraFeeModal);
+                initSwipeDownToDismiss('addExpenseModal', 'addExpenseBox', closeExpenseModal);
+            }, 500);
+        });
     </script>
 </body>
 </html>
