@@ -794,8 +794,9 @@
         };
 
         let activeCategory = 'ALL'; 
-        let currentGalleryTab = 'sole'; // 'sole' hoặc 'library'
-        let currentGalleryBrand = 'Asics';
+        let currentGalleryTab = localStorage.getItem('TRAM_GALLERY_TAB') || 'sole'; 
+        let currentGalleryBrand = localStorage.getItem('TRAM_GALLERY_BRAND') || 'Asics';
+        let expandedLines = JSON.parse(localStorage.getItem('TRAM_GALLERY_LINES') || '{}');
         
         let barChartInst = null; let pieChartInst = null; let expReportPieInst = null; let expTabPieInst = null;
 
