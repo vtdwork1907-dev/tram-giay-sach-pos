@@ -1083,9 +1083,9 @@
             return new Promise(async (resolve, reject) => {
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) throw new Error("Chưa đăng nhập.");
+                    if (!session) throw new Error("Chưa đăng nhập. HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
 
-                    // FIX 1: Dùng Blob thay vì File để tương thích hoàn hảo với nhân WebKit của macOS
+                    // Dùng Blob thay vì File để tương thích hoàn hảo với nhân WebKit của macOS
                     let arr = base64Data.split(','), mime = arr[0].match(/:(.*?);/)[1];
                     let bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
                     while(n--) { u8arr[n] = bstr.charCodeAt(n); }
@@ -1101,13 +1101,18 @@
                         body: formData 
                     });
                     
-                    // FIX 2: Xử lý an toàn nếu Server Cloudflare trả về trang HTML báo lỗi (Ngăn chặn Crash ngầm)
                     if (!response.ok) {
+                        // FIX: Xử lý riêng lỗi 401 để báo tiếng Việt cho nhân viên dễ hiểu
+                        if (response.status === 401) {
+                            throw new Error("Phiên đăng nhập đã quá hạn (Do treo máy lâu). HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
+                        }
+                        
                         const errText = await response.text();
                         throw new Error(`HTTP ${response.status} - ${errText.includes('<html') ? 'Bị Cloudflare chặn bảo mật' : errText}`);
                     }
                     
-                    const data = JSON.parse(await response.text());
+                    // Dùng .json() an toàn thay vì parse text
+                    const data = await response.json();
                     if (data.error) throw new Error(data.error);
                     resolve(data.url);
                 } catch(err) { 
