@@ -716,7 +716,13 @@
         // =========================================================================
         const SUPABASE_URL = 'https://hlmpqachgklowhozqbqj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBxYWNoZ2tsb3dob3pxYnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTA3NTksImV4cCI6MjEwMTIyNjc1OX0.9ZBOIqVvgvcPLDrIf_d4EV3KAlyPQnEsVTG3vU4hlAI';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        autoRefreshToken: true, // Tự động làm mới thẻ thông hành ngầm
+        persistSession: true,   // Ép trình duyệt phải lưu mã đăng nhập vĩnh viễn
+        detectSessionInUrl: false
+    }
+});
         const WORKER_API_URL = 'https://tramgiaysach-media-api.vtdwork1907.workers.dev';
 
         // =========================================================================
