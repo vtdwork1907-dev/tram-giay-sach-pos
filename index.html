@@ -4263,24 +4263,17 @@ function updateExpenseCharts() {
             let ckRev = 0; let tmRev = 0;
 
             state.orders.forEach(o => {
-                // 1. DOANH THU & DOANH SỐ (Giữ nguyên tính theo ngày tạo đơn để không hỏng báo cáo kế toán)
                 if(o.date && o.date.startsWith(todayStr)) {
                     const finalTotal = o.total + (o.extraFeeVal || 0);
                     grossToday += finalTotal; 
-                    
                     if(o.status === 'PAID' || o.status === 'DELIVERED') {
                         revToday += finalTotal;
                         if (o.paymentMethod === 'CASH') tmRev += finalTotal;
                         else ckRev += finalTotal;
                     }
-                    
-                    // Riêng mục 'Đã trả khách' vẫn giới hạn đếm những đơn tạo hôm nay 
-                    // (Để tránh việc đếm toàn hệ thống khiến con số cộng dồn lên hàng ngàn đơn cũ)
                     if(o.status === 'DELIVERED' || o.status === 'PAID') cDelivered++;
                 }
                 
-                // 2. BÁO CÁO CÔNG VIỆC TỒN ĐỌNG (ĐẾM TOÀN HỆ THỐNG)
-                // Các đơn cũ đang tồn đọng sẽ được đếm liên tục bất kể ngày tạo. 
                 if(o.status === 'RECEIVED') cReceived++; 
                 if(o.status === 'PROCESSING') cProcessing++;
                 if(o.status === 'PROCESSED') cProcessed++; 
@@ -4312,32 +4305,42 @@ function updateExpenseCharts() {
                 const finalTotal = o.total + (o.extraFeeVal || 0);
 
                 let imgHtml = '';
-                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
-                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded border border-sky-200 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${validAfterImages.length}</span>`;
+                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-1 rounded-full border border-slate-200 inline-block" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5"></i>${o.images.length}</span>`;
+                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-2 py-1 rounded-full border border-sky-200 inline-block ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5"></i>${validAfterImages.length}</span>`;
                 
                 let actionHtml = '';
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[9px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[9px] md:text-xs font-bold bg-[#083A9C] text-white px-2 py-1.5 md:py-2 rounded-full shadow-sm active:scale-95 flex items-center justify-center gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`;
                 else actionHtml += `<div class="text-[9px] md:text-xs text-slate-400 italic text-center w-full py-1">Không ảnh</div>`;
-                actionHtml += `<label class="text-[9px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                actionHtml += `<label class="text-[9px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 md:py-2 rounded-full shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp<input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
 
                 const servicesBadgeHtml = o.items.map(i => {
-                    const st = i.status || 'RECEIVED'; let badgeClass = 'bg-slate-100 border-slate-300 text-slate-700'; let iconHtml = '<i class="fa-solid fa-box mr-1 opacity-60"></i>';
-                    if (st === 'PROCESSING') { badgeClass = 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i>'; } 
-                    else if (st === 'PROCESSED') { badgeClass = 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold shadow-sm'; iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>'; }
+                    const st = i.status || 'RECEIVED'; 
+                    let badgeClass = 'bg-slate-100 border-slate-200 text-slate-700'; 
+                    let iconHtml = '<i class="fa-solid fa-box mr-1 text-slate-400"></i>';
+                    
+                    if (st === 'PROCESSING') { 
+                        badgeClass = 'bg-gradient-to-r from-amber-400 to-amber-500 border-none text-white shadow-[0_4px_10px_rgba(245,158,11,0.3)]'; 
+                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-50"></i>'; 
+                    } else if (st === 'PROCESSED') { 
+                        badgeClass = 'bg-gradient-to-r from-emerald-400 to-emerald-500 border-none text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]'; 
+                        iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-50"></i>'; 
+                    }
                     const itemIdKey = i.cartId || i.id;
-                    return `<span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} border px-1.5 py-0.5 rounded mr-1 mb-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-xs" title="Bấm để chuyển trạng thái">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>`;
+                    return `<span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} px-2.5 py-1.5 rounded-full mr-1 mb-1 inline-block cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-xs font-bold" title="Bấm để chuyển trạng thái">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>`;
                 }).join('');
 
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-[11px] md:text-sm">${finalTotal.toLocaleString()} đ</div>`;
                 if (o.extraFeeVal) totalCellHtml += `<div class="text-[9px] ${o.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} italic font-bold">Phát sinh: ${o.extraFeeVal.toLocaleString()}đ</div>`;
                 
                 if (isUnpaid) {
-                    totalCellHtml += `<div class="flex gap-1 mt-1"><button onclick="openCollectPaymentModal('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white px-1 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> CK</button>`;
-                    totalCellHtml += `<button onclick="confirmCashPayment('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-1 py-1 rounded shadow-sm active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> Tiền Mặt</button></div>`;
+                    totalCellHtml += `<div class="flex gap-1.5 mt-2">
+                        <button onclick="openCollectPaymentModal('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-1.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(14,165,233,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> CK</button>
+                        <button onclick="confirmCashPayment('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white px-1.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(16,185,129,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> T.Mặt</button>
+                    </div>`;
                 }
 
-                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-1.5 w-full text-[9px] md:text-[10px] font-bold bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-700 p-1 md:p-1 rounded-lg outline-none flex items-center justify-center gap-1 transition shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Phát sinh</button>`;
-                let noteHtml = showNote ? `<div class="text-[9px] md:text-xs text-red-600 font-bold italic mb-1 whitespace-normal leading-tight max-w-[120px] md:max-w-[200px]"><i class="fa-solid fa-comment-dots mr-1"></i>${escapeHtml(o.customer.note)}</div>` : '';
+                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-2 w-full text-[9px] md:text-[10px] font-bold bg-white text-slate-600 px-2 py-1.5 rounded-full border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-file-invoice-dollar text-slate-400"></i> Phát sinh</button>`;
+                let noteHtml = showNote ? `<div class="text-[9px] md:text-xs text-red-600 font-bold italic mb-1.5 whitespace-normal leading-tight max-w-[120px] md:max-w-[200px]"><i class="fa-solid fa-comment-dots mr-1"></i>${escapeHtml(o.customer.note)}</div>` : '';
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
@@ -4355,10 +4358,10 @@ function updateExpenseCharts() {
                             <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
                         </div>
                     </td>
-                    <td class="p-2 md:p-3 align-top whitespace-normal min-w-[100px] md:min-w-[180px]">${noteHtml}<div class="mb-1">${imgHtml}</div><div class="flex w-full">${actionHtml}</div></td>
+                    <td class="p-2 md:p-3 align-top whitespace-normal min-w-[100px] md:min-w-[180px]">${noteHtml}<div class="mb-1.5">${imgHtml}</div><div class="flex w-full">${actionHtml}</div></td>
                     <td class="p-2 md:p-3 align-top whitespace-normal min-w-[130px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
                     <td class="p-2 md:p-3 align-top min-w-[70px] md:min-w-[100px]">${totalCellHtml}</td>
-                    <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1.5 rounded border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1.5 rounded-full border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
                 </tr>`;
             };
 
