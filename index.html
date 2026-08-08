@@ -2366,18 +2366,18 @@
         // 12. XÁC THỰC BẢO MẬT & QUYỀN (AUTH & ROLE)
         // =========================================================================
         async function checkAutoLogin() {
-            const loading = document.getElementById('globalLoading');
-            if (loading) loading.style.display = 'flex';
+    const loading = document.getElementById('globalLoading');
+    // Đã loại bỏ dòng: if (loading) loading.style.display = 'flex'; (vì CSS đã hiển thị sẵn, tránh gây nháy lại)
 
-            if (!navigator.onLine) {
-                state.currentUser = { id: 'offline', name: 'Nhân Viên (Offline)', role: 'manager' };
-                const authScreen = document.getElementById('authScreen');
-                if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-                document.getElementById('currentUserDisplay').innerText = "Offline Mode"; 
-                changeRole('manager');
-                if (loading) loading.style.display = 'none';
-                return;
-            }
+    if (!navigator.onLine) {
+        state.currentUser = { id: 'offline', name: 'Nhân Viên (Offline)', role: 'manager' };
+        const authScreen = document.getElementById('authScreen');
+        if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
+        document.getElementById('currentUserDisplay').innerText = "Offline Mode"; 
+        changeRole('manager');
+        if (loading) loading.style.display = 'none';
+        return;
+    }
 
             try {
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
