@@ -3300,7 +3300,7 @@
                 const summaryParts = []; 
                 for (const cat in catMap) { 
                     if (pendingCounts[cat] > 0) {
-                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2 py-0.5 rounded-md shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[12px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`); 
+                        summaryParts.push(`<span class="font-bold uppercase whitespace-nowrap bg-white px-2.5 py-1 rounded-full shadow-sm border border-amber-200">${catMap[cat]}: <span class="text-red-600 text-[12px] font-extrabold ml-0.5">${pendingCounts[cat]}</span></span>`); 
                     }
                 }
                 
@@ -3361,13 +3361,13 @@
                 const finalTotal = o.total + (o.extraFeeVal || 0);
 
                 let imgHtml = ''; 
-                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-1 py-0.5 md:px-1.5 md:py-1 rounded border border-slate-200 inline-flex items-center" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5 md:mr-1"></i>${o.images.length}</span>`; 
-                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-1 py-0.5 md:px-1.5 md:py-1 rounded border border-sky-200 inline-flex items-center ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5 md:mr-1"></i>${validAfterImages.length}</span>`;
+                if (hasBefore) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-1 rounded-full border border-slate-200 inline-flex items-center" title="Ảnh lúc nhận"><i class="fa-solid fa-camera mr-0.5 md:mr-1"></i>${o.images.length}</span>`; 
+                if (hasAfter) imgHtml += `<span class="text-[9px] md:text-[11px] font-semibold bg-sky-100 text-sky-700 px-2 py-1 rounded-full border border-sky-200 inline-flex items-center ml-1" title="Ảnh hoàn thiện"><i class="fa-solid fa-check mr-0.5 md:mr-1"></i>${validAfterImages.length}</span>`;
                 
                 let actionHtml = ''; 
-                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-navy-800 text-white px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`; 
-                else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`; 
-                actionHtml += `<label class="text-[10px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-0.5 md:gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp <span class="hidden md:inline">Sau</span><input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
+                if (hasBefore || hasAfter) actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-[#083A9C] text-white px-2 py-1.5 md:py-2 rounded-full shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-eye"></i> Xem</button>`; 
+                else actionHtml += `<button onclick="openComparison('${o.id}')" class="text-[10px] md:text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 md:py-2 rounded-full shadow-sm active:scale-95 flex items-center justify-center gap-0.5 md:gap-1 flex-1"><i class="fa-solid fa-plus"></i> Ảnh Sau</button>`; 
+                actionHtml += `<label class="text-[10px] md:text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1.5 md:py-2 rounded-full shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-0.5 md:gap-1 transition flex-1 ml-1"><i class="fa-solid fa-camera-rotate"></i> Chụp <span class="hidden md:inline">Sau</span><input type="file" accept="image/*" multiple onchange="uploadAfterImage(event, '${o.id}')" class="hidden"></label>`;
                 
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-xs md:text-sm">${finalTotal.toLocaleString()} đ</div>`; 
                 if (o.extraFeeVal) totalCellHtml += `<div class="text-[9px] ${o.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} italic font-bold">Phát sinh: ${o.extraFeeVal.toLocaleString()}đ</div>`;
@@ -3379,10 +3379,10 @@
                     </div>`; 
                 }
 
-                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-2 w-full text-[9px] md:text-[10px] font-bold bg-white text-slate-600 px-2 py-2 rounded-full border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-file-invoice-dollar text-slate-400"></i> Phát sinh</button>`;
-                if (o.customer.phone && o.customer.phone.trim() !== '') actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${escapeHtml(o.customer.name)}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-2 py-1 md:py-1.5 rounded-lg transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-comment-sms"></i> Zalo</button>`; 
-                actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-2 py-1 md:py-1.5 rounded-lg transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-link"></i> Link KH</button>`; 
-                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs md:text-sm p-0.5 md:p-1 mt-0.5 transition w-full text-right"><i class="fa-solid fa-trash"></i></button></div>`;
+                let actionColumn = `<div class="flex flex-col gap-1.5 items-end mt-0.5">`; 
+                if (o.customer.phone && o.customer.phone.trim() !== '') actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${escapeHtml(o.customer.name)}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-2 py-1.5 md:py-2 rounded-full transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-comment-sms"></i> Zalo</button>`; 
+                actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-2 py-1.5 md:py-2 rounded-full transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-link"></i> Link KH</button>`; 
+                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs md:text-sm p-1 mt-1 transition w-full text-right"><i class="fa-solid fa-trash"></i></button></div>`;
                 
                 const displayItems = serviceFilter === 'ALL' ? o.items : o.items.filter(item => { const svcInfo = state.services.find(s => s.id === item.id); return svcInfo && svcInfo.category === serviceFilter; }); 
                 const isPaidOrDeliveredFilter = (statusFilter === 'DELIVERED' || statusFilter === 'PAID');
@@ -3394,10 +3394,10 @@
                     
                     if (st === 'PROCESSING') { 
                         badgeClass = 'bg-gradient-to-r from-amber-400 to-amber-500 border-none text-white shadow-[0_4px_10px_rgba(245,158,11,0.3)]'; 
-                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1"></i>'; 
+                        iconHtml = '<i class="fa-solid fa-clock-rotate-left mr-1 text-amber-50"></i>'; 
                     } else if (st === 'PROCESSED') { 
                         badgeClass = 'bg-gradient-to-r from-emerald-400 to-emerald-500 border-none text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]'; 
-                        iconHtml = '<i class="fa-solid fa-circle-check mr-1"></i>'; 
+                        iconHtml = '<i class="fa-solid fa-circle-check mr-1 text-emerald-50"></i>'; 
                     }
                     
                     const itemIdKey = i.cartId || i.id; 
@@ -3410,17 +3410,17 @@
                         if (!i.warrantyDate) i.warrantyDate = calculate3MonthsLater(o.date); 
                         const isExpired = i.warrantyDate < new Date().toISOString().split('T')[0]; 
                         const warrantyBoxClass = isExpired ? 'bg-red-50 border-red-200 text-red-700' : 'bg-indigo-50 border-indigo-200 text-indigo-800'; 
-                        warrantyHtml = `<div class="mt-1.5 p-1 px-2 rounded-full border ${warrantyBoxClass} text-[9px] md:text-[10px] inline-flex items-center gap-1 shadow-sm"><span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span><input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent font-mono font-bold outline-none text-[9px] md:text-[10px] cursor-pointer"></div>`; 
+                        warrantyHtml = `<div class="mt-1.5 p-1 px-2.5 rounded-full border ${warrantyBoxClass} text-[9px] md:text-[10px] inline-flex items-center gap-1 shadow-sm"><span class="font-bold whitespace-nowrap"><i class="fa-solid fa-shield-halved"></i> ${isExpired ? 'Hết BH:' : 'BH đến:'}</span><input type="date" value="${i.warrantyDate}" onchange="updateItemWarrantyDate('${o.id}', '${itemIdKey}', this.value)" class="bg-transparent font-mono font-bold outline-none text-[9px] md:text-[10px] cursor-pointer"></div>`; 
                     }
                     
-                    return `<div class="mb-1.5"><span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} px-2.5 py-1 md:px-3 md:py-1.5 rounded-full mr-1 inline-flex items-center cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-[11px] font-bold">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>${warrantyHtml}</div>`;
+                    return `<div class="mb-2"><span onclick="cycleItemStatus('${o.id}', '${itemIdKey}')" class="${badgeClass} px-3 py-1.5 md:px-3.5 md:py-2 rounded-full mr-1.5 inline-flex items-center cursor-pointer transition hover:scale-105 select-none text-[9px] md:text-[11px] font-bold">${iconHtml}${escapeHtml(i.name)} (x${i.qty})</span>${warrantyHtml}</div>`;
                 }).join('');
 
-                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-1.5 w-full text-[9px] md:text-[11px] font-bold bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-700 p-1 md:p-1.5 rounded-lg outline-none flex items-center justify-center gap-1 transition shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Phát sinh</button>`;
+                let extraFeeBtn = `<button onclick="openExtraFeeModal('${o.id}')" class="mt-2 w-full text-[9px] md:text-[10px] font-bold bg-white text-slate-600 px-2 py-2 rounded-full border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-file-invoice-dollar text-slate-400"></i> Phát sinh</button>`;
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-2 md:p-3 text-center align-top pt-2.5 md:pt-3"><input type="checkbox" class="order-select-cb w-3.5 h-3.5 md:w-4 md:h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
+                    <td class="p-2 md:p-3 text-center align-top pt-2.5 md:pt-3"><input type="checkbox" class="order-select-cb w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer" value="${o.id}" onchange="updateBulkSelectionUI()"></td>
                     <td class="hidden md:table-cell p-2 md:p-3 align-top min-w-[85px] md:min-w-[110px]"><span class="font-mono text-sky-700 font-bold text-[11px] md:text-sm">${o.id}</span><br><span class="text-[8px] md:text-xs text-slate-500 font-mono">${tStr}<span class="hidden md:inline"> - </span>${dStr}</span></td>
                     <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[130px] group">
                         <div class="flex justify-between items-start gap-1">
@@ -3435,10 +3435,10 @@
                             <span class="text-[9px] text-slate-500 font-mono block mt-0.5">${tStr} - ${dStr}</span>
                         </div>
                     </td>
-                    <td class="p-2 md:p-3 align-top min-w-[120px] md:min-w-[160px]"><div class="text-[10px] md:text-xs text-slate-600 italic mb-1 whitespace-normal leading-tight" title="${escapeHtml(o.customer.note || '')}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${escapeHtml(o.customer.note || 'Không có')}</div><div class="flex items-center gap-1 mt-1 mb-1 flex-wrap">${imgHtml}</div><div class="flex w-full items-center">${actionHtml}</div></td>
+                    <td class="p-2 md:p-3 align-top min-w-[120px] md:min-w-[160px]"><div class="text-[10px] md:text-xs text-slate-600 italic mb-1.5 whitespace-normal leading-tight" title="${escapeHtml(o.customer.note || '')}"><i class="fa-solid fa-comment-dots text-slate-400 mr-1"></i>${escapeHtml(o.customer.note || 'Không có')}</div><div class="flex items-center gap-1 mt-1 mb-1.5 flex-wrap">${imgHtml}</div><div class="flex w-full items-center">${actionHtml}</div></td>
                     <td class="p-2 md:p-3 text-[10px] md:text-xs whitespace-normal align-top min-w-[140px] md:min-w-[200px] leading-tight">${servicesBadgeHtml}</td>
                     <td class="p-2 md:p-3 align-top min-w-[80px] md:min-w-[100px]">${totalCellHtml}</td>
-                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1 md:p-1.5 rounded-lg border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
+                    <td class="p-2 md:p-3 align-top min-w-[90px] md:min-w-[120px]"><select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full text-[10px] md:text-xs font-bold p-1.5 md:p-2 rounded-full border outline-none ${clrStatus[o.status]}"><option value="RECEIVED" ${o.status==='RECEIVED'?'selected':''}>Đã nhận</option><option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Đang làm</option><option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>Đã xong</option><option value="PAID" ${o.status==='PAID'?'selected':''}>Đã thu</option><option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>Đã trả</option></select>${extraFeeBtn}</td>
                     <td class="p-2 md:p-3 text-right align-top min-w-[80px] md:min-w-[100px]">${actionColumn}</td>
                 </tr>`;
             }).join('');
@@ -3459,7 +3459,6 @@
             if (prevBtn) prevBtn.disabled = currentOrderPage <= 1; 
             if (nextBtn) nextBtn.disabled = currentOrderPage >= totalPages;
         }
-
         // CÁC THAO TÁC KHÁC TRONG KHO ĐƠN
         function debouncedSearchOrder() { 
             clearTimeout(searchTimeout); 
