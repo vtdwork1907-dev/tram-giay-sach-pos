@@ -4343,10 +4343,11 @@ function updateExpenseCharts() {
                 let totalCellHtml = `<div class="font-bold text-slate-800 text-[11px] md:text-sm">${finalTotal.toLocaleString()} đ</div>`;
                 if (o.extraFeeVal) totalCellHtml += `<div class="text-[9px] ${o.extraFeeVal > 0 ? 'text-amber-600' : 'text-emerald-600'} italic font-bold">Phát sinh: ${o.extraFeeVal.toLocaleString()}đ</div>`;
                 
+                // ĐỒNG BỘ NÚT THANH TOÁN DỌC CHO CẢ TAB TRANG CHỦ
                 if (isUnpaid) {
-                    totalCellHtml += `<div class="flex gap-1.5 mt-2">
-                        <button onclick="openCollectPaymentModal('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-1.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(14,165,233,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> CK</button>
-                        <button onclick="confirmCashPayment('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white px-1.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(16,185,129,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> T.Mặt</button>
+                    totalCellHtml += `<div class="flex flex-col gap-1.5 mt-2">
+                        <button onclick="openCollectPaymentModal('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-1.5.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(14,165,233,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-building-columns"></i> Chuyển khoản</button>
+                        <button onclick="confirmCashPayment('${o.id}')" class="w-full text-[9px] md:text-[10px] font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white px-1.5.5 py-1.5 rounded-full shadow-[0_4px_10px_rgba(16,185,129,0.3)] active:scale-95 flex items-center justify-center gap-1 transition"><i class="fa-solid fa-money-bill-wave"></i> Tiền mặt</button>
                     </div>`;
                 }
 
