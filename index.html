@@ -764,6 +764,12 @@
     </div>
     <!-- SCRIPT CHÍNH -->
     <script>
+        function setSafeText(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.innerText = value;
+    }
+}
         // =========================================================================
         // 1. ĐĂNG KÝ SERVICE WORKER (OFFLINE-FIRST PWA)
         // =========================================================================
