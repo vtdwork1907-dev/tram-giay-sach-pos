@@ -2272,7 +2272,8 @@
                     const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
                     
                     s.services.forEach(svc => { 
-                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: s.brand || 'Khác' }); 
+                        // FIX: Lấy đúng hãng đã chọn trong dịch vụ (svc.brand) thay vì ép theo s.brand
+                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || s.brand || 'Khác' }); 
                     });
                     s.images.forEach(img => { 
                         const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
@@ -2286,7 +2287,8 @@
                 const singleBrandSelect = document.getElementById('singleShoeBrand');
                 mainBrand = singleBrandSelect ? singleBrandSelect.value : 'Khác';
 
-                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: mainBrand }));
+                // FIX: Lấy đúng hãng i.brand trong cart, không được ghi đè bằng mainBrand
+                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: i.brand || mainBrand }));
                 finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
             }
             
