@@ -4564,6 +4564,85 @@ function updateExpenseCharts() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
+        // =========================================================================
+        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (SWIPE-TO-DISMISS) CHO MỌI MODAL
+        // =========================================================================
+        function initSwipeDownToDismiss(modalId, boxId, closeCallback) {
+            const modal = document.getElementById(modalId);
+            const box = document.getElementById(boxId);
+            if (!modal || !box) return;
+
+            let startY = 0, currentY = 0, isDragging = false;
+
+            const onTouchStart = (e) => {
+                isDragging = true;
+                startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                currentY = startY;
+                box.style.transition = 'none';
+            };
+
+            const onTouchMove = (e) => {
+                if (!isDragging) return;
+                currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                const deltaY = currentY - startY;
+                
+                // Chỉ cho phép kéo xuống dưới
+                if (deltaY > 0) {
+                    box.style.transform = `translateY(${deltaY}px)`;
+                    const opacity = Math.max(0.3, 1 - deltaY / 400);
+                    modal.style.backgroundColor = `rgba(15, 23, 42, ${0.9 * opacity})`;
+                }
+            };
+
+            const onTouchEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const deltaY = currentY - startY;
+
+                // Bật lại hiệu ứng mượt khi nhả tay
+                box.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease';
+                modal.style.transition = 'background-color 0.25s ease';
+
+                if (deltaY > 100) {
+                    // Nếu kéo xuống quá 100px -> Thực hiện hiệu ứng bay hẳn xuống dưới rồi đóng
+                    box.style.transform = `translateY(100vh)`;
+                    box.style.opacity = '0';
+                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0)';
+                    setTimeout(() => {
+                        box.style.transform = '';
+                        box.style.opacity = '';
+                        modal.style.backgroundColor = '';
+                        closeCallback();
+                    }, 250);
+                } else {
+                    // Kéo nhẹ chưa đủ lực -> Bật trả về vị trí cũ một cách mượt mà
+                    box.style.transform = 'translateY(0px)';
+                    modal.style.backgroundColor = '';
+                }
+            };
+
+            box.addEventListener('touchstart', onTouchStart, { passive: true });
+            box.addEventListener('touchmove', onTouchMove, { passive: true });
+            box.addEventListener('touchend', onTouchEnd);
+
+            box.addEventListener('mousedown', onTouchStart);
+            window.addEventListener('mousemove', onTouchMove);
+            window.addEventListener('mouseup', onTouchEnd);
+        }
+
+        // KÍCH HOẠT CHO TẤT CẢ CÁC MODAL TRONG HỆ THỐNG
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Khung xem ảnh phóng to
+            initSwipeDownToDismiss('imageViewerModal', 'viewerImage', closeImageViewer);
+            // 2. Khung so sánh Before / After
+            initSwipeDownToDismiss('comparisonModal', 'comparisonBox', closeComparisonModal);
+            // 3. Khung quét QR chuyển khoản
+            initSwipeDownToDismiss('collectPaymentModal', 'collectPaymentBox', closeCollectPaymentModal);
+            // 4. Khung thêm phát sinh tiền
+            initSwipeDownToDismiss('extraFeeModal', 'extraFeeBox', closeExtraFeeModal);
+            // 5. Khung thêm khoản chi
+            initSwipeDownToDismiss('addExpenseModal', 'addExpenseBox', closeExpenseModal);
+        });
     </script>
 </body>
 </html>
