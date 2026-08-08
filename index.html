@@ -1140,6 +1140,27 @@
                 }
             });
         }
+        async function deleteFileFromR2(fileUrl) {
+            try {
+                if (!navigator.onLine) return; 
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) throw new Error("Chưa đăng nhập");
+                
+                const response = await fetch(`${WORKER_API_URL}/delete`, { 
+                    method: 'DELETE', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${session.access_token}` 
+                    }, 
+                    body: JSON.stringify({ key: fileUrl }) 
+                });
+
+                if (!response.ok) throw new Error("Lỗi khi kết nối với Cloudflare Worker");
+            } catch (e) { 
+                console.error("Lỗi xóa file trên R2:", e); 
+                throw e; 
+            }
+        }
         // =========================================================================
         // 9. CÁC HÀM FORMAT DỮ LIỆU & BỔ TRỢ (HELPERS)
         // =========================================================================
