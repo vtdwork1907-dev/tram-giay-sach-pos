@@ -1400,9 +1400,57 @@
         // =========================================================================
         // 11.5. QUẢN LÝ KHO ẢNH (GALLERY) & GHÉP ẢNH TỰ ĐỘNG
         // =========================================================================
-        function switchGalleryTab(tab) {
+        // RENDERING TABS DỊCH VỤ CHÍNH TRONG KHO ẢNH
+        function renderGalleryCategoryTabs() {
+            const cats = [
+                { id: 'SOLE', name: '👟 Thay Đế' },
+                { id: 'CLEAN', name: '🧼 Vệ Sinh' },
+                { id: 'STAIN', name: '💧 Tẩy Ố' },
+                { id: 'REPAINT', name: '🎨 Repaint' },
+                { id: 'GLUE', name: '🖌️ Dán Đế' }
+            ];
+            
+            const container = document.getElementById('galleryCategoryTabs');
+            if(!container) return;
+            
+            container.innerHTML = cats.map(c => `
+                <button onclick="switchGalleryCategory('${c.id}')" class="${currentGalleryCategory === c.id ? 'bg-navy-800 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'} border px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95">
+                    ${c.name}
+                </button>
+            `).join('');
+        }
+
+        // CHUYỂN ĐỔI GIỮA CÁC DỊCH VỤ (THAY ĐẾ / VỆ SINH / TẨY Ố...)
+        function switchGalleryCategory(catId) {
+            currentGalleryCategory = catId;
+            localStorage.setItem('TRAM_GALLERY_CAT', catId);
+            renderGalleryCategoryTabs();
+            
+            const soleUI = document.getElementById('soleSpecificUI');
+            const soleContent = document.getElementById('gal-sole-content');
+            const libContent = document.getElementById('gal-library-content');
+            const libTitle = document.getElementById('gal-lib-title');
+            
+            const catNames = { 'CLEAN': '🧼 Vệ Sinh', 'STAIN': '💧 Tẩy Ố', 'REPAINT': '🎨 Repaint', 'GLUE': '🖌️ Dán Đế' };
+            
+            if (catId === 'SOLE') {
+                soleUI.style.display = 'flex';
+                switchGallerySubTab(currentGalleryTab); // Kích hoạt lại sub-tab hiện tại của Thay đế
+                renderGalleryBrandFilter();
+            } else {
+                // Các dịch vụ khác chỉ có 1 giao diện là Thư viện B/A tổng hợp
+                soleUI.style.display = 'none';
+                soleContent.style.display = 'none';
+                libContent.style.display = 'flex';
+                if(libTitle) libTitle.innerHTML = `${catNames[catId]} - Thư Viện Before/After`;
+                renderGalleryLibrary(); // Chạy thuật toán lọc ảnh B/A cho dịch vụ này
+            }
+        }
+
+        // CHUYỂN ĐỔI SUB-TAB (CHỈ DÀNH RIÊNG CHO THAY ĐẾ)
+        function switchGallerySubTab(tab) {
             currentGalleryTab = tab;
-            localStorage.setItem('TRAM_GALLERY_TAB', tab); // Lưu lại Tab đang mở
+            localStorage.setItem('TRAM_GALLERY_TAB', tab);
             
             const btnSole = document.getElementById('gal-btn-sole');
             const btnLib = document.getElementById('gal-btn-library');
@@ -1416,7 +1464,9 @@
             if(solContent) solContent.style.display = tab === 'sole' ? 'flex' : 'none';
             if(libContent) libContent.style.display = tab === 'library' ? 'flex' : 'none';
             
-            renderGalleryBrandFilter();
+            const libTitle = document.getElementById('gal-lib-title');
+            if(libTitle) libTitle.innerText = `Hãng: ${currentGalleryBrand}`;
+            
             if(tab === 'sole') renderGallerySole(); else renderGalleryLibrary();
         }
 
