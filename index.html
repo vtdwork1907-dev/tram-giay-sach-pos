@@ -1347,11 +1347,19 @@
         // =========================================================================
         function switchGalleryTab(tab) {
             currentGalleryTab = tab;
-            document.getElementById('gal-btn-sole').className = tab === 'sole' ? 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-sky-600 text-white shadow-sm transition' : 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition';
-            document.getElementById('gal-btn-library').className = tab === 'library' ? 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition' : 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition';
+            localStorage.setItem('TRAM_GALLERY_TAB', tab); // Lưu lại Tab đang mở
             
-            document.getElementById('gal-sole-content').style.display = tab === 'sole' ? 'flex' : 'none';
-            document.getElementById('gal-library-content').style.display = tab === 'library' ? 'flex' : 'none';
+            const btnSole = document.getElementById('gal-btn-sole');
+            const btnLib = document.getElementById('gal-btn-library');
+            if(btnSole && btnLib) {
+                btnSole.className = tab === 'sole' ? 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-sky-600 text-white shadow-sm transition' : 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition';
+                btnLib.className = tab === 'library' ? 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition' : 'flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition';
+            }
+            
+            const solContent = document.getElementById('gal-sole-content');
+            const libContent = document.getElementById('gal-library-content');
+            if(solContent) solContent.style.display = tab === 'sole' ? 'flex' : 'none';
+            if(libContent) libContent.style.display = tab === 'library' ? 'flex' : 'none';
             
             renderGalleryBrandFilter();
             if(tab === 'sole') renderGallerySole(); else renderGalleryLibrary();
