@@ -1079,13 +1079,12 @@
                 reader.readAsDataURL(file);
             });
         }
-        function uploadFileToR2(base64Data) {
+        function uploadFileToR2(base64Data, isRetry = false) {
             return new Promise(async (resolve, reject) => {
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) throw new Error("Chưa đăng nhập. HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
 
-                    // Dùng Blob thay vì File để tương thích hoàn hảo với nhân WebKit của macOS
                     let arr = base64Data.split(','), mime = arr[0].match(/:(.*?);/)[1];
                     let bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
                     while(n--) { u8arr[n] = bstr.charCodeAt(n); }
@@ -1102,16 +1101,25 @@
                     });
                     
                     if (!response.ok) {
-                        // FIX: Xử lý riêng lỗi 401 để báo tiếng Việt cho nhân viên dễ hiểu
+                        // FIX: Cơ chế Tự Chữa Lành Token khi bị lỗi 401
                         if (response.status === 401) {
-                            throw new Error("Phiên đăng nhập đã quá hạn (Do treo máy lâu). HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
+                            if (!isRetry) {
+                                // Nếu là lần lỗi đầu tiên, gọi Supabase âm thầm cấp khóa mới
+                                const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
+                                if (!refreshError && refreshData.session) {
+                                    // Có khóa mới -> Gọi lại chính hàm tải ảnh này lần nữa (Đệ quy)
+                                    const retryUrl = await uploadFileToR2(base64Data, true);
+                                    return resolve(retryUrl);
+                                }
+                            }
+                            // Nếu đã cố chữa lành mà vẫn lỗi, lúc này mới bắt người dùng đăng nhập lại
+                            throw new Error("Phiên đăng nhập đã hết hạn. HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
                         }
                         
                         const errText = await response.text();
                         throw new Error(`HTTP ${response.status} - ${errText.includes('<html') ? 'Bị Cloudflare chặn bảo mật' : errText}`);
                     }
                     
-                    // Dùng .json() an toàn thay vì parse text
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
                     resolve(data.url);
