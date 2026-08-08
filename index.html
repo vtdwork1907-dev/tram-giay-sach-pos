@@ -1337,7 +1337,7 @@
             if(id === 'customers') renderCustomersTable(); 
             if(id === 'payment') updateQRView(); 
             if(id === 'dashboard') renderDashboard();
-            if(id === 'gallery') { renderGalleryBrandFilter(); if(currentGalleryTab === 'sole') renderGallerySole(); else renderGalleryLibrary(); }
+            if(id === 'gallery') { switchGalleryTab(currentGalleryTab); }
             
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
