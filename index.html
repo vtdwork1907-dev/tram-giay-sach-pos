@@ -975,7 +975,7 @@
                         item.retryCount = (item.retryCount || 0) + 1;
                         if (item.retryCount >= 3) {
                             item.status = 'error'; 
-                            showNotification("❌ Tải ảnh thất bại", "Hệ thống đã chặn quá trình tải vì sự cố kết nối hoặc Cloudflare từ chối nhận file.");
+                            showNotification("❌ Tải ảnh thất bại", `Chi tiết: ${e.message.substring(0, 100)}`);
                             
                             const targetImgIdx = state.uploadedImages.findIndex(img => img.id === item.imgId);
                             if(targetImgIdx !== -1) { state.uploadedImages[targetImgIdx].status = 'error'; renderPreviewImages(); }
