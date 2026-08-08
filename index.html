@@ -1763,6 +1763,25 @@
             if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
         }
 
+        async function moveBrandUp(idx) {
+            if (idx <= 0 || state.brands[idx] === 'Khác') return;
+            const temp = state.brands[idx];
+            state.brands[idx] = state.brands[idx - 1];
+            state.brands[idx - 1] = temp;
+            await saveSettingsToDB();
+            renderSettingsBrandsTable();
+        }
+
+        async function moveBrandDown(idx) {
+            // Không cho đẩy xuống nếu chạm đáy hoặc nếu item ở dưới là "Khác"
+            if (idx >= state.brands.length - 1 || state.brands[idx] === 'Khác' || state.brands[idx + 1] === 'Khác') return;
+            const temp = state.brands[idx];
+            state.brands[idx] = state.brands[idx + 1];
+            state.brands[idx + 1] = temp;
+            await saveSettingsToDB();
+            renderSettingsBrandsTable();
+        }
+
         async function addNewBrand() {
             const name = document.getElementById('addBrandName').value.trim();
             if(!name) return alert("Vui lòng nhập tên hãng!");
