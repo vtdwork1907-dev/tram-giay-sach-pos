@@ -1764,14 +1764,23 @@
             try {
                 let orderGroups = {};
                 
+                // TẠO BỘ LỌC THỜI GIAN: Tính mốc 115 ngày trước so với hôm nay
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - 115);
+                const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+                
                 // 1. QUÉT ĐƠN TỰ ĐỘNG THEO DỊCH VỤ ĐANG CHỌN
                 state.orders.forEach(o => {
                     if(!['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status)) return;
+                    
+                    // LỚP BẢO VỆ 1: Bỏ qua đơn quá 115 ngày (Cloudflare xoá lúc 120 ngày)
+                    const orderDateOnly = o.date.split(' ')[0];
+                    if (orderDateOnly < cutoffDateStr) return;
+
                     let groupsForOrder = []; 
                     
                     if(o.shoes && o.shoes.length > 0) {
                         o.shoes.forEach((shoe) => {
-                            // Lọc dịch vụ tương ứng với Tab đang mở
                             const matchedSvcs = shoe.services.filter(svc => {
                                 if (currentGalleryCategory === 'SOLE') {
                                     return svc.category === 'SOLE' && (svc.brand || 'Asics') === currentGalleryBrand;
@@ -1801,7 +1810,6 @@
                             if (shoePairs.length > 0) groupsForOrder.push(shoePairs);
                         });
                     } else {
-                        // Áp dụng cho đơn 1 giày
                         const matchedSvcs = o.items.filter(item => {
                             if (currentGalleryCategory === 'SOLE') {
                                 return item.category === 'SOLE' && (item.brand || 'Asics') === currentGalleryBrand;
@@ -1830,7 +1838,7 @@
                 // 2. LỌC ẢNH ĐÃ LƯU THỦ CÔNG THEO DỊCH VỤ
                 const manualItems = (state.soleImages || []).filter(img => {
                     if (!img.isLibrary) return false;
-                    const imgCat = img.category || 'SOLE'; // Mặc định dữ liệu cũ là Thay Đế
+                    const imgCat = img.category || 'SOLE';
                     if (currentGalleryCategory === 'SOLE') {
                         return imgCat === 'SOLE' && img.brand === currentGalleryBrand;
                     }
@@ -1853,6 +1861,10 @@
                         
                         for (const chunk of chunks) {
                             const combinedDataUrl = await createFlexibleCombinedImageBase64(chunk);
+                            
+                            // LỚP BẢO VỆ 2: Nếu tạo ảnh thất bại (trả về null) -> Bỏ qua không vẽ giao diện HTML
+                            if (!combinedDataUrl) continue; 
+                            
                             const shoeNameDisplay = chunk[0].shoeName;
                             
                             html += `
@@ -1864,7 +1876,6 @@
                                 <div class="relative bg-slate-100 w-full flex-1 flex items-center justify-center p-0.5">
                                     <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto max-h-[120px] md:max-h-[160px] object-contain cursor-pointer hover:opacity-90 transition rounded-sm shadow-sm">
                                 </div>
-                                <!-- NÚT LƯU VĨNH VIỄN VÀ CHIA SẺ -->
                                 <div class="p-1.5 flex justify-end gap-1.5 bg-slate-50 border-t border-slate-100">
                                     <button onclick="saveCombinedToLibrary('${combinedDataUrl}', '${currentGalleryCategory === 'SOLE' ? currentGalleryBrand : 'Chung'}')" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[8px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition active:scale-95 shadow-sm border border-sky-200" title="Lưu ảnh này vĩnh viễn không bị xóa"><i class="fa-solid fa-cloud-arrow-up"></i> Lưu Portfolio</button>
                                     <button onclick="shareImage('${combinedDataUrl}', 'Before/After')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[8px] md:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
@@ -1872,6 +1883,12 @@
                             </div>`;
                         }
                     }
+                }
+
+                // NẾU SAU KHI LỌC KHÔNG CÒN ẢNH NÀO VÀ CŨNG KHÔNG CÓ ẢNH THỦ CÔNG
+                if (html === '' && manualItems.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 italic text-[11px] bg-slate-50 rounded-xl border border-slate-200">Các ảnh tự động đã quá hạn lưu trữ 4 tháng và được tự động dọn dẹp.</div>`; 
+                    return;
                 }
 
                 // HIỂN THỊ ẢNH THỦ CÔNG ĐÃ LƯU VĨNH VIỄN
