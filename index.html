@@ -1372,7 +1372,7 @@
                 if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
             }
 
-            if(id === 'reports') { updateReportMetrics(); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
+            if(id === 'reports') { updateReportMetrics(true); setTimeout(() => { if(barChartInst) barChartInst.resize(); if(pieChartInst) pieChartInst.resize(); if(expReportPieInst) expReportPieInst.resize(); }, 100); }
             if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
             if(id === 'customers') renderCustomersTable(); 
             if(id === 'payment') updateQRView(); 
