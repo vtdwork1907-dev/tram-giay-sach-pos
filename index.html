@@ -1479,23 +1479,44 @@
                 state.orders.forEach(o => {
                     if(!['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status)) return;
                     let pairs = [];
+                    
                     if(o.shoes && o.shoes.length > 0) {
+                        // CHẾ ĐỘ NHIỀU ĐÔI
                         o.shoes.forEach((shoe) => {
-                            const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Khác') === currentGalleryBrand);
-                            if(soleSvcs.length === 0) return;
-                            const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
-                            let afterImg = null; let flatShoeIndex = 0;
-                            for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndex += Math.max((o.shoes[i].images || []).length, 1); }
-                            if(o.imagesAfter && o.imagesAfter[flatShoeIndex] && o.imagesAfter[flatShoeIndex].trim() !== '') afterImg = o.imagesAfter[flatShoeIndex];
-                            if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
+                            let hasMatchingBrand = false;
+                            shoe.services.forEach(svc => {
+                                // Sửa logic lọc: Bắt chính xác tên hãng từ dịch vụ trong giỏ
+                                const itemBrand = svc.brand || o.brand || 'Khác';
+                                if (svc.category === 'SOLE' && itemBrand === currentGalleryBrand) {
+                                    hasMatchingBrand = true;
+                                }
+                            });
+                            
+                            if(hasMatchingBrand) {
+                                const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
+                                let afterImg = null; let flatShoeIndex = 0;
+                                for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndex += Math.max((o.shoes[i].images || []).length, 1); }
+                                if(o.imagesAfter && o.imagesAfter[flatShoeIndex] && o.imagesAfter[flatShoeIndex].trim() !== '') afterImg = o.imagesAfter[flatShoeIndex];
+                                if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
+                            }
                         });
                     } else {
-                        const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Khác') === currentGalleryBrand);
-                        if(soleSvcs.length === 0) return;
-                        if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
-                            for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
-                                const b = o.images[i]; const a = o.imagesAfter[i];
-                                if(b && a && a.trim() !== '') pairs.push({ shoeName: 'Giày', before: typeof b === 'string' ? b : (b.r2Url || b.localUrl || b.url), after: a });
+                        // CHẾ ĐỘ 1 ĐÔI
+                        let hasMatchingBrand = false;
+                        o.items.forEach(item => {
+                            // Sửa logic lọc: Đọc trực tiếp Hãng từ mục dịch vụ
+                            const itemBrand = item.brand || o.brand || 'Khác';
+                            if (item.category === 'SOLE' && itemBrand === currentGalleryBrand) {
+                                hasMatchingBrand = true;
+                            }
+                        });
+
+                        if(hasMatchingBrand) {
+                            if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                                for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
+                                    const b = o.images[i]; const a = o.imagesAfter[i];
+                                    if(b && a && a.trim() !== '') pairs.push({ shoeName: o.brand || 'Giày', before: typeof b === 'string' ? b : (b.r2Url || b.localUrl || b.url), after: a });
+                                }
                             }
                         }
                     }
