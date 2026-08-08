@@ -4565,7 +4565,7 @@ function updateExpenseCharts() {
         
         window.addEventListener('resize', adjustPOSLayout);
         // =========================================================================
-        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (SWIPE-TO-DISMISS) CHO MỌI MODAL
+        // BỘ MÁY ĐIỀU KHIỂN VUỐT XUỐNG ĐỂ TẮT (TỐI ƯU CHỐNG LƯU VẾT/LẶP HÌNH)
         // =========================================================================
         function initSwipeDownToDismiss(modalId, boxId, closeCallback) {
             const modal = document.getElementById(modalId);
@@ -4586,11 +4586,11 @@ function updateExpenseCharts() {
                 currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
                 const deltaY = currentY - startY;
                 
-                // Chỉ cho phép kéo xuống dưới
                 if (deltaY > 0) {
-                    box.style.transform = `translateY(${deltaY}px)`;
-                    const opacity = Math.max(0.3, 1 - deltaY / 400);
-                    modal.style.backgroundColor = `rgba(15, 23, 42, ${0.9 * opacity})`;
+                    // Sử dụng translate3d để ép GPU xử lý mượt, ngăn chặn hiện tượng lặp khung hình
+                    box.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+                    const opacity = Math.max(0.2, 1 - deltaY / 350);
+                    modal.style.opacity = opacity;
                 }
             };
 
@@ -4599,25 +4599,24 @@ function updateExpenseCharts() {
                 isDragging = false;
                 const deltaY = currentY - startY;
 
-                // Bật lại hiệu ứng mượt khi nhả tay
                 box.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease';
-                modal.style.transition = 'background-color 0.25s ease';
+                modal.style.transition = 'opacity 0.25s ease';
 
-                if (deltaY > 100) {
-                    // Nếu kéo xuống quá 100px -> Thực hiện hiệu ứng bay hẳn xuống dưới rồi đóng
-                    box.style.transform = `translateY(100vh)`;
-                    box.style.opacity = '0';
-                    modal.style.backgroundColor = 'rgba(15, 23, 42, 0)';
+                if (deltaY > 90) {
+                    // Kéo đủ lực -> Trượt hẳn xuống dưới và làm mờ
+                    box.style.transform = `translate3d(0, 100vh, 0)`;
+                    modal.style.opacity = '0';
                     setTimeout(() => {
+                        // QUAN TRỌNG: Xóa sạch inline style để xóa bỏ bộ đệm layer cũ, không bị lưu hình ảnh
                         box.style.transform = '';
                         box.style.opacity = '';
-                        modal.style.backgroundColor = '';
+                        modal.style.opacity = '';
                         closeCallback();
                     }, 250);
                 } else {
-                    // Kéo nhẹ chưa đủ lực -> Bật trả về vị trí cũ một cách mượt mà
-                    box.style.transform = 'translateY(0px)';
-                    modal.style.backgroundColor = '';
+                    // Kéo chưa đủ -> Bật trở lại vị trí cũ
+                    box.style.transform = 'translate3d(0, 0, 0)';
+                    modal.style.opacity = '1';
                 }
             };
 
@@ -4629,20 +4628,6 @@ function updateExpenseCharts() {
             window.addEventListener('mousemove', onTouchMove);
             window.addEventListener('mouseup', onTouchEnd);
         }
-
-        // KÍCH HOẠT CHO TẤT CẢ CÁC MODAL TRONG HỆ THỐNG
-        window.addEventListener('DOMContentLoaded', () => {
-            // 1. Khung xem ảnh phóng to
-            initSwipeDownToDismiss('imageViewerModal', 'viewerImage', closeImageViewer);
-            // 2. Khung so sánh Before / After
-            initSwipeDownToDismiss('comparisonModal', 'comparisonBox', closeComparisonModal);
-            // 3. Khung quét QR chuyển khoản
-            initSwipeDownToDismiss('collectPaymentModal', 'collectPaymentBox', closeCollectPaymentModal);
-            // 4. Khung thêm phát sinh tiền
-            initSwipeDownToDismiss('extraFeeModal', 'extraFeeBox', closeExtraFeeModal);
-            // 5. Khung thêm khoản chi
-            initSwipeDownToDismiss('addExpenseModal', 'addExpenseBox', closeExpenseModal);
-        });
     </script>
 </body>
 </html>
