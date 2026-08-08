@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tgs-pos-cache-v6';
+const CACHE_NAME = 'tgs-pos-cache-v7';
 
 // 1. Cài đặt và nạp sẵn các file tĩnh vào cache
 self.addEventListener('install', (event) => {
