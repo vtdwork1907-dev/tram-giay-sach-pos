@@ -1685,7 +1685,7 @@
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         }
 
-        // THUẬT TOÁN GHÉP ẢNH LINH HOẠT (1 CẶP HOẶC 2 CẶP TÙY Ý CỦA 1 ĐÔI GIÀY)
+        // THUẬT TOÁN GHÉP ẢNH LINH HOẠT (ĐÃ THÊM BỘ LỌC TÀNG HÌNH)
         async function createFlexibleCombinedImageBase64(pairsChunk) {
             if (!pairsChunk || pairsChunk.length === 0) return null;
             const cacheKey = pairsChunk.map(p => p.before + '|' + p.after).join('||');
@@ -1697,15 +1697,16 @@
                     const img = new Image();
                     if (src.startsWith('http')) img.crossOrigin = "Anonymous";
                     img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null);
+                    
+                    // Lỗi 404 do Cloudflare xoá sẽ nhảy vào đây và trả về null
+                    img.onerror = () => resolve(null); 
                     img.src = src;
                 });
 
-                // Kiểm tra xem đôi giày này có mấy cặp ảnh (Linh hoạt 1 hoặc 2)
                 const isDouble = pairsChunk.length >= 2;
                 const colW = 600; const rowH = 600; const bannerH = 60;
-                const canvasW = colW * 2; // Rộng cố định 1200px
-                const canvasH = (isDouble ? rowH * 2 : rowH) + bannerH; // Chiều cao co giãn
+                const canvasW = colW * 2;
+                const canvasH = (isDouble ? rowH * 2 : rowH) + bannerH;
 
                 const canvas = document.createElement('canvas');
                 canvas.width = canvasW; canvas.height = canvasH;
@@ -1716,44 +1717,44 @@
                     const bImg = await loadImg(pairsChunk[i].before);
                     const aImg = await loadImg(pairsChunk[i].after);
                     
+                    // NẾU ẢNH BỊ XOÁ (BỊ NULL) -> HUỶ LUÔN VIỆC TẠO ẢNH GHÉP
+                    if (!bImg || !aImg) return null;
+                    
                     drawImageCover(ctx, bImg, 0, yPos, colW, rowH); 
                     drawImageCover(ctx, aImg, colW, yPos, colW, rowH); 
                     
-                    // Kẻ vạch ngang phân cách nếu là lưới 2x2
                     if (i === 0 && isDouble) {
                         ctx.beginPath(); ctx.moveTo(0, rowH); ctx.lineTo(canvasW, rowH);
                         ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
                     }
                 }
 
-                // Thanh Banner nhãn bên dưới cùng
                 const yBanner = isDouble ? rowH * 2 : rowH;
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, yBanner, colW, bannerH);
-                
-                // ĐÃ ĐỔI MÀU: Nền "Sau khi làm" thành màu xanh dương hệ thống (Sky-600)
                 ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(colW, yBanner, colW, bannerH);
                 
                 ctx.fillStyle = "white"; ctx.font = "bold 26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText("TRƯỚC KHI LÀM", colW / 2, yBanner + (bannerH / 2));
                 ctx.fillText("SAU KHI LÀM", colW + (colW / 2), yBanner + (bannerH / 2));
                 
-                // Đường kẻ dọc chia đôi Before / After
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
 
-                // VẼ THÊM LOGO GÓC TRÊN TRÁI
                 const logoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/img_1786208707514_sq4h.jpg";
                 const logoImg = await loadImg(logoUrl);
                 if (logoImg) {
-                    const logoSize = 120; // Kích thước logo
-                    const margin = 20;    // Căn lề
+                    const logoSize = 120;
+                    const margin = 20;
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
                 }
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
                 return dataUrl;
-            } catch(e) { console.error("Lỗi tạo ảnh ghép", e); return pairsChunk[0].after || pairsChunk[0].before; }
+            } catch(e) { 
+                console.error("Lỗi tạo ảnh ghép", e); 
+                return null; // Có lỗi cũng huỷ luôn
+            } 
         }
 
         async function renderGalleryLibrary() {
