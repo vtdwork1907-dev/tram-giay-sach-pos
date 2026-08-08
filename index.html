@@ -59,16 +59,32 @@
         .text-navy-800, .text-sky-600 { color: #083A9C !important; }
         .text-sky-700 { color: #0B192C !important; }
         
-        /* Hiển thị Tab lập tức không bị khựng hình hay nháy khung */
-        .tab-content { opacity: 1; }
+        /* HIỆU ỨNG CHUYỂN TAB: Mượt mà, trượt nhẹ lên và hiện dần */
+        .tab-content:not(.hidden) {
+            animation: smoothTabFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes smoothTabFade {
+            0% { opacity: 0; transform: translateY(6px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
 
-        /* THANH ĐIỀU HƯỚNG: Loại bỏ hoàn toàn hiệu ứng dịch chuyển/nháy icon */
-        .nav-btn { box-shadow: none !important; background-color: transparent !important; transition: none !important; }
+        /* THANH ĐIỀU HƯỚNG: Cố định tuyệt đối, KHÔNG CÓ ANIMATION, tránh mọi hiện tượng nháy khung/icon */
+        .nav-btn { 
+            box-shadow: none !important; 
+            background-color: transparent !important; 
+            transition: none !important; 
+            transform: none !important; 
+        }
         .nav-btn.bg-sky-600 {
             background: linear-gradient(135deg, #0B192C 0%, #083A9C 100%) !important;
             box-shadow: 0 8px 25px rgba(8, 58, 156, 0.25) !important; 
             border-radius: 24px !important; 
             border: none !important; 
+            transform: none !important; 
+            transition: none !important;
+        }
+        .nav-btn i, .nav-btn span { 
+            transition: none !important; 
             transform: none !important; 
         }
         .nav-btn.bg-sky-600 i, .nav-btn.bg-sky-600 span { color: #ffffff !important; }
