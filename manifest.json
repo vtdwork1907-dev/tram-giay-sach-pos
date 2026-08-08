@@ -4,8 +4,8 @@
   "description": "Hệ thống quản lý dịch vụ và chăm sóc khách hàng Trạm Giày Sạch",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#f3f4f6",
+  "theme_color": "#0a2347",
   "orientation": "portrait",
   "icons": [
     {
