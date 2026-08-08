@@ -1122,8 +1122,7 @@
         }
 
         function mapOrderJsToDb(o) {
-            // Thủ thuật: Đẩy brand vào items để lách qua việc không có cột brand trong Supabase, tránh lỗi DB
-            if (o.brand && o.items) o.items.forEach(i => i.brand = o.brand);
+            // Không ghi đè i.brand bằng o.brand nữa, giữ nguyên hãng của từng item đã chọn
             return {
                 id: o.id, tracking_id: o.tracking_id || null, date: o.date,
                 customer_name: o.customer.name, customer_phone: o.customer.phone, customer_note: o.customer.note || '',
