@@ -1390,43 +1390,143 @@
             if(currentGalleryTab === 'sole') renderGallerySole(); else renderGalleryLibrary();
         }
         
-        function renderGallerySole() {
-            const grid = document.getElementById('gal-sole-grid'); if(!grid) return;
-            const filtered = (state.soleImages || []).filter(img => img.brand === currentGalleryBrand && !img.isLibrary);
+        function promptAddShoeLine() {
+            const lineName = prompt("Nhập tên dòng giày (VD: Air Force 1, Gel Lyte):");
+            if (!lineName || !lineName.trim()) return;
+            const name = lineName.trim();
             
-            if(filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 italic text-xs bg-slate-50 rounded-xl border border-slate-200">Chưa có mẫu đế nào cho hãng này. Bấm "Tải Ảnh Đế" để thêm.</div>`; return;
-            }
-            grid.innerHTML = filtered.map(img => {
-                const src = typeof img.url === 'string' ? img.url : (img.r2Url || img.localUrl);
-                const isUploading = img.status === 'uploading' || img.status === 'pending';
-                return `
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group relative">
-                    <div class="h-32 md:h-40 w-full relative bg-slate-100">
-                        <img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer hover:opacity-90' : 'opacity-50'} transition">
-                        ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-6 h-6 border-2 border-sky-500 border-t-transparent"></div></div>` : ''}
-                        ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-times text-[10px]"></i></button>` : ''}
-                    </div>
-                    <div class="p-2 flex flex-col gap-2 flex-1">
-                        <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Ghi chú mẫu đế..." class="w-full text-[10px] md:text-xs p-1.5 border border-slate-200 rounded outline-none focus:border-sky-500 bg-slate-50">
-                        ${!isUploading ? `<button onclick="shareImage('${src}', 'Mẫu đế ${currentGalleryBrand}')" class="w-full bg-slate-100 hover:bg-slate-200 text-sky-700 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1 transition"><i class="fa-solid fa-share-nodes"></i> Gửi Khách</button>` : `<div class="text-[9px] text-center text-slate-400 py-1.5">Đang tải lên...</div>`}
-                    </div>
-                </div>`;
-            }).join('');
+            const exists = state.soleImages.some(img => img.brand === currentGalleryBrand && !img.isLibrary && img.line === name);
+            if (exists) return alert("Dòng giày này đã tồn tại!");
+            
+            const folderId = 'folder_' + Date.now();
+            state.soleImages.unshift({ id: folderId, brand: currentGalleryBrand, line: name, isFolder: true, isLibrary: false });
+            
+            expandedLines[name] = true;
+            localStorage.setItem('TRAM_GALLERY_LINES', JSON.stringify(expandedLines));
+            
+            saveLocalState(); saveSettingsToDB();
+            renderGallerySole();
         }
 
-        function uploadGallerySole(e) { uploadGalleryImagesBase(e, false); }
-        function uploadGalleryLibrary(e) { uploadGalleryImagesBase(e, true); }
+        function toggleLineAccordion(lineName) {
+            expandedLines[lineName] = !expandedLines[lineName];
+            localStorage.setItem('TRAM_GALLERY_LINES', JSON.stringify(expandedLines));
+            renderGallerySole();
+        }
+        
+        function deleteShoeLine(lineName) {
+            if(!confirm(`Bạn chắc chắn muốn xóa toàn bộ thư mục dòng "${lineName}" và TẤT CẢ ảnh bên trong?`)) return;
+            
+            const itemsToDelete = state.soleImages.filter(img => img.brand === currentGalleryBrand && !img.isLibrary && img.line === lineName);
+            itemsToDelete.forEach(img => {
+                if(img.url && img.url.startsWith('http')) deleteFileFromR2(img.url);
+            });
+            
+            state.soleImages = state.soleImages.filter(img => !(img.brand === currentGalleryBrand && !img.isLibrary && img.line === lineName));
+            
+            saveLocalState(); saveSettingsToDB();
+            renderGallerySole();
+        }
 
-        function uploadGalleryImagesBase(e, isLibrary) {
+        function renderGallerySole() {
+            const container = document.getElementById('gal-sole-lines'); if(!container) return;
+            const allBrandImages = (state.soleImages || []).filter(img => img.brand === currentGalleryBrand && !img.isLibrary);
+            
+            if(allBrandImages.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 italic text-xs bg-slate-50 rounded-xl border border-slate-200">Chưa có ảnh hoặc dòng giày nào cho hãng này. Bấm "Thêm Dòng" để tạo thư mục.</div>`; 
+                return;
+            }
+            
+            // Gom nhóm theo dòng giày (line)
+            const groups = { 'Chung': [] };
+            allBrandImages.forEach(img => {
+                const l = img.line || 'Chung';
+                if (!groups[l]) groups[l] = [];
+                if (!img.isFolder) groups[l].push(img);
+            });
+            
+            let html = '';
+            for (const [lineName, imgs] of Object.entries(groups)) {
+                if (lineName === 'Chung' && imgs.length === 0) continue; 
+                
+                const isExpanded = expandedLines[lineName] !== false; 
+                const safeLine = escapeHtml(lineName);
+                const isGeneral = lineName === 'Chung';
+                
+                let imgsHtml = '';
+                if (imgs.length === 0) {
+                    imgsHtml = `<div class="w-full text-center py-6 text-slate-400 italic text-xs font-semibold">Thư mục trống. Hãy tải ảnh lên.</div>`;
+                } else {
+                    imgsHtml = imgs.map(img => {
+                        const src = typeof img.url === 'string' ? img.url : (img.r2Url || img.localUrl);
+                        const isUploading = img.status === 'uploading' || img.status === 'pending';
+                        return `
+                        <div class="w-32 md:w-40 shrink-0 bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col group relative shadow-sm">
+                            <div class="h-32 md:h-36 w-full relative bg-slate-100 border-b border-slate-100">
+                                <img src="${src}" ${!isUploading ? `onclick="openImageViewer('${src}')"` : ''} class="w-full h-full object-contain ${!isUploading ? 'cursor-pointer hover:opacity-90' : 'opacity-50'} transition p-1">
+                                ${isUploading ? `<div class="absolute inset-0 flex items-center justify-center"><div class="spinner w-6 h-6 border-2 border-sky-500 border-t-transparent"></div></div>` : ''}
+                                ${!isUploading ? `<button onclick="deleteGalleryImage('${img.id}')" class="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md active:scale-95 transition backdrop-blur-sm"><i class="fa-solid fa-times text-[10px]"></i></button>` : ''}
+                            </div>
+                            <div class="p-1.5 flex flex-col gap-1.5 flex-1 bg-white">
+                                <input type="text" value="${escapeHtml(img.note || '')}" onchange="updateGalleryNote('${img.id}', this.value)" placeholder="Mã/Tên đế..." class="w-full text-[10px] md:text-[11px] p-1.5 border border-slate-200 rounded outline-none focus:border-sky-500 bg-slate-50 text-center font-bold text-slate-700">
+                                ${!isUploading ? `<button onclick="shareImage('${src}', 'Mẫu đế ${currentGalleryBrand} - ${safeLine}')" class="w-full bg-slate-100 hover:bg-slate-200 text-sky-700 text-[10px] font-bold py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition active:scale-95"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>` : `<div class="text-[9px] text-center text-slate-400 py-1.5">Đang tải...</div>`}
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+                
+                html += `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-100 p-2.5 flex justify-between items-center cursor-pointer border-b border-slate-200 hover:bg-slate-200 transition-colors" onclick="toggleLineAccordion('${safeLine.replace(/'/g, "\\'")}')">
+                        <div class="font-bold text-slate-700 text-[11px] md:text-sm flex items-center gap-2">
+                            <i class="fa-solid ${isExpanded ? 'fa-folder-open text-sky-500' : 'fa-folder text-slate-400'} transition-colors text-base md:text-lg"></i> 
+                            ${isGeneral ? 'Ảnh Đế Chung' : `${safeLine}`} 
+                            <span class="text-[9px] md:text-[10px] font-bold bg-white text-slate-600 px-1.5 py-0.5 rounded-full ml-1 shadow-sm border border-slate-200">${imgs.length}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 md:gap-3">
+                            ${!isGeneral ? `<button onclick="event.stopPropagation(); deleteShoeLine('${safeLine.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-red-500 p-1 md:p-2 bg-white rounded-lg border border-slate-200 shadow-sm active:scale-95 transition" title="Xóa thư mục này"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                            <label class="bg-sky-100 text-sky-700 hover:bg-sky-200 px-2.5 md:px-3 py-1.5 md:py-1.5 rounded-lg text-[10px] md:text-xs font-bold cursor-pointer transition flex items-center gap-1 md:gap-1.5 shadow-sm active:scale-95" onclick="event.stopPropagation()">
+                                <i class="fa-solid fa-upload"></i> Tải ảnh
+                                <input type="file" accept="image/*" multiple onchange="uploadGallerySole(event, '${isGeneral ? '' : safeLine.replace(/'/g, "\\'")}')" class="hidden">
+                            </label>
+                            <div class="w-6 h-6 flex items-center justify-center bg-white rounded-full border border-slate-200 shadow-sm ml-1">
+                                <i class="fa-solid fa-chevron-down text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''} text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="${isExpanded ? 'flex' : 'hidden'} p-3 bg-slate-50 gap-3 overflow-x-auto hide-scroll items-stretch border-t border-white">
+                        ${imgsHtml}
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function uploadGallerySole(e, lineName) { uploadGalleryImagesBase(e, false, lineName); }
+        function uploadGalleryLibrary(e) { uploadGalleryImagesBase(e, true, null); }
+
+        function uploadGalleryImagesBase(e, isLibrary, lineName) {
             const files = Array.from(e.target.files); if (files.length === 0) return;
             if(!state.soleImages) state.soleImages = [];
+            
             for (const file of files) {
                 const imgId = 'gal_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
                 const localUrl = URL.createObjectURL(file);
-                state.soleImages.unshift({ id: imgId, brand: currentGalleryBrand, note: '', status: 'uploading', localUrl: localUrl, url: localUrl, isLibrary: isLibrary }); 
+                
+                const newImg = { id: imgId, brand: currentGalleryBrand, note: '', status: 'uploading', localUrl: localUrl, url: localUrl, isLibrary: isLibrary };
+                if (!isLibrary && lineName) newImg.line = lineName; // Gán ảnh vào đúng dòng
+                
+                state.soleImages.unshift(newImg); 
                 compressImage(file).then(compressed => { idbPut('upload_queue', { imgId, file: compressed, localUrl, status: 'pending' }).then(() => processUploadQueue()); });
             }
+            
+            // Tự động mở bung thư mục ra khi vừa tải ảnh lên
+            if (!isLibrary) {
+                const targetLine = lineName || 'Chung';
+                expandedLines[targetLine] = true;
+                localStorage.setItem('TRAM_GALLERY_LINES', JSON.stringify(expandedLines));
+            }
+            
             saveLocalState();
             if(isLibrary) renderGalleryLibrary(); else renderGallerySole();
             e.target.value = '';
