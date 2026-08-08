@@ -441,23 +441,30 @@
                 </div>
             </section>
 
-            <!-- TAB: KHO ẢNH (TÍNH NĂNG MỚI) -->
+            <!-- TAB: KHO ẢNH (BIG UPDATE: ĐA DỊCH VỤ) -->
             <section id="tab-gallery" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between w-full max-w-full">
-                    <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2"><i class="fa-solid fa-images text-sky-600"></i> Quản Lý Kho Ảnh</h2>
+                    <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2"><i class="fa-solid fa-photo-film text-sky-600"></i> Kho Ảnh & Before/After</h2>
                 </div>
 
-                <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
-                    <button onclick="switchGalleryTab('sole')" id="gal-btn-sole" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-sky-600 text-white shadow-sm transition">Kho Đế Cửa Hàng</button>
-                    <button onclick="switchGalleryTab('library')" id="gal-btn-library" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition">Thư Viện Before/After</button>
+                <!-- BỘ LỌC DỊCH VỤ CHÍNH -->
+                <div class="flex gap-2 overflow-x-auto hide-scroll pb-1" id="galleryCategoryTabs">
+                    <!-- Sẽ được render bằng JS -->
                 </div>
 
-                <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1"><i class="fa-solid fa-filter"></i> Lọc Theo Hãng</div>
-                    <div id="galleryBrandFilter" class="flex gap-2 overflow-x-auto hide-scroll pb-1"></div>
+                <!-- KHU VỰC RIÊNG CHO DỊCH VỤ THAY ĐẾ (GIỮ NGUYÊN CẤU TRÚC CŨ) -->
+                <div id="soleSpecificUI" class="flex flex-col gap-4">
+                    <div class="flex gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
+                        <button onclick="switchGallerySubTab('sole')" id="gal-btn-sole" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-sky-600 text-white shadow-sm transition">Kho Đế Cửa Hàng</button>
+                        <button onclick="switchGallerySubTab('library')" id="gal-btn-library" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-transparent text-slate-500 hover:bg-slate-50 transition">Thư Viện Before/After</button>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1"><i class="fa-solid fa-filter"></i> Lọc Theo Hãng</div>
+                        <div id="galleryBrandFilter" class="flex gap-2 overflow-x-auto hide-scroll pb-1"></div>
+                    </div>
                 </div>
 
-                <!-- KHO ĐẾ (HỖ TRỢ THƯ MỤC DÒNG GIÀY) -->
+                <!-- KHUNG HIỂN THỊ KHO ĐẾ (CHỈ HIỆN KHI CHỌN THAY ĐẾ -> KHO ĐẾ) -->
                 <div id="gal-sole-content" class="flex flex-col gap-4">
                     <div class="bg-slate-50 p-2.5 md:p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-inner">
                         <span class="font-bold text-[11px] md:text-sm text-slate-700" id="gal-sole-brand-title">Hãng: Asics</span>
@@ -471,15 +478,15 @@
                     <div id="gal-sole-lines" class="flex flex-col gap-3"></div>
                 </div>
 
-                <!-- THƯ VIỆN BEFORE/AFTER -->
+                <!-- KHUNG HIỂN THỊ THƯ VIỆN B/A TỔNG HỢP (DÙNG CHUNG CHO TẤT CẢ DỊCH VỤ) -->
                 <div id="gal-library-content" class="hidden flex-col gap-4">
                     <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex justify-between items-center shadow-inner">
-                        <span class="font-bold text-sm text-emerald-800" id="gal-lib-brand-title">Hãng: Asics</span>
+                        <span class="font-bold text-sm text-emerald-800" id="gal-lib-title">Thư Viện Before/After</span>
                         <label class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow active:scale-95 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-plus"></i> Tải B/A Thủ Công<input type="file" accept="image/*" multiple onchange="uploadGalleryLibrary(event)" class="hidden">
                         </label>
                     </div>
-                    <div class="text-[10px] md:text-xs text-emerald-700 font-medium italic px-1"><i class="fa-solid fa-circle-info"></i> Ảnh của đơn có dịch vụ "Thay đế" đã xong sẽ tự động hiện ở đây.</div>
+                    <div class="text-[10px] md:text-xs text-emerald-700 font-medium italic px-1"><i class="fa-solid fa-circle-info"></i> Hệ thống tự động quét các đơn <strong>Đã xong</strong> để ghép ảnh B/A. Hãy bấm <strong>"Lưu vĩnh viễn"</strong> những tấm đẹp nhất để giữ lại làm Portfolio!</div>
                     <div id="gal-library-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
             </section>
