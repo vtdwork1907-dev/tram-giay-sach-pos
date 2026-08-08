@@ -1104,7 +1104,7 @@
                     while(n--) { u8arr[n] = bstr.charCodeAt(n); }
                     const blob = new Blob([u8arr], { type: mime });
 
-                    const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
+                    const safeFileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
                     const formData = new FormData(); 
                     formData.append('file', blob, safeFileName);
                     
