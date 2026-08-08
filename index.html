@@ -1729,7 +1729,9 @@
                 // Thanh Banner nhãn bên dưới cùng
                 const yBanner = isDouble ? rowH * 2 : rowH;
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, yBanner, colW, bannerH);
-                ctx.fillStyle = "rgba(16, 185, 129, 0.9)"; ctx.fillRect(colW, yBanner, colW, bannerH);
+                
+                // ĐÃ ĐỔI MÀU: Nền "Sau khi làm" thành màu xanh dương hệ thống (Sky-600)
+                ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(colW, yBanner, colW, bannerH);
                 
                 ctx.fillStyle = "white"; ctx.font = "bold 26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText("TRƯỚC KHI LÀM", colW / 2, yBanner + (bannerH / 2));
@@ -1738,6 +1740,15 @@
                 // Đường kẻ dọc chia đôi Before / After
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
+
+                // VẼ THÊM LOGO GÓC TRÊN TRÁI
+                const logoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/img_1786208707514_sq4h.jpg";
+                const logoImg = await loadImg(logoUrl);
+                if (logoImg) {
+                    const logoSize = 120; // Kích thước logo
+                    const margin = 20;    // Căn lề
+                    ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
+                }
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
