@@ -1079,24 +1079,21 @@
                 reader.readAsDataURL(file);
             });
         }
-        function dataURLtoFile(dataurl, filename) {
-            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-            while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-            return new File([u8arr], filename, {type:mime});
-        }
-
         function uploadFileToR2(base64Data) {
             return new Promise(async (resolve, reject) => {
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) throw new Error("Chưa đăng nhập.");
 
-                    const file = dataURLtoFile(base64Data, `img_${Date.now()}.jpg`);
+                    // FIX 1: Dùng Blob thay vì File để tương thích hoàn hảo với nhân WebKit của macOS
+                    let arr = base64Data.split(','), mime = arr[0].match(/:(.*?);/)[1];
+                    let bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                    while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+                    const blob = new Blob([u8arr], { type: mime });
+
                     const safeFileName = `img_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
-                    
                     const formData = new FormData(); 
-                    formData.append('file', file, safeFileName);
+                    formData.append('file', blob, safeFileName);
                     
                     const response = await fetch(`${WORKER_API_URL}/upload`, { 
                         method: 'POST', 
@@ -1104,8 +1101,14 @@
                         body: formData 
                     });
                     
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || `Server lỗi (${response.status})`);
+                    // FIX 2: Xử lý an toàn nếu Server Cloudflare trả về trang HTML báo lỗi (Ngăn chặn Crash ngầm)
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`HTTP ${response.status} - ${errText.includes('<html') ? 'Bị Cloudflare chặn bảo mật' : errText}`);
+                    }
+                    
+                    const data = JSON.parse(await response.text());
+                    if (data.error) throw new Error(data.error);
                     resolve(data.url);
                 } catch(err) { 
                     reject(err); 
