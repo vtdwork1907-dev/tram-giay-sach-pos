@@ -1974,7 +1974,8 @@
         function addShoeItem() {
             const shoeId = 'shoe_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); 
             const shoeNum = state.shoes.length + 1;
-            state.shoes.push({ id: shoeId, name: `Đôi #${shoeNum}`, note: '', brand: 'Khác', services: [], images: [] });
+            // Đã đổi brand mặc định thành Asics
+            state.shoes.push({ id: shoeId, name: `Đôi #${shoeNum}`, note: '', brand: 'Asics', services: [], images: [] });
             state.activeShoeId = shoeId; 
             renderMultiShoeList(); 
             recalculateSubtotalInput();
