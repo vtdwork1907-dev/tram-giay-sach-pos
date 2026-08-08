@@ -2262,7 +2262,7 @@
         async function processOrder() {
             let finalCartItems = []; 
             let finalImageUrls = []; 
-            let mainBrand = 'Khác';
+            let mainBrand = 'Asics'; // Đã đổi thành Asics
             const dateStr = document.getElementById('orderDateInput').value;
 
             if (state.multiShoeMode) {
@@ -2274,7 +2274,7 @@
                     const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
                     
                     s.services.forEach(svc => { 
-                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || 'Khác' }); 
+                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || 'Asics' }); // Đã đổi
                     });
                     s.images.forEach(img => { 
                         const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
@@ -2282,12 +2282,10 @@
                     });
                 });
                 if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
-                // Lấy hãng của dịch vụ đầu tiên làm hãng đại diện
-                if(state.shoes.length > 0 && state.shoes[0].services.length > 0) mainBrand = state.shoes[0].services[0].brand || 'Khác';
+                if(state.shoes.length > 0 && state.shoes[0].services.length > 0) mainBrand = state.shoes[0].services[0].brand || 'Asics'; // Đã đổi
             } else {
                 if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
-                // Bỏ qua tìm kiếm singleShoeBrand, lấy trực tiếp hãng của dịch vụ đầu tiên
-                mainBrand = state.cart[0].brand || 'Khác';
+                mainBrand = state.cart[0].brand || 'Asics'; // Đã đổi
 
                 finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: i.brand || mainBrand }));
                 finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
@@ -2295,6 +2293,7 @@
             
             const name = document.getElementById('custName').value.trim(); 
             const phone = document.getElementById('custPhone').value.trim();
+            // ... (Giữ nguyên toàn bộ phần code bên dưới của hàm này)
             if(!phone || !name) return alert("Vui lòng nhập đầy đủ Tên và Số điện thoại khách hàng!");
 
             const sub = parseInt(document.getElementById('subtotalInput').value) || 0; 
