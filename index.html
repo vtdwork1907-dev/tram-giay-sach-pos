@@ -1479,44 +1479,23 @@
                 state.orders.forEach(o => {
                     if(!['PROCESSED', 'PAID', 'DELIVERED'].includes(o.status)) return;
                     let pairs = [];
-                    
                     if(o.shoes && o.shoes.length > 0) {
-                        // CHẾ ĐỘ NHIỀU ĐÔI
                         o.shoes.forEach((shoe) => {
-                            let hasMatchingBrand = false;
-                            shoe.services.forEach(svc => {
-                                // Sửa logic lọc: Bắt chính xác tên hãng từ dịch vụ trong giỏ
-                                const itemBrand = svc.brand || o.brand || 'Khác';
-                                if (svc.category === 'SOLE' && itemBrand === currentGalleryBrand) {
-                                    hasMatchingBrand = true;
-                                }
-                            });
-                            
-                            if(hasMatchingBrand) {
-                                const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
-                                let afterImg = null; let flatShoeIndex = 0;
-                                for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndex += Math.max((o.shoes[i].images || []).length, 1); }
-                                if(o.imagesAfter && o.imagesAfter[flatShoeIndex] && o.imagesAfter[flatShoeIndex].trim() !== '') afterImg = o.imagesAfter[flatShoeIndex];
-                                if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
-                            }
+                            const soleSvcs = shoe.services.filter(svc => svc.category === 'SOLE' && (svc.brand || 'Khác') === currentGalleryBrand);
+                            if(soleSvcs.length === 0) return;
+                            const beforeImg = (shoe.images && shoe.images[0]) ? (shoe.images[0].r2Url || shoe.images[0].localUrl || shoe.images[0].url || shoe.images[0]) : null;
+                            let afterImg = null; let flatShoeIndex = 0;
+                            for(let i=0; i<o.shoes.length; i++) { if(o.shoes[i].id === shoe.id) break; flatShoeIndex += Math.max((o.shoes[i].images || []).length, 1); }
+                            if(o.imagesAfter && o.imagesAfter[flatShoeIndex] && o.imagesAfter[flatShoeIndex].trim() !== '') afterImg = o.imagesAfter[flatShoeIndex];
+                            if(beforeImg && afterImg) pairs.push({ shoeName: shoe.name + (shoe.note ? ` (${shoe.note})` : ''), before: beforeImg, after: afterImg });
                         });
                     } else {
-                        // CHẾ ĐỘ 1 ĐÔI
-                        let hasMatchingBrand = false;
-                        o.items.forEach(item => {
-                            // Sửa logic lọc: Đọc trực tiếp Hãng từ mục dịch vụ
-                            const itemBrand = item.brand || o.brand || 'Khác';
-                            if (item.category === 'SOLE' && itemBrand === currentGalleryBrand) {
-                                hasMatchingBrand = true;
-                            }
-                        });
-
-                        if(hasMatchingBrand) {
-                            if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
-                                for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
-                                    const b = o.images[i]; const a = o.imagesAfter[i];
-                                    if(b && a && a.trim() !== '') pairs.push({ shoeName: o.brand || 'Giày', before: typeof b === 'string' ? b : (b.r2Url || b.localUrl || b.url), after: a });
-                                }
+                        const soleSvcs = o.items.filter(item => item.category === 'SOLE' && (item.brand || 'Khác') === currentGalleryBrand);
+                        if(soleSvcs.length === 0) return;
+                        if(o.images && o.images.length > 0 && o.imagesAfter && o.imagesAfter.length > 0) {
+                            for(let i=0; i<Math.min(o.images.length, o.imagesAfter.length); i++) {
+                                const b = o.images[i]; const a = o.imagesAfter[i];
+                                if(b && a && a.trim() !== '') pairs.push({ shoeName: 'Giày', before: typeof b === 'string' ? b : (b.r2Url || b.localUrl || b.url), after: a });
                             }
                         }
                     }
@@ -1763,39 +1742,30 @@
         // 13.5 CÀI ĐẶT: QUẢN LÝ HÃNG GIÀY (BRANDS)
         // =========================================================================
         function renderSettingsBrandsTable() {
-            const tbody = document.getElementById('settingsBrandsTableBody');
-            if (!tbody) return;
-            if (!state.brands || state.brands.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-slate-500 text-xs italic">Chưa có hãng nào</td></tr>';
-                return;
-            }
-            tbody.innerHTML = state.brands.map((b, idx) => `
-                <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-                    <td class="p-2 md:p-3 font-bold text-slate-700 text-xs md:text-sm flex items-center gap-3">
-                        <div class="flex flex-col gap-0.5">
-                            <button type="button" onclick="moveBrand(${idx}, -1)" class="${idx === 0 ? 'text-slate-200 cursor-not-allowed' : 'text-sky-500 hover:text-sky-700'} p-0.5" ${idx === 0 ? 'disabled' : ''}><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
-                            <button type="button" onclick="moveBrand(${idx}, 1)" class="${idx === state.brands.length - 1 ? 'text-slate-200 cursor-not-allowed' : 'text-sky-500 hover:text-sky-700'} p-0.5" ${idx === state.brands.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
-                        </div>
-                        ${escapeHtml(b)}
-                    </td>
-                    <td class="p-2 md:p-3 text-right">
-                        <button type="button" onclick="editBrand(${idx})" class="text-amber-500 hover:text-amber-600 px-2 py-1 text-xs md:text-sm"><i class="fa-solid fa-pen"></i></button>
-                        <button type="button" onclick="deleteBrand(${idx})" class="text-red-400 hover:text-red-600 px-2 py-1 text-xs md:text-sm"><i class="fa-solid fa-trash"></i></button>
+            if(!state.brands || state.brands.length === 0) state.brands = ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+            document.getElementById('settingsBrandsTable').innerHTML = state.brands.map((b, idx) => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-3"><input type="text" value="${escapeHtml(b)}" onchange="updateBrandName(${idx}, this.value)" ${b === 'Khác' ? 'disabled' : ''} class="w-full font-bold text-slate-800 text-xs p-1.5 rounded border border-transparent hover:border-emerald-300 focus:border-emerald-500 outline-none bg-transparent focus:bg-white transition" title="${b === 'Khác' ? 'Hãng mặc định không thể sửa' : 'Bấm vào để sửa tên hãng'}"></td>
+                    <td class="p-3 text-right">
+                        ${b === 'Khác' ? `<span class="text-[10px] text-slate-400 italic">Mặc định</span>` : `<button onclick="deleteBrand(${idx})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Xóa hãng này"><i class="fa-solid fa-trash"></i></button>`}
                     </td>
                 </tr>
             `).join('');
+            
+            renderPOSBrandSelects();
+            if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
         }
 
-        function addNewBrand() {
-            const b = prompt("Nhập tên Hãng giày mới:");
-            if(b && b.trim()) {
-                if(!state.brands) state.brands = [];
-                if(state.brands.includes(b.trim())) return alert("Hãng này đã tồn tại!");
-                state.brands.push(b.trim());
-                saveSettingsToDB(); // QUAN TRỌNG: Đẩy lên mây để đồng bộ
-                renderSettingsBrandsTable();
-                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
-            }
+        async function addNewBrand() {
+            const name = document.getElementById('addBrandName').value.trim();
+            if(!name) return alert("Vui lòng nhập tên hãng!");
+            if(state.brands.some(b => b.toLowerCase() === name.toLowerCase())) return alert("Tên hãng này đã tồn tại!");
+            
+            state.brands.unshift(name);
+            await saveSettingsToDB();
+            renderSettingsBrandsTable();
+            document.getElementById('addBrandName').value = '';
+            showNotification("✅ Thêm thành công", `Đã thêm hãng ${name} vào hệ thống.`);
         }
 
         async function updateBrandName(idx, newName) {
@@ -1807,34 +1777,14 @@
             renderSettingsBrandsTable();
         }
 
-        function deleteBrand(idx) {
-            if(confirm("Bạn có chắc muốn xóa hãng '" + state.brands[idx] + "'?")) {
+        async function deleteBrand(idx) {
+            const brandName = state.brands[idx];
+            if(brandName === 'Khác') return alert("Không thể xóa hãng mặc định!");
+            if(confirm(`Bạn có chắc muốn xóa hãng ${brandName}? Các ảnh trong kho của hãng này có thể bị mất định dạng.`)) {
                 state.brands.splice(idx, 1);
-                saveSettingsToDB(); // QUAN TRỌNG
+                await saveSettingsToDB();
                 renderSettingsBrandsTable();
-                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
             }
-        }
-        function editBrand(idx) {
-            const old = state.brands[idx];
-            const b = prompt("Sửa tên Hãng:", old);
-            if(b && b.trim() && b.trim() !== old) {
-                if(state.brands.includes(b.trim())) return alert("Hãng này đã tồn tại!");
-                state.brands[idx] = b.trim();
-                saveSettingsToDB(); 
-                renderSettingsBrandsTable();
-                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
-            }
-        }
-
-        function moveBrand(idx, dir) {
-            if (idx + dir < 0 || idx + dir >= state.brands.length) return;
-            const temp = state.brands[idx];
-            state.brands[idx] = state.brands[idx + dir];
-            state.brands[idx + dir] = temp;
-            saveSettingsToDB(); 
-            renderSettingsBrandsTable();
-            if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
         }
 
         // =========================================================================
