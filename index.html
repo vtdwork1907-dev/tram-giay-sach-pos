@@ -1730,20 +1730,36 @@
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
 
-                const logoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/img_1786208707514_sq4h.jpg";
+                // VẼ THÊM LOGO GÓC TRÊN TRÁI (THU NHỎ & BO TRÒN)
+                const logoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
                 const logoImg = await loadImg(logoUrl);
                 if (logoImg) {
-                    const logoSize = 120;
-                    const margin = 20;
+                    const logoSize = 75; // Đã thu nhỏ từ 120 xuống 75
+                    const margin = 20;   // Khoảng cách từ lề
+                    const radius = 12;   // Độ bo tròn góc (12px)
+
+                    ctx.save(); // Lưu trạng thái canvas
+                    ctx.beginPath();
+                    ctx.moveTo(margin + radius, margin);
+                    ctx.lineTo(margin + logoSize - radius, margin);
+                    ctx.quadraticCurveTo(margin + logoSize, margin, margin + logoSize, margin + radius);
+                    ctx.lineTo(margin + logoSize, margin + logoSize - radius);
+                    ctx.quadraticCurveTo(margin + logoSize, margin + logoSize, margin + logoSize - radius, margin + logoSize);
+                    ctx.lineTo(margin + radius, margin + logoSize);
+                    ctx.quadraticCurveTo(margin, margin + logoSize, margin, margin + logoSize - radius);
+                    ctx.lineTo(margin, margin + radius);
+                    ctx.quadraticCurveTo(margin, margin, margin + radius, margin);
+                    ctx.closePath();
+                    ctx.clip(); // Thực hiện cắt khung bo tròn
+
+                    // Vẽ ảnh logo vào trong khung đã cắt
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
+                    ctx.restore(); // Trả lại trạng thái bình thường cho canvas
                 }
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
                 return dataUrl;
-            } catch(e) { 
-                console.error("Lỗi tạo ảnh ghép", e); 
-                return null; // Có lỗi cũng huỷ luôn
             } 
         }
 
