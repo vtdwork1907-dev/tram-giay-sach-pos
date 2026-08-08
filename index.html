@@ -971,6 +971,7 @@
                         item.retryCount = (item.retryCount || 0) + 1;
                         if (item.retryCount >= 3) {
                             item.status = 'error'; 
+                            showNotification("❌ Tải ảnh thất bại", "Có ảnh không thể gửi lên máy chủ (do mạng hoặc file quá lớn). Vui lòng xóa khung bị lỗi và tải lại.");
                             
                             const targetImgIdx = state.uploadedImages.findIndex(img => img.id === item.imgId);
                             if(targetImgIdx !== -1) { state.uploadedImages[targetImgIdx].status = 'error'; renderPreviewImages(); }
