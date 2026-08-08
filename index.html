@@ -3532,169 +3532,264 @@
             });
         }
 
-        function clearDateFilter() { 
+        // Thay thế toàn bộ 3 hàm này bằng đoạn code dưới đây:
+
+function clearDateFilter() { 
     document.getElementById('reportStartDate').value = ''; 
     document.getElementById('reportEndDate').value = ''; 
     
     updateReportMetrics(true);
 }
 
-       async function updateReportMetrics(forceFetch = false) {
-    updateExpenseCharts();
+async function updateReportMetrics(forceFetch = false) {
+    // Bọc trong try-catch để dù biểu đồ chi phí lỗi thì báo cáo tổng vẫn tính bình thường
+    try { updateExpenseCharts(); } catch(e) { console.error("Lỗi vẽ biểu đồ chi phí:", e); }
 
     const startInput = document.getElementById('reportStartDate');
     const endInput = document.getElementById('reportEndDate');
     const start = startInput ? startInput.value : '';
     const end = endInput ? endInput.value : '';
 
-    // Mặc định lấy dữ liệu 150 đơn sẵn có trong máy làm dữ liệu nền (đảm bảo không bao giờ bị hiển thị 0)
-    let reportOrders = state.orders || [];
-    let reportExpenses = state.expenses || [];
+    // Luôn sử dụng dữ liệu offline đang có sẵn làm phao cứu sinh
+    let reportOrders = Array.isArray(state.orders) ? [...state.orders] : [];
+    let reportExpenses = Array.isArray(state.expenses) ? [...state.expenses] : [];
 
-    // Nếu có mạng Internet, tiến hành tải đầy đủ dữ liệu từ Cloud về để báo cáo chính xác
-    if (navigator.onLine) {
+    const isReportTabActive = !document.getElementById('tab-reports').classList.contains('hidden');
+
+    // Bắt đầu gọi lên Server nếu có mạng
+    if (navigator.onLine && (isReportTabActive || forceFetch)) {
         const iconRep = document.querySelector('#tab-reports .fa-chart-pie');
-        if (iconRep) {
-            iconRep.classList.remove('fa-chart-pie');
-            iconRep.classList.add('fa-spinner', 'fa-spin');
-        }
+        if (iconRep) { iconRep.classList.remove('fa-chart-pie'); iconRep.classList.add('fa-spinner', 'fa-spin'); }
 
         try {
-            // Truy vấn toàn bộ đơn hàng từ Supabase
-            let queryOrders = supabaseClient.from('orders').select('*').order('date', { ascending: false });
-            if (start) queryOrders = queryOrders.gte('date', start + ' 00:00:00');
-            if (end) queryOrders = queryOrders.lte('date', end + ' 23:59:59');
-
-            const { data: dbOrders, error: errOrders } = await queryOrders;
+            // Tải đơn hàng (tối ưu tốc độ: tải theo lô từng 1000 đơn, không tải hình ảnh)
+            let allFetchedOrders = [];
+            let fromO = 0; 
+            const step = 1000; 
+            let fetchO = true;
             
-            if (!errOrders && dbOrders && dbOrders.length > 0) {
-                // Chuyển đổi dữ liệu chuẩn thông qua mapper mapOrderDbToJs
-                reportOrders = dbOrders.map(mapOrderDbToJs);
+            while (fetchO) {
+                let q = supabaseClient.from('orders')
+                    .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                    .order('date', { ascending: false })
+                    .range(fromO, fromO + step - 1);
+
+                if (start) q = q.gte('date', start + ' 00:00:00');
+                if (end) q = q.lte('date', end + ' 23:59:59');
+
+                const { data, error } = await q;
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    allFetchedOrders = allFetchedOrders.concat(data);
+                    fromO += step;
+                    if (data.length < step) fetchO = false;
+                } else {
+                    fetchO = false;
+                }
+            }
+            
+            if (allFetchedOrders.length > 0 || start || end) {
+                reportOrders = allFetchedOrders.map(db => ({
+                    date: db.date,
+                    customer: { phone: db.customer_phone },
+                    total: db.total || 0,
+                    extraFeeVal: db.extra_fee_val || 0,
+                    status: db.status || 'RECEIVED',
+                    paymentMethod: db.payment_method || null,
+                    items: db.items || []
+                }));
             }
 
-            // Truy vấn toàn bộ chi phí từ Supabase
-            let queryExpenses = supabaseClient.from('expenses').select('*').order('date', { ascending: false });
-            if (start) queryExpenses = queryExpenses.gte('date', start);
-            if (end) queryExpenses = queryExpenses.lte('date', end);
+            // Tải chi phí (theo lô 1000)
+            let allFetchedExp = [];
+            let fromE = 0; 
+            let fetchE = true;
+            
+            while (fetchE) {
+                let q = supabaseClient.from('expenses')
+                    .select('amount, date, cat')
+                    .order('date', { ascending: false })
+                    .range(fromE, fromE + step - 1);
+                    
+                if (start) q = q.gte('date', start);
+                if (end) q = q.lte('date', end);
 
-            const { data: dbExpenses, error: errExpenses } = await queryExpenses;
-
-            if (!errExpenses && dbExpenses && dbExpenses.length > 0) {
-                reportExpenses = dbExpenses;
+                const { data, error } = await q;
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    allFetchedExp = allFetchedExp.concat(data);
+                    fromE += step;
+                    if (data.length < step) fetchE = false;
+                } else {
+                    fetchE = false;
+                }
             }
-        } catch (err) {
-            console.error("Lỗi khi tải dữ liệu báo cáo từ Cloud:", err);
+            
+            if (allFetchedExp.length > 0 || start || end) {
+                reportExpenses = allFetchedExp;
+            }
+        } catch(e) {
+            console.error("Lỗi đồng bộ full data báo cáo, dùng lại dữ liệu nội bộ:", e);
         } finally {
-            if (iconRep) {
-                iconRep.classList.add('fa-chart-pie');
-                iconRep.classList.remove('fa-spinner', 'fa-spin');
-            }
+            if (iconRep) { iconRep.classList.add('fa-chart-pie'); iconRep.classList.remove('fa-spinner', 'fa-spin'); }
         }
     }
 
-    // Bắt đầu cộng dồn các chỉ số tài chính
-    let grossSales = 0;
-    let rev = 0;
-    let exp = 0;
+    // TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC LỖI
+    let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
     let totalOrdersCount = 0;
     const uniqueCustomersPhones = new Set();
-    let ckRev = 0;
-    let tmRev = 0;
+    let ckRev = 0, tmRev = 0;
 
-    // Kiểm tra đơn hàng có nằm trong khoảng ngày được lọc hay không
     const inRange = (dStr) => {
-        if (!dStr) return true;
+        if (!dStr) return false; 
         const d = dStr.split(' ')[0].split('T')[0];
         if (start && d < start) return false;
         if (end && d > end) return false;
         return true;
     };
 
-    // Tính toán trên danh sách đơn hàng
-    reportOrders.forEach(o => {
-        if (inRange(o.date)) {
-            totalOrdersCount++;
-            if (o.customer && o.customer.phone) {
-                uniqueCustomersPhones.add(o.customer.phone);
-            }
+    try {
+        reportOrders.forEach(o => {
+            if (inRange(o.date)) {
+                totalOrdersCount++;
+                if (o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone);
 
-            const finalTotal = (o.total || 0) + (o.extraFeeVal || 0);
-            grossSales += finalTotal;
+                const finalTotal = (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+                grossSales += finalTotal;
 
-            if (o.status === 'PAID' || o.status === 'DELIVERED') {
-                rev += finalTotal;
-                if (o.paymentMethod === 'CASH') {
-                    tmRev += finalTotal;
-                } else {
-                    ckRev += finalTotal;
+                if (o.status === 'PAID' || o.status === 'DELIVERED') {
+                    rev += finalTotal;
+                    if (o.paymentMethod === 'CASH') tmRev += finalTotal; else ckRev += finalTotal;
+                }
+
+                if (o.items && Array.isArray(o.items)) {
+                    o.items.forEach(item => {
+                        let parsedItem = item;
+                        if (typeof item === 'string') {
+                            try { parsedItem = JSON.parse(item); } catch(e) {}
+                        }
+                        const svcInfo = state.services.find(s => s.id === parsedItem.id);
+                        const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                        if (!svcCounts[cat]) svcCounts[cat] = 0;
+                        svcCounts[cat] += (Number(parsedItem.qty) || 1);
+                    });
                 }
             }
+        });
 
-            if (o.items && Array.isArray(o.items)) {
-                o.items.forEach(item => {
-                    const svcInfo = state.services.find(s => s.id === item.id);
-                    const cat = svcInfo ? svcInfo.category : 'KHÁC';
-                    if (!svcCounts[cat]) svcCounts[cat] = 0;
-                    svcCounts[cat] += (item.qty || 1);
-                });
-            }
-        }
-    });
+        reportExpenses.forEach(e => {
+            if (inRange(e.date)) exp += (Number(e.amount) || 0);
+        });
+    } catch(e) {
+        console.error("Lỗi khi lặp dữ liệu tính toán báo cáo:", e);
+    }
 
-    // Tính toán trên danh sách khoản chi
-    reportExpenses.forEach(e => {
-        if (inRange(e.date)) {
-            exp += (e.amount || 0);
-        }
-    });
+    // CẬP NHẬT CON SỐ LÊN GIAO DIỆN
+    const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
+    
+    setTxt('repTotalOrders', totalOrdersCount.toLocaleString('vi-VN'));
+    setTxt('repUniqueCustomers', `Từ ${uniqueCustomersPhones.size} khách hàng`);
+    setTxt('repGrossSales', grossSales.toLocaleString('vi-VN') + ' đ');
+    setTxt('repRevenue', rev.toLocaleString('vi-VN') + ' đ');
+    setTxt('repRevenueBreakdown', `CK: ${ckRev.toLocaleString('vi-VN')} đ | TM: ${tmRev.toLocaleString('vi-VN')} đ`);
+    setTxt('repExpenses', exp.toLocaleString('vi-VN') + ' đ');
+    setTxt('repNetProfit', (rev - exp).toLocaleString('vi-VN') + ' đ');
 
-    // Cập nhật các con số lên màn hình
-    const elTotalOrders = document.getElementById('repTotalOrders');
-    if (elTotalOrders) elTotalOrders.innerText = totalOrdersCount.toLocaleString('vi-VN');
-
-    const elUnique = document.getElementById('repUniqueCustomers');
-    if (elUnique) elUnique.innerText = `Từ ${uniqueCustomersPhones.size} khách hàng`;
-
-    const elGross = document.getElementById('repGrossSales');
-    if (elGross) elGross.innerText = grossSales.toLocaleString('vi-VN') + ' đ';
-
-    const elRev = document.getElementById('repRevenue');
-    if (elRev) elRev.innerText = rev.toLocaleString('vi-VN') + ' đ';
-
-    const brkDown = document.getElementById('repRevenueBreakdown');
-    if (brkDown) brkDown.innerText = `CK: ${ckRev.toLocaleString('vi-VN')} đ | TM: ${tmRev.toLocaleString('vi-VN')} đ`;
-
-    const elExp = document.getElementById('repExpenses');
-    if (elExp) elExp.innerText = exp.toLocaleString('vi-VN') + ' đ';
-
-    const elNet = document.getElementById('repNetProfit');
-    if (elNet) elNet.innerText = (rev - exp).toLocaleString('vi-VN') + ' đ';
-
-    // Cập nhật biểu đồ Doanh Thu & Chi Phí
     if (barChartInst) {
-        barChartInst.data.labels = [(start || end) ? `Từ ${start || '...'} đến ${end || '...'}` : `Tổng thời gian`];
+        barChartInst.data.labels = [(start || end) ? `Từ ${start||'...'} đến ${end||'...'}` : `Tổng thời gian`];
         barChartInst.data.datasets[0].data[0] = rev;
         barChartInst.data.datasets[1].data[0] = exp;
         barChartInst.update();
     }
-
-    // Cập nhật biểu đồ Dịch Vụ
+    
     if (pieChartInst) {
-        const labelsMap = {
-            'CLEAN': 'Vệ Sinh',
-            'SOLE': 'Thay Đế',
-            'GLUE': 'Dán Đế',
-            'REPAINT': 'Repaint',
-            'STAIN': 'Tẩy Ố',
-            'KHÁC': 'Khác'
-        };
+        const labelsMap = { 'CLEAN': 'Vệ Sinh', 'SOLE': 'Thay Đế', 'GLUE': 'Dán Đế', 'REPAINT': 'Repaint', 'STAIN': 'Tẩy Ố', 'KHÁC': 'Khác' };
         const labels = Object.keys(svcCounts).map(k => labelsMap[k] || 'Khác');
         const data = Object.values(svcCounts);
         pieChartInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu'];
         pieChartInst.data.datasets[0].data = data.length > 0 ? data : [1];
         pieChartInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#0284c7', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0'];
         pieChartInst.update();
+    }
+}
+
+function updateExpenseCharts() {
+    let targetMonthPrefix = ''; 
+    if (document.getElementById('expenseMonthFilter')) targetMonthPrefix = document.getElementById('expenseMonthFilter').value; 
+    if (!targetMonthPrefix) { 
+        const now = new Date(); 
+        targetMonthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; 
+    }
+    
+    const monthExpenses = state.expenses.filter(e => e.date && e.date.startsWith(targetMonthPrefix)); 
+    const expTabCounts = {}; 
+    let monthTotal = 0;
+    
+    monthExpenses.forEach(e => { 
+        const catName = e.cat === 'SUPPLY' ? 'Vận hành (vật tư,...)' : (e.cat === 'OPERATIONAL' ? 'Cố định' : 'Khác'); 
+        if (!expTabCounts[catName]) expTabCounts[catName] = 0; 
+        expTabCounts[catName] += e.amount; 
+        monthTotal += e.amount; 
+    });
+    
+    const totalEl = document.getElementById('expTabMonthTotal'); 
+    if (totalEl) totalEl.innerText = monthTotal.toLocaleString('vi-VN') + ' đ';
+    
+    const catListEl = document.getElementById('expTabCategoryBreakdown');
+    if (catListEl) { 
+        if (monthExpenses.length === 0) { 
+            catListEl.innerHTML = `<div class="text-slate-400 italic text-center py-2">Tháng này chưa có khoản chi nào</div>`; 
+        } else { 
+            const catColors = {'Vận hành (vật tư,...)': '#ef4444', 'Cố định': '#f59e0b', 'Khác': '#3b82f6'}; 
+            catListEl.innerHTML = Object.keys(expTabCounts).map(cat => { 
+                const amt = expTabCounts[cat]; 
+                const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 100) : 0; 
+                return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100"><span class="flex items-center gap-1.5 font-semibold text-slate-700"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color:${catColors[cat] || '#8b5cf6'}"></span>${cat}</span><div class="text-right"><span class="font-bold text-slate-800">${amt.toLocaleString('vi-VN')} đ</span><span class="text-[10px] text-slate-500 font-bold ml-1">(${pct}%)</span></div></div>`; 
+            }).join(''); 
+        } 
+    }
+
+    if (expTabPieInst) { 
+        const labels = Object.keys(expTabCounts); 
+        const data = Object.values(expTabCounts); 
+        expTabPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; 
+        expTabPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; 
+        expTabPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; 
+        expTabPieInst.update(); 
+    }
+
+    const start = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : ''; 
+    const end = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : ''; 
+    
+    // Đã thêm bảo vệ lỗi nếu dStr bị undefined/null
+    const inRange = (dStr) => { 
+        if (!dStr) return false; 
+        const d = dStr.split(' ')[0]; 
+        if (start && d < start) return false; 
+        if (end && d > end) return false; 
+        return true; 
+    };
+
+    const reportExpCounts = {}; 
+    state.expenses.forEach(e => { 
+        if (inRange(e.date)) { 
+            const catName = e.cat === 'SUPPLY' ? 'Vận hành (vật tư,...)' : (e.cat === 'OPERATIONAL' ? 'Cố định' : 'Khác'); 
+            if (!reportExpCounts[catName]) reportExpCounts[catName] = 0; 
+            reportExpCounts[catName] += e.amount; 
+        } 
+    });
+
+    if (expReportPieInst) { 
+        const labels = Object.keys(reportExpCounts); 
+        const data = Object.values(reportExpCounts); 
+        expReportPieInst.data.labels = labels.length > 0 ? labels : ['Chưa có dữ liệu']; 
+        expReportPieInst.data.datasets[0].data = data.length > 0 ? data : [1]; 
+        expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; 
+        expReportPieInst.update(); 
     }
 }
 
