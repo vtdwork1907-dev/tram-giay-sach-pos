@@ -4233,17 +4233,27 @@ function updateExpenseCharts() {
             let ckRev = 0; let tmRev = 0;
 
             state.orders.forEach(o => {
+                // 1. DOANH THU & DOANH SỐ (Giữ nguyên tính theo ngày tạo đơn để không hỏng báo cáo kế toán)
                 if(o.date && o.date.startsWith(todayStr)) {
                     const finalTotal = o.total + (o.extraFeeVal || 0);
                     grossToday += finalTotal; 
+                    
                     if(o.status === 'PAID' || o.status === 'DELIVERED') {
                         revToday += finalTotal;
                         if (o.paymentMethod === 'CASH') tmRev += finalTotal;
                         else ckRev += finalTotal;
                     }
-                    if(o.status === 'RECEIVED') cReceived++; if(o.status === 'PROCESSING') cProcessing++;
-                    if(o.status === 'PROCESSED') cProcessed++; if(o.status === 'DELIVERED') cDelivered++;
+                    
+                    // Riêng mục 'Đã trả khách' vẫn giới hạn đếm những đơn tạo hôm nay 
+                    // (Để tránh việc đếm toàn hệ thống khiến con số cộng dồn lên hàng ngàn đơn cũ)
+                    if(o.status === 'DELIVERED' || o.status === 'PAID') cDelivered++;
                 }
+                
+                // 2. BÁO CÁO CÔNG VIỆC TỒN ĐỌNG (ĐẾM TOÀN HỆ THỐNG)
+                // Các đơn cũ đang tồn đọng sẽ được đếm liên tục bất kể ngày tạo. 
+                if(o.status === 'RECEIVED') cReceived++; 
+                if(o.status === 'PROCESSING') cProcessing++;
+                if(o.status === 'PROCESSED') cProcessed++; 
             });
 
             document.getElementById('dashGrossSales').innerText = grossToday.toLocaleString() + ' đ'; 
