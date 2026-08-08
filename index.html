@@ -1794,6 +1794,27 @@
                 if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
             }
         }
+        function editBrand(idx) {
+            const old = state.brands[idx];
+            const b = prompt("Sửa tên Hãng:", old);
+            if(b && b.trim() && b.trim() !== old) {
+                if(state.brands.includes(b.trim())) return alert("Hãng này đã tồn tại!");
+                state.brands[idx] = b.trim();
+                saveSettingsToDB(); 
+                renderSettingsBrandsTable();
+                if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
+            }
+        }
+
+        function moveBrand(idx, dir) {
+            if (idx + dir < 0 || idx + dir >= state.brands.length) return;
+            const temp = state.brands[idx];
+            state.brands[idx] = state.brands[idx + dir];
+            state.brands[idx + dir] = temp;
+            saveSettingsToDB(); 
+            renderSettingsBrandsTable();
+            if(currentGalleryTab === 'sole' || currentGalleryTab === 'library') renderGalleryBrandFilter();
+        }
 
         // =========================================================================
         // 14. CÀI ĐẶT: LOGO & MÃ QR THANH TOÁN
