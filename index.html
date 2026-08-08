@@ -1093,7 +1093,7 @@
                 reader.readAsDataURL(file);
             });
         }
-        function uploadFileToR2(base64Data, isRetry = false) {
+        function uploadFileToR2(base64Data, prefix = 'orders', isRetry = false) {
             return new Promise(async (resolve, reject) => {
                 try {
                     let { data: { session } } = await supabaseClient.auth.getSession();
@@ -1104,6 +1104,7 @@
                     while(n--) { u8arr[n] = bstr.charCodeAt(n); }
                     const blob = new Blob([u8arr], { type: mime });
 
+                    // Gắn biến prefix vào tên file
                     const safeFileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2,6)}.jpg`;
                     const formData = new FormData(); 
                     formData.append('file', blob, safeFileName);
@@ -1115,18 +1116,15 @@
                     });
                     
                     if (!response.ok) {
-                        // FIX: Cơ chế Tự Chữa Lành Token khi bị lỗi 401
                         if (response.status === 401) {
                             if (!isRetry) {
-                                // Nếu là lần lỗi đầu tiên, gọi Supabase âm thầm cấp khóa mới
                                 const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
                                 if (!refreshError && refreshData.session) {
-                                    // Có khóa mới -> Gọi lại chính hàm tải ảnh này lần nữa (Đệ quy)
-                                    const retryUrl = await uploadFileToR2(base64Data, true);
+                                    // Truyền lại đúng prefix khi chữa lành token
+                                    const retryUrl = await uploadFileToR2(base64Data, prefix, true);
                                     return resolve(retryUrl);
                                 }
                             }
-                            // Nếu đã cố chữa lành mà vẫn lỗi, lúc này mới bắt người dùng đăng nhập lại
                             throw new Error("Phiên đăng nhập đã hết hạn. HÃY BẤM NÚT 'THOÁT' Ở GÓC TRÊN VÀ ĐĂNG NHẬP LẠI.");
                         }
                         
@@ -1141,14 +1139,6 @@
                     reject(err); 
                 }
             });
-        }
-        async function deleteFileFromR2(fileUrl) {
-            try {
-                if (!navigator.onLine) return; 
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) throw new Error("Chưa đăng nhập");
-                await fetch(`${WORKER_API_URL}/delete`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ key: fileUrl }) });
-            } catch (e) { console.error("Lỗi xóa file trên R2:", e); }
         }
         // =========================================================================
         // 9. CÁC HÀM FORMAT DỮ LIỆU & BỔ TRỢ (HELPERS)
