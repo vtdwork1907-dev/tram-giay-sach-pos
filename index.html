@@ -457,15 +457,18 @@
                     <div id="galleryBrandFilter" class="flex gap-2 overflow-x-auto hide-scroll pb-1"></div>
                 </div>
 
-                <!-- KHO ĐẾ -->
+                <!-- KHO ĐẾ (HỖ TRỢ THƯ MỤC DÒNG GIÀY) -->
                 <div id="gal-sole-content" class="flex flex-col gap-4">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-inner">
-                        <span class="font-bold text-sm text-slate-700" id="gal-sole-brand-title">Hãng: Asics</span>
-                        <label class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow active:scale-95 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Tải Ảnh Đế<input type="file" accept="image/*" multiple onchange="uploadGallerySole(event)" class="hidden">
-                        </label>
+                    <div class="bg-slate-50 p-2.5 md:p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-inner">
+                        <span class="font-bold text-[11px] md:text-sm text-slate-700" id="gal-sole-brand-title">Hãng: Asics</span>
+                        <div class="flex gap-1.5 md:gap-2">
+                            <button onclick="promptAddShoeLine()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] md:text-xs font-bold px-2 md:px-3 py-1.5 md:py-2 rounded-lg cursor-pointer shadow active:scale-95 transition flex items-center gap-1"><i class="fa-solid fa-folder-plus"></i> Thêm Dòng</button>
+                            <label class="bg-sky-600 hover:bg-sky-700 text-white text-[10px] md:text-xs font-bold px-2 md:px-3 py-1.5 md:py-2 rounded-lg cursor-pointer shadow active:scale-95 transition flex items-center gap-1">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Ảnh Chung<input type="file" accept="image/*" multiple onchange="uploadGallerySole(event, null)" class="hidden">
+                            </label>
+                        </div>
                     </div>
-                    <div id="gal-sole-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+                    <div id="gal-sole-lines" class="flex flex-col gap-3"></div>
                 </div>
 
                 <!-- THƯ VIỆN BEFORE/AFTER -->
