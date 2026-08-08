@@ -36,30 +36,83 @@
     
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { navy: { 50: '#f0f5fa', 100: '#e1ebd5', 600: '#1d5494', 800: '#10386C', 900: '#0a2347' }, cyanBrand: '#00A8E8' } } }
+            theme: { extend: { colors: { navy: { 50: '#f5f3ff', 100: '#e0e7ff', 600: '#4f46e5', 800: '#3730a3', 900: '#312e81' }, cyanBrand: '#38bdf8' } } }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Lexend', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
+        
+        /* 1. MÀU NỀN & HIỆU ỨNG ÁNH SÁNG AMBIENT */
+        body { 
+            font-family: 'Lexend', sans-serif; 
+            background-color: #f1f5f9; /* Xám xanh nhạt nền nã */
+            -webkit-tap-highlight-color: transparent; 
+            position: relative;
+        }
+        /* Cục sáng màu Tím góc trên */
+        body::before {
+            content: ''; position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%; z-index: -1; pointer-events: none;
+        }
+        /* Cục sáng màu Xanh góc dưới */
+        body::after {
+            content: ''; position: fixed; bottom: -10%; right: -10%; width: 60vw; height: 60vw;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%; z-index: -1; pointer-events: none;
+        }
+
+        /* 2. CHUYỂN HOÁ TOÀN BỘ CARD THÀNH GLASSMORPHISM (KÍNH MỜ) */
+        .bg-white.rounded-2xl, .bg-white.rounded-xl, .bg-white.rounded-3xl, .bg-white.rounded-lg {
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+        }
+        /* Các ô nền xám con bên trong sẽ trong suốt hơn một chút */
+        .bg-slate-50, .bg-slate-100 {
+            background: rgba(248, 250, 252, 0.5) !important;
+            border-color: rgba(226, 232, 240, 0.4) !important;
+        }
+
+        /* 3. ĐỔI MÀU GIAO DIỆN HỆ THỐNG SANG GRADIENT TÀI CHÍNH */
+        .bg-navy-800 {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
+        }
+        .text-navy-800 { color: #4f46e5 !important; }
+        
+        /* Hiệu ứng cho nút Tab đang Active */
+        .nav-btn.bg-sky-600 {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.35) !important;
+            border: none !important;
+            transform: translateY(-2px);
+        }
+
+        /* 4. CHỈNH LẠI THANH CUỘN */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 4px; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        #globalLoading { display: flex; position: fixed; inset: 0; background: rgba(255,255,255,1); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); pointer-events: none; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        /* Loading & Image Preview (Giữ nguyên) */
+        #globalLoading { display: flex; position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .spinner { border: 4px solid rgba(79, 70, 229, 0.1); border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
+        .image-preview-item { position: relative; width: 3.5rem; height: 4.66rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.8); flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; }
         .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-        .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); cursor: pointer; }
+        .image-preview-item .remove-btn { position: absolute; top: -0.25rem; right: -0.25rem; background-color: #ef4444; color: white; font-size: 0.625rem; width: 1.25rem; height: 1.25rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; }
         .image-preview-item .upload-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; }
-        .image-preview-item .upload-spinner { width: 1.25rem; height: 1.25rem; border: 2px solid #cbd5e1; border-top-color: #0284c7; border-radius: 50%; animation: spin 1s linear infinite; }
-        @media (min-width: 768px) {
-            .image-preview-item { width: 4.5rem; height: 6rem; }
+        .image-preview-item .upload-spinner { width: 1.25rem; height: 1.25rem; border: 2px solid #cbd5e1; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+        @media (min-width: 768px) { .image-preview-item { width: 4.5rem; height: 6rem; } }
+        
+        /* Chừa khoảng trống cho Floating Nav trên điện thoại */
+        @media (max-width: 767px) {
+            main { padding-bottom: 110px !important; }
         }
     </style>
 </head>
