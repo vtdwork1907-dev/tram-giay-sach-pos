@@ -4799,6 +4799,7 @@ function initSwipeToCloseModals() {
     });
 }
         window.addEventListener('DOMContentLoaded', async () => {
+            initSwipeToCloseModals();
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none'; 
                 state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png"; 
