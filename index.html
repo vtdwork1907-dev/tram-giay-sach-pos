@@ -2047,26 +2047,32 @@
 
             try {
                 const loadImg = (src) => new Promise((resolve) => {
-    if (!src) return resolve(null);
-    const img = new Image();
-    if (src.startsWith('http')) img.crossOrigin = "Anonymous";
-    
-    img.onload = () => resolve(img);
-    img.onerror = (err) => {
-        console.error("Lỗi khi tải ảnh logo:", src, err); // Thêm dòng này để thấy lỗi
-        resolve(null);
-    };
-    img.src = src;
-});
+                    if (!src) return resolve(null);
+                    const img = new Image();
+                    if (src.startsWith('http')) img.crossOrigin = "Anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = (err) => resolve(null);
+                    img.src = src;
+                });
 
                 const isDouble = pairsChunk.length >= 2;
-                const colW = 600; const rowH = 600; const bannerH = 60;
+                
+                // TĂNG ĐỘ NÉT GẤP 3 LẦN
+                const scaleFactor = 3; 
+                const colW = 600 * scaleFactor; 
+                const rowH = 600 * scaleFactor; 
+                const bannerH = 60 * scaleFactor; 
+
                 const canvasW = colW * 2;
                 const canvasH = (isDouble ? rowH * 2 : rowH) + bannerH;
 
                 const canvas = document.createElement('canvas');
                 canvas.width = canvasW; canvas.height = canvasH;
                 const ctx = canvas.getContext('2d');
+                
+                // Tối ưu thuật toán làm mịn khi scale ảnh
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
 
                 for (let i = 0; i < Math.min(pairsChunk.length, 2); i++) {
                     const yPos = i * rowH;
@@ -2080,7 +2086,7 @@
                     
                     if (i === 0 && isDouble) {
                         ctx.beginPath(); ctx.moveTo(0, rowH); ctx.lineTo(canvasW, rowH);
-                        ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
+                        ctx.lineWidth = 4 * scaleFactor; ctx.strokeStyle = "white"; ctx.stroke();
                     }
                 }
 
@@ -2088,14 +2094,16 @@
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, yBanner, colW, bannerH);
                 ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(colW, yBanner, colW, bannerH);
                 
-                ctx.fillStyle = "white"; ctx.font = "bold 26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillStyle = "white"; 
+                ctx.font = "bold " + (26 * scaleFactor) + "px sans-serif"; 
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText("TRƯỚC KHI LÀM", colW / 2, yBanner + (bannerH / 2));
                 ctx.fillText("SAU KHI LÀM", colW + (colW / 2), yBanner + (bannerH / 2));
                 
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
-                ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
+                ctx.lineWidth = 6 * scaleFactor; ctx.strokeStyle = "white"; ctx.stroke();
 
-               // Ưu tiên logo cài đặt, nếu không có thì lấy mặc định
+                // Ưu tiên logo cài đặt
                 const defaultLogoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
                 const targetLogoUrl = state.logo ? state.logo : defaultLogoUrl;
                 
@@ -2103,9 +2111,9 @@
                 const logoImg = await getLogoImageFast(targetLogoUrl);
 
                 if (logoImg) {
-                    const logoSize = 75; 
-                    const margin = 20;   
-                    const radius = 12;   
+                    const logoSize = 75 * scaleFactor; 
+                    const margin = 20 * scaleFactor;   
+                    const radius = 12 * scaleFactor;   
 
                     ctx.save(); 
                     ctx.beginPath();
@@ -2124,9 +2132,9 @@
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
                     ctx.restore(); 
                 }
-                // Đã xóa bỏ hoàn toàn đoạn vẽ chữ. Nếu logo lỗi mạng cực nặng, nó sẽ để trống góc trái chứ không làm chậm app.
 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                // Xuất ảnh chất lượng cao 95%
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
                 combinedImageCache[cacheKey] = dataUrl;
                 return dataUrl;
             } catch(e) { 
