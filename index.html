@@ -4700,6 +4700,104 @@ function updateExpenseCharts() {
             finally { if (showLoading) { const loader = document.getElementById('globalLoading'); if (loader) loader.style.display = 'none'; } }
         }
 
+        // =========================================================================
+// HỆ THỐNG VUỐT ĐỂ ĐÓNG MODAL (NATIVE IOS FEEL)
+// =========================================================================
+function initSwipeToCloseModals() {
+    // Danh sách các modal và ID hộp nội dung cần hiệu ứng vuốt
+    const modalsConfig = [
+        { id: 'imageViewerModal', boxId: 'viewerImage', closeFunc: closeImageViewer },
+        { id: 'comparisonModal', boxId: 'comparisonBox', closeFunc: closeComparisonModal },
+        { id: 'collectPaymentModal', boxId: 'collectPaymentBox', closeFunc: closeCollectPaymentModal },
+        { id: 'extraFeeModal', boxId: 'extraFeeBox', closeFunc: closeExtraFeeModal },
+        { id: 'addExpenseModal', boxId: 'addExpenseBox', closeFunc: closeExpenseModal }
+    ];
+
+    modalsConfig.forEach(config => {
+        const modal = document.getElementById(config.id);
+        const box = document.getElementById(config.boxId);
+        if (!modal || !box) return;
+
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+        let isScrollable = false;
+
+        // 1. Khi ngón tay chạm vào màn hình
+        modal.addEventListener('touchstart', (e) => {
+            // KIỂM TRA QUAN TRỌNG: Nếu đang chạm vào vùng có thể cuộn (scroll) và chưa cuộn lên kịch trần
+            const target = e.target;
+            const scrollableContent = target.closest('.overflow-y-auto, .overflow-auto, .hide-scroll, #cartItemsList, #expenseImagesBox');
+            
+            if (scrollableContent && scrollableContent.scrollTop > 0) {
+                isScrollable = true; // Bỏ qua, cho phép cuộn nội dung bình thường
+                return;
+            }
+            
+            isScrollable = false;
+            isDragging = true;
+            startY = e.touches[0].clientY;
+            currentY = startY;
+
+            // Tắt CSS transition để hộp đi theo tay lập tức mà không bị delay
+            box.style.transition = 'none';
+            modal.style.transition = 'none';
+        }, { passive: true });
+
+        // 2. Khi ngón tay di chuyển (vuốt)
+        modal.addEventListener('touchmove', (e) => {
+            if (!isDragging || isScrollable) return;
+
+            currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+
+            // Chỉ kích hoạt hiệu ứng khi vuốt XUỐNG
+            if (deltaY > 0) {
+                if (e.cancelable) e.preventDefault(); // Chặn hành vi cuộn trang gốc của trình duyệt
+
+                // Tạo cảm giác "nặng" (resistance) bằng cách nhân với 0.85
+                const translateY = deltaY * 0.85; 
+                
+                // Kéo hộp nội dung xuống và làm mờ nền đen dần dần
+                box.style.transform = `translateY(${translateY}px)`;
+                modal.style.opacity = Math.max(0, 1 - (deltaY / (window.innerHeight * 0.8)));
+            }
+        }, { passive: false });
+
+        // 3. Khi nhấc ngón tay lên
+        modal.addEventListener('touchend', () => {
+            if (!isDragging || isScrollable) return;
+            isDragging = false;
+
+            const deltaY = currentY - startY;
+
+            // Bật lại CSS transition mượt mà
+            box.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+            modal.style.transition = 'opacity 0.25s ease, background-color 0.25s ease';
+
+            // Nếu vuốt xuống hơn 120px -> ĐÓNG MODAL
+            if (deltaY > 120) {
+                // Đẩy hộp rơi hẳn xuống dưới màn hình trước khi gọi hàm ẩn
+                box.style.transform = `translateY(100vh)`;
+                modal.style.opacity = '0';
+                
+                setTimeout(() => {
+                    config.closeFunc(); // Gọi hàm đóng gốc của bạn
+                    // Dọn dẹp inline-style để không bị lỗi ở lần mở tiếp theo
+                    setTimeout(() => {
+                        box.style.transform = '';
+                        modal.style.opacity = '';
+                    }, 300);
+                }, 150);
+            } 
+            // Nếu vuốt nhẹ chưa đủ lực -> NẢY VỀ VỊ TRÍ CŨ
+            else {
+                box.style.transform = '';
+                modal.style.opacity = '';
+            }
+        });
+    });
+}
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.location.hash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none'; 
