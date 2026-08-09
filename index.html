@@ -2347,13 +2347,13 @@
                 const aImg = new Image(); aImg.crossOrigin = "Anonymous";
                 const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; 
                 
-                const loadProxyImg = (imgObj, url, resolve) => {
+                const loadProxyImgFast = (imgObj, url, resolve) => {
                     imgObj.onload = resolve;
                     imgObj.onerror = () => {
-                        // Gọi proxy cứu viện nếu CORS chặn
-                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                        // Dùng proxy wsrv.nl cực nhanh
+                        const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=webp`;
                         imgObj.onload = resolve;
-                        imgObj.onerror = resolve; // Bỏ cuộc an toàn để không treo máy
+                        imgObj.onerror = resolve; 
                         imgObj.src = proxyUrl;
                     };
                     imgObj.src = url;
@@ -2365,7 +2365,7 @@
                 await Promise.all([
                     new Promise(r => { bImg.onload = r; bImg.onerror = r; bImg.src = beforeUrl; }),
                     new Promise(r => { aImg.onload = r; aImg.onerror = r; aImg.src = afterUrl; }),
-                    new Promise(r => loadProxyImg(logoImg, targetLogoUrl, r))
+                    new Promise(r => loadProxyImgFast(logoImg, targetLogoUrl, r))
                 ]);
 
                 const canvas = document.createElement('canvas');
