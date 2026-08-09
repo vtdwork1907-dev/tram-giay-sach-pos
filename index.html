@@ -2377,30 +2377,40 @@
                 ]);
 
                 const canvas = document.createElement('canvas');
-                const targetHeight = 800; 
+                
+                // TĂNG ĐỘ NÉT GẤP 3 LẦN
+                const scaleFactor = 3;
+                const targetHeight = 800 * scaleFactor; 
                 const bWidth = (bImg.width / bImg.height) * targetHeight;
                 const aWidth = (aImg.width / aImg.height) * targetHeight;
+                const bannerH = 50 * scaleFactor;
                 
                 canvas.width = bWidth + aWidth; canvas.height = targetHeight;
                 const ctx = canvas.getContext('2d');
                 
+                // Tối ưu thuật toán làm mịn
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
                 ctx.drawImage(bImg, 0, 0, bWidth, targetHeight);
                 ctx.drawImage(aImg, bWidth, 0, aWidth, targetHeight);
                 
-                ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, targetHeight - 50, bWidth, 50);
+                ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, targetHeight - bannerH, bWidth, bannerH);
                 
-                ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(bWidth, targetHeight - 50, aWidth, 50);
+                ctx.fillStyle = "rgba(2, 132, 199, 0.9)"; ctx.fillRect(bWidth, targetHeight - bannerH, aWidth, bannerH);
                 
-                ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText("TRƯỚC KHI LÀM", bWidth / 2, targetHeight - 25);
-                ctx.fillText("SAU KHI LÀM", bWidth + (aWidth / 2), targetHeight - 25);
+                ctx.fillStyle = "white"; 
+                ctx.font = "bold " + (24 * scaleFactor) + "px sans-serif"; 
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText("TRƯỚC KHI LÀM", bWidth / 2, targetHeight - (bannerH / 2));
+                ctx.fillText("SAU KHI LÀM", bWidth + (aWidth / 2), targetHeight - (bannerH / 2));
                 
-                ctx.beginPath(); ctx.moveTo(bWidth, 0); ctx.lineTo(bWidth, targetHeight); ctx.lineWidth = 4; ctx.strokeStyle = "white"; ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bWidth, 0); ctx.lineTo(bWidth, targetHeight); ctx.lineWidth = 4 * scaleFactor; ctx.strokeStyle = "white"; ctx.stroke();
 
                 if (logoImg.width > 0) {
-                    const logoSize = 75; 
-                    const margin = 20;
-                    const radius = 12; 
+                    const logoSize = 75 * scaleFactor; 
+                    const margin = 20 * scaleFactor;
+                    const radius = 12 * scaleFactor; 
 
                     ctx.save();
                     ctx.beginPath();
@@ -2420,6 +2430,7 @@
                     ctx.restore();
                 }
 
+                // Xuất ảnh chất lượng cao 95%
                 canvas.toBlob(async (blob) => {
                     if(!blob) throw new Error("Canvas toBlob failed");
                     const file = new File([blob], 'BeforeAfter_TramGiaySach.jpg', { type: 'image/jpeg' });
@@ -2433,7 +2444,7 @@
                         showNotification("📥 Đã tải về", "Trình duyệt không hỗ trợ chia sẻ trực tiếp, ảnh đã được tải xuống máy.");
                     }
                     loading.style.display = 'none';
-                }, 'image/jpeg', 0.9);
+                }, 'image/jpeg', 0.95);
             } catch(e) { console.error("Lỗi ghép ảnh:", e); alert("Không thể ghép ảnh lúc này."); loading.style.display = 'none'; }
         }
         // =========================================================================
