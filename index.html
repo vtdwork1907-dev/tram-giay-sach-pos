@@ -2356,6 +2356,38 @@
             } catch(e) { alert("Không thể ghép ảnh lúc này."); } 
             finally { loading.style.display = 'none'; }
         }
+        // HÀM MỚI: TẢI ẢNH NÉT TRỰC TIẾP VỀ MÁY TÍNH (DÙNG CHO PC)
+        async function downloadHighQualityImage(chunkJsonStr, title) {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'flex'; 
+            loading.querySelector('.text-sm').innerText = 'Đang xử lý tải ảnh bản nét về máy tính...';
+            
+            try {
+                const chunk = JSON.parse(chunkJsonStr.replace(/&quot;/g, '"'));
+                const hqBase64Data = await drawHighQualityCanvas(chunk); // Gọi hàm vẽ bản nét 3K
+                if (!hqBase64Data) throw new Error("Không thể tạo ảnh nét");
+
+                // Trích xuất file ảnh từ Base64
+                const res = await fetch(hqBase64Data);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Tạo liên kết tải ngầm
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = `TramGiaySach_BeforeAfter_${Date.now()}.jpg`; 
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showNotification("📥 ĐÃ TẢI VỀ", "Ảnh chất lượng cao đã được lưu vào máy tính!");
+            } catch(e) { 
+                alert("Lỗi tải ảnh về máy tính: " + e.message); 
+            } finally { 
+                loading.style.display = 'none'; 
+            }
+        }
 
         // 3. LÕI VẼ ẢNH BẢN NÉT (CHẠY NGẦM)
         async function drawHighQualityCanvas(chunk) {
