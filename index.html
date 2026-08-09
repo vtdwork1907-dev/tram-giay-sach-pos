@@ -2331,10 +2331,25 @@
                 const aImg = new Image(); aImg.crossOrigin = "Anonymous";
                 const logoImg = new Image(); logoImg.crossOrigin = "Anonymous"; 
                 
+                const loadProxyImg = (imgObj, url, resolve) => {
+                    imgObj.onload = resolve;
+                    imgObj.onerror = () => {
+                        // Gọi proxy cứu viện nếu CORS chặn
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                        imgObj.onload = resolve;
+                        imgObj.onerror = resolve; // Bỏ cuộc an toàn để không treo máy
+                        imgObj.src = proxyUrl;
+                    };
+                    imgObj.src = url;
+                };
+
+                const defaultLogo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
+                const targetLogoUrl = state.logo ? state.logo : defaultLogo;
+
                 await Promise.all([
                     new Promise(r => { bImg.onload = r; bImg.onerror = r; bImg.src = beforeUrl; }),
                     new Promise(r => { aImg.onload = r; aImg.onerror = r; aImg.src = afterUrl; }),
-                    new Promise(r => { logoImg.onload = r; logoImg.onerror = r; logoImg.src = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png"; })
+                    new Promise(r => loadProxyImg(logoImg, targetLogoUrl, r))
                 ]);
 
                 const canvas = document.createElement('canvas');
