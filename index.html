@@ -2065,16 +2065,12 @@
                 ctx.beginPath(); ctx.moveTo(colW, 0); ctx.lineTo(colW, canvasH);
                 ctx.lineWidth = 6; ctx.strokeStyle = "white"; ctx.stroke();
 
-                // Ưu tiên logo cài đặt, nếu không có thì lấy mặc định
+               // Ưu tiên logo cài đặt, nếu không có thì lấy mặc định
                 const defaultLogoUrl = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png";
                 const targetLogoUrl = state.logo ? state.logo : defaultLogoUrl;
                 
-                // 1. Tải logo và tự động vượt rào CORS nếu bị chặn
-                let logoImg = await loadImg(targetLogoUrl);
-                if (!logoImg && targetLogoUrl.startsWith('http')) {
-                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetLogoUrl)}`;
-                    logoImg = await loadImg(proxyUrl);
-                }
+                // Gọi hàm tải logo siêu tốc (đã được lưu cache)
+                const logoImg = await getLogoImageFast(targetLogoUrl);
 
                 if (logoImg) {
                     const logoSize = 75; 
@@ -2097,18 +2093,8 @@
 
                     ctx.drawImage(logoImg, margin, margin, logoSize, logoSize);
                     ctx.restore(); 
-                } else {
-                    // 2. TEM DỰ PHÒNG CHUYÊN NGHIỆP: Tự động đóng dấu chữ nếu mất mạng / đứt link ảnh
-                    ctx.fillStyle = "rgba(8, 58, 156, 0.95)"; // Màu Navy chuẩn form doanh nghiệp
-                    ctx.beginPath();
-                    if (ctx.roundRect) { ctx.roundRect(20, 20, 180, 38, 8); } else { ctx.fillRect(20, 20, 180, 38); }
-                    ctx.fill();
-                    ctx.fillStyle = "white";
-                    ctx.font = "bold 14px sans-serif";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText("TRẠM GIÀY SẠCH", 110, 39);
                 }
+                // Đã xóa bỏ hoàn toàn đoạn vẽ chữ. Nếu logo lỗi mạng cực nặng, nó sẽ để trống góc trái chứ không làm chậm app.
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 combinedImageCache[cacheKey] = dataUrl;
