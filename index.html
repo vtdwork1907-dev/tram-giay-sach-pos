@@ -2262,10 +2262,11 @@
                                 <div class="relative bg-slate-100 w-full flex-1 flex items-center justify-center p-0.5">
                                     <img src="${combinedDataUrl}" onclick="openImageViewer('${combinedDataUrl}')" class="w-full h-auto max-h-[120px] md:max-h-[160px] object-contain cursor-pointer hover:opacity-90 transition rounded-sm shadow-sm">
                                 </div>
-                                <div class="p-1.5 flex justify-end gap-1.5 bg-slate-50 border-t border-slate-100">
-                                    <button onclick="saveHighQualityToLibrary('${escapeHtml(JSON.stringify(chunk))}', '${currentGalleryCategory === 'SOLE' ? currentGalleryBrand : 'Chung'}')" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[8px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition active:scale-95 shadow-sm border border-sky-200" title="Lưu ảnh này vĩnh viễn không bị xóa"><i class="fa-solid fa-cloud-arrow-up"></i> Lưu Portfolio</button>
-<button onclick="shareHighQualityImage('${escapeHtml(JSON.stringify(chunk))}', 'Before/After')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[8px] md:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200"><i class="fa-solid fa-share-nodes"></i> Chia Sẻ</button>
-                                </div>
+                                <div class="p-1.5 flex justify-end gap-1 bg-slate-50 border-t border-slate-100">
+    <button onclick="saveHighQualityToLibrary('${escapeHtml(JSON.stringify(chunk))}', '${currentGalleryCategory === 'SOLE' ? currentGalleryBrand : 'Chung'}')" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-800 text-[8px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition active:scale-95 shadow-sm border border-sky-200" title="Lưu Portfolio vĩnh viễn"><i class="fa-solid fa-cloud-arrow-up"></i> Lưu</button>
+    <button onclick="downloadHighQualityImage('${escapeHtml(JSON.stringify(chunk))}', 'Before/After')" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[8px] md:text-[10px] font-bold py-1 rounded flex items-center justify-center gap-1 transition active:scale-95 shadow-sm border border-emerald-200" title="Tải thẳng về máy tính"><i class="fa-solid fa-download"></i> Tải Về</button>
+    <button onclick="shareHighQualityImage('${escapeHtml(JSON.stringify(chunk))}', 'Before/After')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[8px] md:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition active:scale-95 shadow-sm border border-slate-200" title="Chia sẻ"><i class="fa-solid fa-share-nodes"></i></button>
+</div>
                             </div>`;
                         }
                     }
