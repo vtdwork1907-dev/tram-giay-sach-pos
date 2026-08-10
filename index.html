@@ -528,6 +528,15 @@
                         <div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Từ ngày</label><input type="date" id="reportStartDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><span class="text-slate-400 mt-3">-</span><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Đến ngày</label><input type="date" id="reportEndDate" class="text-[16px] md:text-xs p-1 rounded border border-slate-300 outline-none w-full" onchange="updateReportMetrics()"></div><button onclick="clearDateFilter()" class="mt-3 ml-1 bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 md:py-1.5 rounded text-xs transition"><i class="fa-solid fa-rotate-right"></i></button>
                     </div>
                 </div>
+                <!-- THẺ QUỸ CỬA HÀNG -->
+                <div class="owner-only bg-gradient-to-r from-emerald-500 to-teal-600 p-4 md:p-5 rounded-2xl shadow-lg text-white flex justify-between items-center w-full max-w-full">
+                    <div>
+                        <span class="text-[11px] md:text-sm font-bold opacity-90 uppercase tracking-wider"><i class="fa-solid fa-vault mr-1"></i> Quỹ Cửa Hàng (Gốc 12.5Tr)</span>
+                        <div id="repStoreFund" class="text-2xl md:text-4xl font-extrabold mt-1">12,500,000 đ</div>
+                        <div class="text-[9px] md:text-[11px] opacity-80 mt-1.5">*Bao gồm vốn gốc + Toàn bộ tiền đã thu - Toàn bộ chi phí</div>
+                    </div>
+                    <div class="text-5xl md:text-6xl opacity-20 pr-2"><i class="fa-solid fa-piggy-bank"></i></div>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 w-full max-w-full">
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-amber-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-boxes-stacked"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">TỔNG SỐ ĐƠN</span><div id="repTotalOrders" class="text-lg md:text-2xl font-extrabold text-amber-600 mt-1 relative truncate">0</div><div id="repUniqueCustomers" class="text-[9px] font-semibold text-slate-400 mt-0.5 relative">Từ 0 khách hàng</div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"><div class="absolute -right-4 -top-4 text-slate-100 text-5xl md:text-6xl opacity-40"><i class="fa-solid fa-file-invoice"></i></div><span class="text-[9px] md:text-[10px] font-bold text-slate-500 relative line-clamp-1">DOANH SỐ</span><div id="repGrossSales" class="text-lg md:text-2xl font-extrabold text-slate-800 mt-1 relative truncate">0 đ</div></div>
