@@ -4961,6 +4961,25 @@ function initSwipeToCloseModals() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
+        function updateStoreFundUI() {
+            let currentFund = 12500000; // Vốn ban đầu
+
+            // 1. Cộng doanh thu (Toàn bộ đơn hàng đã thu/trả)
+            state.orders.forEach(o => {
+                if (o.status === 'PAID' || o.status === 'DELIVERED') {
+                    currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+                }
+            });
+
+            // 2. Trừ chi phí (Toàn bộ chi phí)
+            state.expenses.forEach(e => {
+                currentFund -= (Number(e.amount) || 0);
+            });
+
+            // 3. Hiển thị
+            const fundEl = document.getElementById('repStoreFund');
+            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
+        }
     </script>
 </body>
 </html>
