@@ -4619,15 +4619,20 @@ function updateExpenseCharts() {
             let ckRev = 0; let tmRev = 0;
 
             state.orders.forEach(o => {
+                const finalTotal = o.total + (o.extraFeeVal || 0);
+
+                // DOANH SỐ: Những đơn được bấm "Tạo đơn" hôm nay
                 if(o.date && o.date.startsWith(todayStr)) {
-                    const finalTotal = o.total + (o.extraFeeVal || 0);
                     grossToday += finalTotal; 
-                    if(o.status === 'PAID' || o.status === 'DELIVERED') {
-                        revToday += finalTotal;
-                        if (o.paymentMethod === 'CASH') tmRev += finalTotal;
-                        else ckRev += finalTotal;
-                    }
-                    if(o.status === 'DELIVERED' || o.status === 'PAID') cDelivered++;
+                }
+                
+                // DOANH THU: Những đơn được bấm "Thanh toán/Trả khách" trong hôm nay
+                const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
+                if(payDateStr === todayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) {
+                    revToday += finalTotal;
+                    if (o.paymentMethod === 'CASH') tmRev += finalTotal;
+                    else ckRev += finalTotal;
+                    cDelivered++;
                 }
                 
                 if(o.status === 'RECEIVED') cReceived++; 
