@@ -1324,6 +1324,16 @@
         function mapOrderDbToJs(db) {
             let extractedBrand = 'Asics';
             if (db.items && db.items.length > 0 && db.items[0].brand) extractedBrand = db.items[0].brand;
+            
+            // Tách ngầm ra
+            let pm = db.payment_method || null;
+            let pDate = null;
+            if (pm && pm.includes('|')) {
+                const parts = pm.split('|');
+                pm = parts[0];
+                pDate = parts[1];
+            }
+
             return {
                 id: db.id, tracking_id: db.tracking_id || db.id, date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
@@ -1331,7 +1341,9 @@
                 items: db.items || [], shoes: db.shoes || null,
                 images: db.images || [], imagesAfter: db.images_after || [],
                 subtotalVal: db.subtotal_val || 0, discountVal: db.discount_val || 0, total: db.total || 0,
-                status: db.status || 'RECEIVED', paymentMethod: db.payment_method || null,
+                status: db.status || 'RECEIVED', 
+                paymentMethod: pm,
+                payment_date: pDate,
                 extraFeeVal: db.extra_fee_val || 0, extraFeeReason: db.extra_fee_reason || ''
             };
         }
