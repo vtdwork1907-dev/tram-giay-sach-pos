@@ -4623,12 +4623,12 @@ function updateExpenseCharts() {
             state.orders.forEach(o => {
                 const finalTotal = o.total + (o.extraFeeVal || 0);
 
-                // DOANH SỐ: Những đơn được bấm "Tạo đơn" hôm nay
+                // DOANH SỐ: Những đơn được TẠO trong hôm nay
                 if(o.date && o.date.startsWith(todayStr)) {
                     grossToday += finalTotal; 
                 }
                 
-                // DOANH THU: Những đơn được bấm "Thanh toán/Trả khách" trong hôm nay
+                // DOANH THU: Những đơn được THANH TOÁN trong hôm nay (Miễn thanh toán hôm nay là tính)
                 const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
                 if(payDateStr === todayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) {
                     revToday += finalTotal;
@@ -4642,7 +4642,7 @@ function updateExpenseCharts() {
                 if(o.status === 'PROCESSED') cProcessed++; 
             });
 
-            document.getElementById('dashGrossSales').innerText = grossToday.toLocaleString() + ' đ'; 
+            document.getElementById('dashGrossSales').innerText = grossToday.toLocaleString() + ' đ';
             document.getElementById('dashRevenue').innerText = revToday.toLocaleString() + ' đ';
             const brkDown = document.getElementById('dashRevenueBreakdown');
             if(brkDown) brkDown.innerText = `CK: ${ckRev.toLocaleString()} đ | TM: ${tmRev.toLocaleString()} đ`;
