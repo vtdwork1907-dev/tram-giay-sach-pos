@@ -539,15 +539,6 @@
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase">Doanh Thu & Chi Phí</span><div class="flex-1 relative w-full h-full"><canvas id="revenueBarChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Dịch vụ đặt nhiều nhất</span><div class="flex-1 w-full h-full relative"><canvas id="servicesPieChart"></canvas></div></div>
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Phân bổ chi phí</span><div class="flex-1 w-full h-full relative"><canvas id="reportExpensesPieChart"></canvas></div></div>
-                <!-- THẺ QUỸ CỬA HÀNG (CHỈ CHỦ CỬA HÀNG THẤY DO CÓ CLASS "owner-only") -->
-                <div class="owner-only bg-gradient-to-r from-emerald-500 to-teal-600 p-4 md:p-5 rounded-2xl shadow-lg text-white flex justify-between items-center w-full max-w-full">
-                    <div>
-                        <span class="text-[11px] md:text-sm font-bold opacity-90 uppercase tracking-wider"><i class="fa-solid fa-vault mr-1"></i> Quỹ Cửa Hàng (Tiền mặt + C.Khoản)</span>
-                        <div id="repStoreFund" class="text-2xl md:text-4xl font-extrabold mt-1">12,000,000 đ</div>
-                        <div class="text-[9px] md:text-[11px] opacity-80 mt-1.5">*Số dư gốc: 12tr (Hệ thống tự động cộng/trừ từ ngày 10/08/2026)</div>
-                    </div>
-                    <div class="text-5xl md:text-6xl opacity-20 pr-2"><i class="fa-solid fa-piggy-bank"></i></div>
-                </div>
                 </div>
             </section>
 
@@ -1306,17 +1297,14 @@
         }
 
         function mapOrderJsToDb(o) {
-            let pmDb = o.paymentMethod || null;
-            if (pmDb && o.payment_date) pmDb = `${pmDb}|${o.payment_date}`; // Ghép ẩn vào
-
+            // Không ghi đè i.brand bằng o.brand nữa, giữ nguyên hãng của từng item đã chọn
             return {
                 id: o.id, tracking_id: o.tracking_id || null, date: o.date,
                 customer_name: o.customer.name, customer_phone: o.customer.phone, customer_note: o.customer.note || '',
                 items: o.items || [], shoes: o.shoes || null,
                 images: o.images || [], images_after: o.imagesAfter || [],
                 subtotal_val: o.subtotalVal || 0, discount_val: o.discountVal || 0, total: o.total || 0,
-                status: o.status || 'RECEIVED', 
-                payment_method: pmDb, 
+                status: o.status || 'RECEIVED', payment_method: o.paymentMethod || null,
                 extra_fee_val: o.extraFeeVal || 0, extra_fee_reason: o.extraFeeReason || ''
             };
         }
@@ -1324,16 +1312,6 @@
         function mapOrderDbToJs(db) {
             let extractedBrand = 'Asics';
             if (db.items && db.items.length > 0 && db.items[0].brand) extractedBrand = db.items[0].brand;
-            
-            // Tách ngầm ra
-            let pm = db.payment_method || null;
-            let pDate = null;
-            if (pm && pm.includes('|')) {
-                const parts = pm.split('|');
-                pm = parts[0];
-                pDate = parts[1];
-            }
-
             return {
                 id: db.id, tracking_id: db.tracking_id || db.id, date: db.date,
                 customer: { name: db.customer_name, phone: db.customer_phone, note: db.customer_note },
@@ -1341,9 +1319,7 @@
                 items: db.items || [], shoes: db.shoes || null,
                 images: db.images || [], imagesAfter: db.images_after || [],
                 subtotalVal: db.subtotal_val || 0, discountVal: db.discount_val || 0, total: db.total || 0,
-                status: db.status || 'RECEIVED', 
-                paymentMethod: pm,
-                payment_date: pDate,
+                status: db.status || 'RECEIVED', paymentMethod: db.payment_method || null,
                 extraFeeVal: db.extra_fee_val || 0, extraFeeReason: db.extra_fee_reason || ''
             };
         }
@@ -3917,8 +3893,6 @@
             const o = state.orders.find(x => x.id === activeCollectingOrderId); 
             if (o) { 
                 o.status = 'DELIVERED'; o.paymentMethod = 'TRANSFER'; 
-                const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            if (o.items) o.items.forEach(i => i.status = 'PROCESSED');
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED'); 
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') }); 
                 setOrderWarrantyOnDelivery(o); 
@@ -3936,7 +3910,6 @@
             const o = state.orders.find(x => x.id === orderId); 
             if (o) { 
                 o.status = 'DELIVERED'; o.paymentMethod = 'CASH'; 
-                const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED'); 
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') }); 
                 setOrderWarrantyOnDelivery(o); 
@@ -3959,13 +3932,7 @@
                 
                 if (o.items) { o.items.forEach(item => item.status = newItemStatus); } 
                 if (o.shoes) { o.shoes.forEach(shoe => { if (shoe.services) shoe.services.forEach(item => item.status = newItemStatus); }); } 
-                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o);
-                if (!o.payment_date) {
-                        const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                    }
-                } else {
-                    o.payment_date = null; // Nếu hoàn tác về trạng thái khác thì xóa ngày thu
-                }
+                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o); 
                 
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') { 
                     lastPaidNotifiedId = o.id; 
@@ -4595,7 +4562,6 @@ function updateExpenseCharts() {
         expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; 
         expReportPieInst.update(); 
     }
-    updateStoreFundUI();
 }
 
         // =========================================================================
@@ -4623,22 +4589,15 @@ function updateExpenseCharts() {
             let ckRev = 0; let tmRev = 0;
 
             state.orders.forEach(o => {
-                const finalTotal = o.total + (o.extraFeeVal || 0);
-
-                // 1. DOANH SỐ (GROSS): Tính những đơn ĐƯỢC TẠO trong hôm nay
                 if(o.date && o.date.startsWith(todayStr)) {
+                    const finalTotal = o.total + (o.extraFeeVal || 0);
                     grossToday += finalTotal; 
-                }
-                
-                // 2. DOANH THU (REVENUE): Tính những đơn ĐƯỢC THANH TOÁN trong hôm nay
-                // Dùng payment_date nếu có, nếu là đơn cũ thì tạm lấy ngày tạo đơn
-                const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
-                
-                if(payDateStr === todayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) {
-                    revToday += finalTotal;
-                    if (o.paymentMethod === 'CASH') tmRev += finalTotal;
-                    else ckRev += finalTotal;
-                    cDelivered++; // Đếm số đơn đã giao trong hôm nay
+                    if(o.status === 'PAID' || o.status === 'DELIVERED') {
+                        revToday += finalTotal;
+                        if (o.paymentMethod === 'CASH') tmRev += finalTotal;
+                        else ckRev += finalTotal;
+                    }
+                    if(o.status === 'DELIVERED' || o.status === 'PAID') cDelivered++;
                 }
                 
                 if(o.status === 'RECEIVED') cReceived++; 
@@ -4655,6 +4614,7 @@ function updateExpenseCharts() {
             document.getElementById('dashCountProcessing').innerText = cProcessing;
             document.getElementById('dashCountProcessed').innerText = cProcessed; 
             document.getElementById('dashCountDelivered').innerText = cDelivered;
+
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
 
             const generateDashRow = (o, showNote = false) => {
@@ -4966,33 +4926,6 @@ function initSwipeToCloseModals() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
-        // HÀM TÍNH TOÁN QUỸ CỬA HÀNG
-        function updateStoreFundUI() {
-            const startFundDate = '2026-08-10'; // Ngày bắt đầu chốt sổ
-            let currentFund = 12000000; // Vốn ban đầu
-
-            // 1. Cộng doanh thu (Chỉ cộng các đơn Đã Thu Tiền / Đã Trả Khách từ ngày 10/08/2026)
-            state.orders.forEach(o => {
-                const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
-                if (payDateStr >= startFundDate) {
-                    if (o.status === 'PAID' || o.status === 'DELIVERED') {
-                        currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
-                    }
-                }
-            });
-
-            // 2. Trừ chi phí (Từ ngày 10/08/2026)
-            state.expenses.forEach(e => {
-                const dStr = e.date.split(' ')[0];
-                if (dStr >= startFundDate) {
-                    currentFund -= (Number(e.amount) || 0);
-                }
-            });
-
-            // 3. Hiển thị ra màn hình
-            const fundEl = document.getElementById('repStoreFund');
-            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
-        }
     </script>
 </body>
 </html>
