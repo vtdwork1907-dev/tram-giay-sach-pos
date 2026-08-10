@@ -4708,7 +4708,7 @@ function updateExpenseCharts() {
             try {
                 const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
                     supabaseClient.from('users').select('*'), supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
-                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(), supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(150), supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(5000)
+                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(), supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(150), supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(100)
                 ]);
                 
                 if (usersRes.data) state.users = usersRes.data; 
