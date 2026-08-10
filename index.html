@@ -2407,6 +2407,7 @@
 
         // 3. LÕI VẼ ẢNH BẢN NÉT (CHẠY NGẦM)
         // TỐI ƯU VƯỢT RÀO CORS CHO ẢNH TỪ MÁY NHÂN VIÊN (CLOUD)
+        async function drawHighQualityCanvas(chunk) {
             const loadImg = async (src) => {
                 if (!src) return null;
                 const tryLoad = (url) => new Promise((resolve) => {
