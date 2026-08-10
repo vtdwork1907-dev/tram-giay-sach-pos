@@ -4593,7 +4593,9 @@ function updateExpenseCharts() {
         expReportPieInst.data.datasets[0].backgroundColor = data.length > 0 ? ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'] : ['#e2e8f0']; 
         expReportPieInst.update(); 
     }
-    updateStoreFundUI();
+
+    // Kích hoạt tính Quỹ ngay sau khi Report có dữ liệu mới
+    updateStoreFundUI(reportOrders, reportExpenses);
 }
 
         // =========================================================================
@@ -4963,25 +4965,29 @@ function initSwipeToCloseModals() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
-        function updateStoreFundUI() {
-            let currentFund = 12500000; // Vốn ban đầu
+        function updateStoreFundUI(ordersData, expensesData) {
+    const START_DATE = '2026-08-10'; // Chốt sổ: Chỉ tính thu/chi từ ngày này trở đi
+    let currentFund = 12500000; // Vốn ban đầu
 
-            // 1. Cộng doanh thu (Toàn bộ đơn hàng đã thu/trả)
-            state.orders.forEach(o => {
-                if (o.status === 'PAID' || o.status === 'DELIVERED') {
-                    currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
-                }
-            });
-
-            // 2. Trừ chi phí (Toàn bộ chi phí)
-            state.expenses.forEach(e => {
-                currentFund -= (Number(e.amount) || 0);
-            });
-
-            // 3. Hiển thị
-            const fundEl = document.getElementById('repStoreFund');
-            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
+    // 1. Cộng doanh thu (Chỉ cộng đơn thu từ 10/08/2026)
+    ordersData.forEach(o => {
+        const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
+        if (payDateStr >= START_DATE && (o.status === 'PAID' || o.status === 'DELIVERED')) {
+            currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
         }
+    });
+
+    // 2. Trừ chi phí (Chỉ trừ chi phí phát sinh từ 10/08/2026)
+    expensesData.forEach(e => {
+        const expDateStr = e.date ? e.date.split(' ')[0] : '';
+        if (expDateStr >= START_DATE) {
+            currentFund -= (Number(e.amount) || 0);
+        }
+    });
+
+    const fundEl = document.getElementById('repStoreFund');
+    if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
+}
     </script>
 </body>
 </html>
