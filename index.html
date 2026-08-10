@@ -3909,7 +3909,7 @@
             document.getElementById('collectPaymentModal').classList.add('hidden'); 
         }
         
-        async function confirmCollectedPayment() { 
+       async function confirmCollectedPayment() { 
             if (!activeCollectingOrderId) return; 
             const o = state.orders.find(x => x.id === activeCollectingOrderId); 
             if (o) { 
