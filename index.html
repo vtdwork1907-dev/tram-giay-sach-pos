@@ -4935,6 +4935,33 @@ function initSwipeToCloseModals() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
+        // HÀM TÍNH TOÁN QUỸ CỬA HÀNG
+        function updateStoreFundUI() {
+            const startFundDate = '2026-08-10'; // Ngày bắt đầu chốt sổ
+            let currentFund = 12000000; // Vốn ban đầu
+
+            // 1. Cộng doanh thu (Chỉ cộng các đơn Đã Thu Tiền / Đã Trả Khách từ ngày 10/08/2026)
+            state.orders.forEach(o => {
+                const dStr = o.date.split(' ')[0]; // Lấy ngày YYYY-MM-DD
+                if (dStr >= startFundDate) {
+                    if (o.status === 'PAID' || o.status === 'DELIVERED') {
+                        currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+                    }
+                }
+            });
+
+            // 2. Trừ chi phí (Từ ngày 10/08/2026)
+            state.expenses.forEach(e => {
+                const dStr = e.date.split(' ')[0];
+                if (dStr >= startFundDate) {
+                    currentFund -= (Number(e.amount) || 0);
+                }
+            });
+
+            // 3. Hiển thị ra màn hình
+            const fundEl = document.getElementById('repStoreFund');
+            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
+        }
     </script>
 </body>
 </html>
