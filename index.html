@@ -4977,29 +4977,28 @@ function initSwipeToCloseModals() {
         });
         
         window.addEventListener('resize', adjustPOSLayout);
-        function updateStoreFundUI(ordersData, expensesData) {
-    const START_DATE = '2026-08-10'; // Chốt sổ: Chỉ tính thu/chi từ ngày này trở đi
-    let currentFund = 12500000; // Vốn ban đầu
+        function updateStoreFundUI() {
+            const START_DATE = '2026-08-10'; // Chốt sổ 
+            let currentFund = 12500000;
 
-    // 1. Cộng doanh thu (Chỉ cộng đơn thu từ 10/08/2026)
-    ordersData.forEach(o => {
-        const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
-        if (payDateStr >= START_DATE && (o.status === 'PAID' || o.status === 'DELIVERED')) {
-            currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+            // SỬ DỤNG TRỰC TIẾP state.orders ĐỂ QUỸ NHẢY NGAY LẬP TỨC, KHÔNG BỊ ĐỘ TRỄ MÁY CHỦ ĐÈ LÊN
+            state.orders.forEach(o => {
+                const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
+                if (payDateStr >= START_DATE && (o.status === 'PAID' || o.status === 'DELIVERED')) {
+                    currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+                }
+            });
+
+            state.expenses.forEach(e => {
+                const expDateStr = e.date ? e.date.split(' ')[0] : '';
+                if (expDateStr >= START_DATE) {
+                    currentFund -= (Number(e.amount) || 0);
+                }
+            });
+
+            const fundEl = document.getElementById('repStoreFund');
+            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
         }
-    });
-
-    // 2. Trừ chi phí (Chỉ trừ chi phí phát sinh từ 10/08/2026)
-    expensesData.forEach(e => {
-        const expDateStr = e.date ? e.date.split(' ')[0] : '';
-        if (expDateStr >= START_DATE) {
-            currentFund -= (Number(e.amount) || 0);
-        }
-    });
-
-    const fundEl = document.getElementById('repStoreFund');
-    if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
-}
     </script>
 </body>
 </html>
