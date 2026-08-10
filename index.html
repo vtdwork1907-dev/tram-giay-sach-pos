@@ -3917,6 +3917,8 @@
             const o = state.orders.find(x => x.id === activeCollectingOrderId); 
             if (o) { 
                 o.status = 'DELIVERED'; o.paymentMethod = 'TRANSFER'; 
+                const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            if (o.items) o.items.forEach(i => i.status = 'PROCESSED');
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED'); 
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') }); 
                 setOrderWarrantyOnDelivery(o); 
@@ -3934,6 +3936,7 @@
             const o = state.orders.find(x => x.id === orderId); 
             if (o) { 
                 o.status = 'DELIVERED'; o.paymentMethod = 'CASH'; 
+                const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED'); 
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') }); 
                 setOrderWarrantyOnDelivery(o); 
@@ -3956,7 +3959,13 @@
                 
                 if (o.items) { o.items.forEach(item => item.status = newItemStatus); } 
                 if (o.shoes) { o.shoes.forEach(shoe => { if (shoe.services) shoe.services.forEach(item => item.status = newItemStatus); }); } 
-                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o); 
+                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o);
+                if (!o.payment_date) {
+                        const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    }
+                } else {
+                    o.payment_date = null; // Nếu hoàn tác về trạng thái khác thì xóa ngày thu
+                }
                 
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') { 
                     lastPaidNotifiedId = o.id; 
