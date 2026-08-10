@@ -3913,6 +3913,8 @@
             const o = state.orders.find(x => x.id === activeCollectingOrderId); 
             if (o) { 
                 o.status = 'DELIVERED'; o.paymentMethod = 'TRANSFER'; 
+                if(!o.payment_date) { const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
                 if (o.items) o.items.forEach(i => i.status = 'PROCESSED'); 
                 if (o.shoes) o.shoes.forEach(s => { if(s.services) s.services.forEach(i => i.status = 'PROCESSED') }); 
                 setOrderWarrantyOnDelivery(o); 
