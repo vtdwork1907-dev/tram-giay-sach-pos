@@ -3956,7 +3956,13 @@
                 
                 if (o.items) { o.items.forEach(item => item.status = newItemStatus); } 
                 if (o.shoes) { o.shoes.forEach(shoe => { if (shoe.services) shoe.services.forEach(item => item.status = newItemStatus); }); } 
-                if (['DELIVERED', 'PAID'].includes(st)) setOrderWarrantyOnDelivery(o); 
+                
+                if (['DELIVERED', 'PAID'].includes(st)) {
+                    setOrderWarrantyOnDelivery(o); 
+                    if(!o.payment_date) { const d = new Date(); o.payment_date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+                } else {
+                    o.payment_date = null; // Huỷ ngày thanh toán nếu vô tình chuyển ngược lại
+                }
                 
                 if (oldStatus !== 'DELIVERED' && st === 'DELIVERED') { 
                     lastPaidNotifiedId = o.id; 
