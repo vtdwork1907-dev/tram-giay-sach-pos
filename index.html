@@ -4392,15 +4392,27 @@ async function updateReportMetrics(forceFetch = false) {
             }
             
             if (allFetchedOrders.length > 0 || start || end) {
-                reportOrders = allFetchedOrders.map(db => ({
-                    date: db.date,
-                    customer: { phone: db.customer_phone },
-                    total: db.total || 0,
-                    extraFeeVal: db.extra_fee_val || 0,
-                    status: db.status || 'RECEIVED',
-                    paymentMethod: db.payment_method || null,
-                    items: db.items || []
-                }));
+                reportOrders = allFetchedOrders.map(db => {
+                    // Giải mã ngày thanh toán ẩn từ DB
+                    let pm = db.payment_method || null;
+                    let pDate = null;
+                    if (pm && pm.includes('|')) {
+                        const parts = pm.split('|');
+                        pm = parts[0];
+                        pDate = parts[1];
+                    }
+                    
+                    return {
+                        date: db.date,
+                        customer: { phone: db.customer_phone },
+                        total: db.total || 0,
+                        extraFeeVal: db.extra_fee_val || 0,
+                        status: db.status || 'RECEIVED',
+                        paymentMethod: pm,
+                        payment_date: pDate, // Đã bổ sung ngày thanh toán vào đây để quỹ đọc được
+                        items: db.items || []
+                    };
+                });
             }
 
             // Tải chi phí (theo lô 1000)
