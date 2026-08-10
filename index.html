@@ -1306,14 +1306,17 @@
         }
 
         function mapOrderJsToDb(o) {
-            // Không ghi đè i.brand bằng o.brand nữa, giữ nguyên hãng của từng item đã chọn
+            let pmDb = o.paymentMethod || null;
+            if (pmDb && o.payment_date) pmDb = `${pmDb}|${o.payment_date}`; // Ghép ẩn vào
+
             return {
                 id: o.id, tracking_id: o.tracking_id || null, date: o.date,
                 customer_name: o.customer.name, customer_phone: o.customer.phone, customer_note: o.customer.note || '',
                 items: o.items || [], shoes: o.shoes || null,
                 images: o.images || [], images_after: o.imagesAfter || [],
                 subtotal_val: o.subtotalVal || 0, discount_val: o.discountVal || 0, total: o.total || 0,
-                status: o.status || 'RECEIVED', payment_method: o.paymentMethod || null,
+                status: o.status || 'RECEIVED', 
+                payment_method: pmDb, 
                 extra_fee_val: o.extraFeeVal || 0, extra_fee_reason: o.extraFeeReason || ''
             };
         }
