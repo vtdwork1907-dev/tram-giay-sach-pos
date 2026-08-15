@@ -4656,15 +4656,28 @@ function updateExpenseCharts() {
         }
         // HÀM LƯU GHI CHÚ LÝ DO TRỄ CỦA NHÂN VIÊN (NỘI BỘ)
         window.updateDelayNote = async function(orderId) {
-            const inputEl = document.getElementById('delay_note_' + orderId);
-            if(!inputEl) return;
-            const o = state.orders.find(x => x.id === orderId);
-            if (o) {
-                o.delayNote = inputEl.value.trim();
-                await saveLocalState();
-                showNotification("✅ Đã lưu", "Đã lưu lại ghi chú nội bộ cho đơn này!");
-            }
-        };
+    const inputEl = document.getElementById('delay_note_' + orderId);
+    if(!inputEl) return;
+    const val = inputEl.value.trim();
+    if (!val) return alert("Vui lòng nhập ghi chú!");
+    
+    const o = state.orders.find(x => x.id === orderId);
+    if (o) {
+        o.delayNote = val;
+        await saveLocalState();
+        await dbUpdateOrder(orderId); // Bắt buộc đẩy vào hàng đợi đồng bộ máy chủ
+        showNotification("✅ Đã lưu", "Đã lưu lại ghi chú nội bộ cho đơn này!");
+        renderDashboard(); // Render lại ngay lập tức để ẩn ô input và hiện note dạng text
+    }
+};
+
+window.editDelayNote = async function(orderId) {
+    const o = state.orders.find(x => x.id === orderId);
+    if (o) {
+        o.delayNote = ''; // Xóa note tạm thời để hiện lại ô input
+        renderDashboard();
+    }
+};
 
         function renderDashboard() {
     const now = new Date(); 
