@@ -906,8 +906,9 @@
         let imgTouchStartY = 0; 
         let imgTouchMoveY = 0;
 
-        let state = {
+       let state = {
             users: [], currentUser: null, logo: null,
+            dailyGoal: 2000000, // <-- ĐÂY LÀ BIẾN MỚI THÊM VÀO
             services: [
                 { id: 'c1', name: 'Vệ sinh giày', category: 'CLEAN', defaultPrice: 80000, icon: 'fa-soap' },
                 { id: 'c2', name: 'Vệ sinh giày trẻ em', category: 'CLEAN', defaultPrice: 40000, icon: 'fa-soap' },
@@ -918,7 +919,7 @@
             ],
             // NEW STATES CHO TÍNH NĂNG KHO ẢNH & HÃNG GIÀY
             brands: ['Asics', 'Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'],
-            soleImages: [], // { id, brand, url, note, status, localUrl }
+            soleImages: [], 
             
             orders: [], expenses: [], qrConfig: { bank: 'ICB', accountNo: '', accountName: '' }, 
             cart: [], uploadedImages: [], role: null,
