@@ -3331,13 +3331,22 @@ function revokeIfBlob(url) {
 }
 
         function removeShoeImage(shoeId, imgIdOrUrl) { 
-            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return; 
-            shoe.images = shoe.images.filter(img => { 
-                if (typeof img === 'string') return img !== imgIdOrUrl; 
-                return img.id !== imgIdOrUrl && img.localUrl !== imgIdOrUrl; 
-            }); 
-            renderMultiShoeList(); 
+    const shoe = state.shoes.find(s => s.id === shoeId); 
+    if (!shoe) return; 
+    
+    shoe.images = shoe.images.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === imgIdOrUrl);
+            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
+        } else {
+            isMatch = (img.id === imgIdOrUrl || img.localUrl === imgIdOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
         }
+        return !isMatch; 
+    }); 
+    renderMultiShoeList(); 
+}
 
         function renderPreviewImages() { 
             const c = document.getElementById('renderedImagesBox'); 
