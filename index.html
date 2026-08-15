@@ -780,12 +780,6 @@
         el.innerText = value;
     }
 }
-        / HÀM GIẢI PHÓNG RAM CHO ẢNH PREVIEW
-function revokeIfBlob(url) {
-    if (url && typeof url === 'string' && url.startsWith('blob:')) {
-        URL.revokeObjectURL(url);
-    }
-}
         // =========================================================================
         // 1. ĐĂNG KÝ SERVICE WORKER (OFFLINE-FIRST PWA)
         // =========================================================================
@@ -1145,48 +1139,15 @@ function revokeIfBlob(url) {
                 for (const item of syncItems) {
                     if (!navigator.onLine) break;
                     
-                    // --- BỌC BẢO VỆ CHỐNG KẸT DÂY CHUYỀN ---
+                    // THÊM TRY...CATCH BỌC TỪNG ĐƠN HÀNG ĐỂ CHỐNG KẸT DÂY CHUYỀN
                     try {
                         let dataToPush = item.data;
                         
-                        // 1. XỬ LÝ LƯU ĐƠN HÀNG (ĐÃ TÍCH HỢP BỘ LỌC TÀNG HÌNH LINK CHẾT)
                         if (item.type === 'INSERT_ORDER' || item.type === 'UPDATE_ORDER') {
                             const rel = uploads.filter(u => u.orderId === item.data.id);
-                            
-                            // Xử lý ảnh Before
-                            if (dataToPush.images && dataToPush.images.length > 0) { 
-                                dataToPush.images = dataToPush.images.map(url => { 
-                                    const m = rel.find(u => u.localUrl === url); 
-                                    if (m && m.r2Url) return m.r2Url;
-                                    if (url && url.startsWith('blob:')) return null; // Lọc link chết
-                                    return url; 
-                                }).filter(Boolean); 
-                            }
-                            
-                            // Xử lý ảnh After
-                            if (dataToPush.imagesAfter && dataToPush.imagesAfter.length > 0) { 
-                                dataToPush.imagesAfter = dataToPush.imagesAfter.map(url => { 
-                                    const m = rel.find(u => u.localUrl === url); 
-                                    if (m && m.r2Url) return m.r2Url;
-                                    if (url && url.startsWith('blob:')) return null; // Lọc link chết
-                                    return url; 
-                                }).filter(Boolean); 
-                            }
-                            
-                            // Xử lý ảnh Nhiều Đôi Giày
-                            if (dataToPush.shoes) { 
-                                dataToPush.shoes.forEach(shoe => { 
-                                    if (shoe.images) { 
-                                        shoe.images = shoe.images.map(imgObj => { 
-                                            const url = typeof imgObj === 'string' ? imgObj : imgObj.url; 
-                                            const m = rel.find(u => u.localUrl === url); 
-                                            if (m && m.r2Url) return { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' };
-                                            if (url && url.startsWith('blob:')) return null; // Lọc link chết
-                                            return imgObj;
-                                        }).filter(Boolean); 
-                                    } 
-                                }); 
-                            }
+                            if (dataToPush.images && dataToPush.images.length > 0) { dataToPush.images = dataToPush.images.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
+                            if (dataToPush.imagesAfter && dataToPush.imagesAfter.length > 0) { dataToPush.imagesAfter = dataToPush.imagesAfter.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
+                            if (dataToPush.shoes) { dataToPush.shoes.forEach(shoe => { if (shoe.images) { shoe.images = shoe.images.map(imgObj => { const blobUrl = typeof imgObj === 'string' ? imgObj : imgObj.url; const m = rel.find(u => u.localUrl === blobUrl); return m ? { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' } : imgObj; }); } }); }
                             
                             let error;
                             if (item.type === 'INSERT_ORDER') { error = (await supabaseClient.from('orders').insert([mapOrderJsToDb(dataToPush)])).error; } 
@@ -1194,8 +1155,6 @@ function revokeIfBlob(url) {
 
                             if (!error) { await idbDelete('pending_sync', item.syncId); for (const u of rel) await idbDelete('upload_queue', u.imgId); } else throw error;
                         }
-                        
-                        // 2. CÁC THAO TÁC KHÁC
                         else if (item.type === 'DELETE_ORDER') {
                             const { error } = await supabaseClient.from('orders').delete().eq('id', dataToPush.id);
                             if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
@@ -1210,15 +1169,17 @@ function revokeIfBlob(url) {
                             const { error } = await supabaseClient.from('expenses').delete().eq('id', dataToPush.id);
                             if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
                         }
-
                     } catch (itemError) {
-                        // --- CƠ CHẾ TỰ CHỮA LÀNH ---
+                        // CƠ CHẾ TỰ CHỮA LÀNH (AUTO-HEALING)
                         console.error("Lỗi đồng bộ 1 mục:", itemError);
-                        item.retryCount = (item.retryCount || 0) + 1;
+                        item.retryCount = (item.retryCount || 0) + 1; // Cộng dồn số lần thử
+                        
                         if (item.retryCount >= 3) {
+                            // Nếu đã thất bại 3 lần -> Trực tiếp đá khỏi hàng đợi để không chặn các đơn khác
                             await idbDelete('pending_sync', item.syncId);
-                            showNotification("⚠️ Cảnh báo nghẽn mạng", "Có thao tác bị lỗi kết nối liên tục và đã được hệ thống tự động loại bỏ để chống kẹt app.");
+                            showNotification("⚠️ Cảnh báo nghẽn mạng", "Có 1 thao tác bị lỗi kết nối liên tục và đã được hệ thống tự động loại bỏ để chống kẹt app.");
                         } else {
+                            // Chưa đủ 3 lần thì lưu lại số lần lỗi và đợi vòng lặp sau thử lại
                             await idbPut('pending_sync', item);
                         }
                     }
@@ -3268,41 +3229,14 @@ function revokeIfBlob(url) {
             calculateFinalTotal();
         }
         function clearCart() {
-    // 1. Quét sạch RAM ảnh ở giỏ hàng đơn thường
-    state.uploadedImages.forEach(img => {
-        const url = typeof img === 'string' ? img : img.localUrl;
-        revokeIfBlob(url);
-    });
-
-    // 2. Quét sạch RAM ảnh ở các đôi giày (Multi-shoe)
-    state.shoes.forEach(shoe => {
-        shoe.images.forEach(img => {
-            const url = typeof img === 'string' ? img : img.localUrl;
-            revokeIfBlob(url);
-        });
-    });
-
-    // 3. Tiến hành reset state như cũ
-    state.cart = []; 
-    state.uploadedImages = []; 
-    state.multiShoeMode = false; 
-    state.shoes = []; 
-    state.activeShoeId = null;
-    const toggle = document.getElementById('multiShoeToggle'); 
-    
-    if (toggle) toggle.checked = false; 
-    toggleMultiShoeMode(false);
-    
-    ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => { 
-        const el = document.getElementById(id); 
-        if(el) el.value = ''; 
-    });
-    document.getElementById('cartOrderStatus').value = 'RECEIVED'; 
-    
-    setCurrentDateTimeForOrder(); 
-    renderCart(); 
-    renderPreviewImages();
-}
+            state.cart = []; state.uploadedImages = []; state.multiShoeMode = false; state.shoes = []; state.activeShoeId = null;
+            const toggle = document.getElementById('multiShoeToggle'); if (toggle) toggle.checked = false; toggleMultiShoeMode(false);
+            
+            ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            document.getElementById('cartOrderStatus').value = 'RECEIVED'; 
+            
+            setCurrentDateTimeForOrder(); renderCart(); renderPreviewImages();
+        }
 
         // =========================================================================
         // 17. POS: XỬ LÝ ẢNH TRƯỚC (BEFORE) KHI TẠO ĐƠN
@@ -3343,37 +3277,21 @@ function revokeIfBlob(url) {
         }
 
         function removeUploadedImage(idOrUrl) { 
-    state.uploadedImages = state.uploadedImages.filter(img => { 
-        let isMatch = false;
-        if (typeof img === 'string') {
-            isMatch = (img === idOrUrl);
-            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
-        } else {
-            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
-            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
+            state.uploadedImages = state.uploadedImages.filter(img => { 
+                if(typeof img === 'string') return img !== idOrUrl; 
+                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
+            }); 
+            renderPreviewImages(); 
         }
-        return !isMatch; 
-    }); 
-    renderPreviewImages(); 
-}
 
         function removeShoeImage(shoeId, imgIdOrUrl) { 
-    const shoe = state.shoes.find(s => s.id === shoeId); 
-    if (!shoe) return; 
-    
-    shoe.images = shoe.images.filter(img => { 
-        let isMatch = false;
-        if (typeof img === 'string') {
-            isMatch = (img === imgIdOrUrl);
-            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
-        } else {
-            isMatch = (img.id === imgIdOrUrl || img.localUrl === imgIdOrUrl); 
-            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
+            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return; 
+            shoe.images = shoe.images.filter(img => { 
+                if (typeof img === 'string') return img !== imgIdOrUrl; 
+                return img.id !== imgIdOrUrl && img.localUrl !== imgIdOrUrl; 
+            }); 
+            renderMultiShoeList(); 
         }
-        return !isMatch; 
-    }); 
-    renderMultiShoeList(); 
-}
 
         function renderPreviewImages() { 
             const c = document.getElementById('renderedImagesBox'); 
@@ -4331,32 +4249,19 @@ function revokeIfBlob(url) {
         }
         
         function removeExpenseUploadedImage(idOrUrl) { 
-    expenseTempImages = expenseTempImages.filter(img => { 
-        let isMatch = false;
-        if (typeof img === 'string') {
-            isMatch = (img === idOrUrl);
-            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
-        } else {
-            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
-            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
+            expenseTempImages = expenseTempImages.filter(img => { 
+                if (typeof img === 'string') return img !== idOrUrl; 
+                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
+            }); 
+            renderExpensePreviewImages(); 
         }
-        return !isMatch; 
-    }); 
-    renderExpensePreviewImages(); 
-}
         
         function openAddExpenseModal() { 
-    // Dọn sạch rác RAM từ lần thêm chi phí trước (nếu người dùng tải ảnh lên nhưng không bấm lưu)
-    expenseTempImages.forEach(img => {
-        const url = typeof img === 'string' ? img : img.localUrl;
-        revokeIfBlob(url);
-    });
-
-    expenseTempImages = []; 
-    renderExpensePreviewImages(); 
-    document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
-    document.getElementById('addExpenseModal').classList.remove('hidden'); 
-}
+            expenseTempImages = []; 
+            renderExpensePreviewImages(); 
+            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
+            document.getElementById('addExpenseModal').classList.remove('hidden'); 
+        }
         
         function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
