@@ -4724,13 +4724,11 @@ window.editDelayNote = async function(orderId) {
         const orderDateOnly = String(o.date || '').substring(0, 10);
         const payDateOnly = String(o.payment_date || o.date || '').substring(0, 10);
 
-        // DOANH SỐ: Tạo ngày nào tính ngày đó (Số đơn & Tiền phát sinh)
         if(orderDateOnly === todayStr) {
             grossToday += finalTotal;
             ordersTodayCount++;
         }
         
-        // ĐÃ THU THỰC TẾ: Bấm thanh toán / trả khách ngày nào tính ngày đó
         if(payDateOnly === todayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) revToday += finalTotal;
         if(payDateOnly === yesterdayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) revYest += finalTotal;
 
@@ -4742,15 +4740,12 @@ window.editDelayNote = async function(orderId) {
         const orderDateObj = new Date(orderDateOnly);
         const diffDays = Math.floor((now - orderDateObj) / (1000 * 60 * 60 * 24));
 
-        // 1. ĐƠN ĐỎ: Trễ hẹn
         if (['RECEIVED', 'PROCESSING'].includes(o.status) && diffDays >= 4) {
             urgentOrders.push({ ...o, diffDays });
         }
-        // 2. ĐƠN XANH LÁ: Quên lấy
         if (o.status === 'PROCESSED' && diffDays >= 1) {
             forgottenOrders.push({ ...o, diffDays });
         }
-        // 3. ĐƠN CÓ GHI CHÚ YÊU CẦU
         if (o.customer.note && o.customer.note.trim() !== '' && ['RECEIVED', 'PROCESSING'].includes(o.status)) {
             notedOrders.push(o);
         }
@@ -4765,14 +4760,12 @@ window.editDelayNote = async function(orderId) {
     document.getElementById('dash-block-1').innerHTML = `
         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 ml-1"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
         <div class="grid grid-cols-2 gap-3 md:gap-4 px-1">
-            <!-- Ô Đã Thu Thực Tế (Đã bỏ Phát sinh mới) -->
             <div class="bg-white/80 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgba(11,25,44,0.04)] flex flex-col justify-center transform transition hover:-translate-y-1">
                 <span class="text-[9px] md:text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
                 <div class="text-lg md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
                 <div class="text-[8px] md:text-[10px] mt-2 md:mt-3 bg-slate-50 p-1 md:p-1.5 rounded-lg inline-block w-fit border border-slate-100 shadow-sm">${revTrendHtml}</div>
             </div>
             
-            <!-- Ô Doanh Số Hôm Nay (Thay thế ô Mục Tiêu cũ) -->
             <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(8,58,156,0.25)] flex flex-col justify-center relative overflow-hidden text-white transform transition hover:-translate-y-1">
                 <div class="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-7xl"><i class="fa-solid fa-chart-line"></i></div>
                 <span class="text-[9px] md:text-xs font-bold text-sky-200 uppercase mb-1 flex items-center justify-between relative z-10">Doanh số hôm nay</span>
@@ -4782,33 +4775,23 @@ window.editDelayNote = async function(orderId) {
         </div>
     `;
 
-    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Ô TO HƠN) ---
-    const totalPipeline = cReceived + cProcessing + cProcessed;
-    const wRec = totalPipeline ? Math.max((cReceived/totalPipeline)*100, 15) : 33;
-    const wPro = totalPipeline ? Math.max((cProcessing/totalPipeline)*100, 15) : 33;
-    const wDone = totalPipeline ? Math.max((cProcessed/totalPipeline)*100, 15) : 34;
+    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Chỉ còn Nhận & Đang Làm, nhỏ gọn) ---
+    const totalActive = cReceived + cProcessing;
+    const wRec = totalActive ? Math.max((cReceived/totalActive)*100, 20) : 50;
+    const wPro = totalActive ? Math.max((cProcessing/totalActive)*100, 20) : 50;
 
     document.getElementById('dash-block-2').innerHTML = `
         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1"><i class="fa-solid fa-chart-bar text-sky-500"></i> Tình trạng hiện tại</h2>
-        <div class="bg-white/90 backdrop-blur-xl p-2.5 md:p-3 rounded-[2.5rem] shadow-[0_8px_30px_rgba(11,25,44,0.06)] border border-white mx-1">
-            <div class="flex h-16 md:h-20 w-full rounded-[2rem] overflow-hidden text-white text-[10px] md:text-xs font-bold text-center leading-none shadow-inner">
+        <div class="bg-white/90 backdrop-blur-xl p-2 rounded-[2rem] shadow-[0_4px_20px_rgba(11,25,44,0.04)] border border-white mx-1 max-w-sm">
+            <div class="flex h-12 md:h-14 w-full rounded-[1.5rem] overflow-hidden text-white font-bold text-center leading-none shadow-inner">
                 <div style="width: ${wRec}%" class="bg-slate-400 flex flex-col items-center justify-center border-r border-white/30 px-1 transition-all duration-500">
-                    <span class="opacity-90 mb-1 hidden md:block uppercase tracking-wider text-[10px]">Mới Nhận</span>
-                    <span class="text-xl md:text-3xl font-extrabold drop-shadow-md">${cReceived}</span>
+                    <span class="opacity-90 mb-1 uppercase tracking-wider text-[8px] md:text-[10px]">Mới Nhận</span>
+                    <span class="text-lg md:text-2xl font-extrabold drop-shadow-sm">${cReceived}</span>
                 </div>
-                <div style="width: ${wPro}%" class="bg-gradient-to-b from-amber-400 to-amber-500 flex flex-col items-center justify-center border-r border-white/30 px-1 shadow-inner text-amber-950 transition-all duration-500">
-                    <span class="opacity-90 mb-1 hidden md:block uppercase tracking-wider text-[10px]">Đang Làm</span>
-                    <span class="text-xl md:text-3xl font-extrabold drop-shadow-sm">${cProcessing}</span>
+                <div style="width: ${wPro}%" class="bg-gradient-to-b from-amber-400 to-amber-500 flex flex-col items-center justify-center px-1 shadow-inner text-amber-950 transition-all duration-500">
+                    <span class="opacity-90 mb-1 uppercase tracking-wider text-[8px] md:text-[10px]">Đang Làm</span>
+                    <span class="text-lg md:text-2xl font-extrabold drop-shadow-sm">${cProcessing}</span>
                 </div>
-                <div style="width: ${wDone}%" class="bg-gradient-to-b from-emerald-400 to-emerald-500 flex flex-col items-center justify-center px-1 shadow-inner transition-all duration-500">
-                    <span class="opacity-90 mb-1 hidden md:block uppercase tracking-wider text-[10px]">Chờ Lấy</span>
-                    <span class="text-xl md:text-3xl font-extrabold drop-shadow-md">${cProcessed}</span>
-                </div>
-            </div>
-            <div class="flex justify-between px-4 pt-2.5 pb-1 md:hidden text-[10px] font-bold text-slate-500 text-center uppercase tracking-wider">
-                <div style="width: ${wRec}%">Nhận</div>
-                <div style="width: ${wPro}%" class="text-amber-600">Đang làm</div>
-                <div style="width: ${wDone}%" class="text-emerald-600">Chờ lấy</div>
             </div>
         </div>
     `;
@@ -4816,25 +4799,25 @@ window.editDelayNote = async function(orderId) {
     // --- KHỐI 3: CẢNH BÁO ---
     let urgentCardsHtml = '';
     urgentOrders.forEach(o => {
-        // Kiểm tra xem đã có ghi chú lưu chưa
-        const delayNoteHtml = o.delayNote 
+        // UI logic: Nếu có ghi chú VÀ không ở chế độ sửa thì hiển thị text. Ngược lại hiển thị ô input có sẵn text cũ.
+        const delayNoteHtml = (o.delayNote && !o.isEditingDelayNote) 
             ? `
             <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex items-center justify-between shadow-inner transition">
-                <span class="text-[10px] md:text-xs text-amber-800 font-semibold italic"><i class="fa-solid fa-thumbtack text-amber-500 mr-1.5"></i> ${escapeHtml(o.delayNote)}</span>
-                <button onclick="editDelayNote('${o.id}')" class="text-sky-600 hover:text-sky-800 text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-white shadow-sm transition active:scale-95 ml-2">Sửa</button>
+                <span class="text-[10px] md:text-xs text-amber-800 font-semibold italic flex-1 truncate"><i class="fa-solid fa-thumbtack text-amber-500 mr-1.5"></i> ${escapeHtml(o.delayNote)}</span>
+                <button onclick="editDelayNote('${o.id}')" class="text-sky-600 hover:text-sky-800 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-white shadow-sm transition active:scale-95 ml-2 border border-sky-100">Sửa</button>
             </div>
             `
             : `
             <div class="bg-white/90 p-1.5 md:p-2 rounded-xl border border-red-100 flex items-center gap-2 shadow-inner transition">
                 <i class="fa-solid fa-pen-to-square text-red-300 text-[10px] md:text-xs ml-1"></i>
-                <input type="text" id="delay_note_${o.id}" placeholder="Ghi chú lý do tại sao trễ..." class="w-full text-[10px] md:text-xs outline-none bg-transparent text-slate-700 font-medium">
+                <input type="text" id="delay_note_${o.id}" placeholder="Ghi chú lý do trễ (để trống để xóa)..." value="${escapeHtml(o.delayNote || '')}" class="w-full text-[10px] md:text-xs outline-none bg-transparent text-slate-700 font-medium">
                 <button onclick="updateDelayNote('${o.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-bold transition active:scale-95 shadow-sm whitespace-nowrap">Lưu</button>
             </div>
             `;
 
         urgentCardsHtml += `
         <div class="bg-white/70 backdrop-blur-md border border-red-100 p-3 md:p-4 rounded-[1.5rem] flex flex-col gap-3 shadow-sm shrink-0">
-            <div class="flex items-center justify-between gap-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 md:w-12 md:h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-base md:text-lg shrink-0 shadow-inner"><i class="fa-solid fa-triangle-exclamation animate-pulse"></i></div>
                     <div>
@@ -4842,7 +4825,10 @@ window.editDelayNote = async function(orderId) {
                         <div class="text-[10px] md:text-[11px] text-red-600 font-bold mt-1 bg-red-50 inline-block px-2 py-0.5 rounded-md border border-red-100">Đã trễ ${o.diffDays} ngày</div>
                     </div>
                 </div>
-                <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold px-3.5 py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[10px] md:text-xs font-bold px-3 py-2 md:py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-eye"></i> Xem</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold px-3 py-2 md:py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                </div>
             </div>
             ${delayNoteHtml}
         </div>`;
