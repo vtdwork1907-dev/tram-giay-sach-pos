@@ -4668,7 +4668,6 @@ function updateExpenseCharts() {
 
         function renderDashboard() {
             const now = new Date(); 
-            // Cắt chuỗi ngày an toàn, đảm bảo định dạng YYYY-MM-DD khớp 100%
             const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
@@ -4681,14 +4680,16 @@ function updateExpenseCharts() {
             let notedOrders = []; 
 
             state.orders.forEach(o => {
-                const finalTotal = o.total + (o.extraFeeVal || 0);
+                // Ép kiểu số để đảm bảo tính toán luôn chính xác
+                const finalTotal = Number(o.total || 0) + Number(o.extraFeeVal || 0);
                 
-                // Trích xuất ngày tạo đơn và ngày thanh toán chuẩn xác
-                const orderDateOnly = o.date ? o.date.substring(0, 10) : '';
-                const payDateOnly = o.payment_date ? o.payment_date.substring(0, 10) : orderDateOnly;
+                const orderDateOnly = String(o.date || '').substring(0, 10);
+                const payDateOnly = String(o.payment_date || o.date || '').substring(0, 10);
 
-                // TÍNH DOANH THU & DOANH SỐ (Sửa lỗi không nhảy số)
+                // TÍNH DOANH THU & DOANH SỐ
+                // Gross (Phát sinh): Chỉ cần tạo đơn hôm nay là cộng
                 if(orderDateOnly === todayStr) grossToday += finalTotal; 
+                // Rev (Đã thu): Phải chuyển trạng thái PAID hoặc DELIVERED
                 if(payDateOnly === todayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) revToday += finalTotal;
                 if(payDateOnly === yesterdayStr && (o.status === 'PAID' || o.status === 'DELIVERED')) revYest += finalTotal;
 
@@ -4700,75 +4701,78 @@ function updateExpenseCharts() {
                 const orderDateObj = new Date(orderDateOnly);
                 const diffDays = Math.floor((now - orderDateObj) / (1000 * 60 * 60 * 24));
 
-                // Phân loại đơn cảnh báo
+                // 1. ĐƠN ĐỎ: Trễ hẹn (Sẽ mất khi chuyển sang Đã xong - PROCESSED)
                 if (['RECEIVED', 'PROCESSING'].includes(o.status) && diffDays >= 4) {
                     urgentOrders.push({ ...o, diffDays });
                 }
+                // 2. ĐƠN XANH LÁ: Quên lấy (Chỉ hiện khi Đã xong. Mất khi cập nhật Đã trả khách)
                 if (o.status === 'PROCESSED' && diffDays >= 1) {
                     forgottenOrders.push({ ...o, diffDays });
                 }
-                if (o.customer.note && o.customer.note.trim() !== '' && !['DELIVERED', 'PAID'].includes(o.status)) {
+                // 3. ĐƠN CÓ GHI CHÚ (Sẽ mất khi chuyển sang Đã xong - PROCESSED)
+                if (o.customer.note && o.customer.note.trim() !== '' && ['RECEIVED', 'PROCESSING'].includes(o.status)) {
                     notedOrders.push(o);
                 }
             });
 
-            // --- KHỐI 1: TỔNG QUAN DOANH THU (Ép 2 cột ngang trên điện thoại) ---
-            const goal = state.dailyGoal || 2000000;
+            // --- KHỐI 1: TỔNG QUAN (Glassmorphism & Đối xứng) ---
+            const goal = Number(state.dailyGoal) || 2000000;
             const progressPct = Math.min((revToday / goal) * 100, 100).toFixed(1);
             
             const revTrend = revToday - revYest;
             const revTrendHtml = revTrend >= 0 
-                ? `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> +${revTrend.toLocaleString()}đ so với hôm qua</span>` 
-                : `<span class="text-red-500 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> ${Math.abs(revTrend).toLocaleString()}đ so với hôm qua</span>`;
+                ? `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> +${revTrend.toLocaleString()}đ so với h.qua</span>` 
+                : `<span class="text-red-500 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> ${Math.abs(revTrend).toLocaleString()}đ so với h.qua</span>`;
 
             document.getElementById('dash-block-1').innerHTML = `
-                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
-                <div class="grid grid-cols-2 gap-3 md:gap-4">
-                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                        <span class="text-[9px] md:text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">Thực tế <i class="fa-solid fa-money-bill-wave text-emerald-100 text-lg md:text-2xl"></i></span>
-                        <div class="text-base md:text-3xl font-extrabold text-slate-800">${revToday.toLocaleString()} đ</div>
-                        <div class="text-[8px] md:text-[10px] mt-1.5 md:mt-2 bg-slate-50 p-1 md:p-1.5 rounded inline-block w-fit border border-slate-100">${revTrendHtml}</div>
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 ml-1"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
+                <div class="grid grid-cols-2 gap-3 md:gap-4 px-1">
+                    <div class="bg-white/80 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgba(11,25,44,0.04)] flex flex-col justify-center transform transition hover:-translate-y-1">
+                        <span class="text-[9px] md:text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
+                        <div class="text-lg md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
+                        <div class="text-[9px] md:text-[11px] mt-1 text-slate-500 font-semibold border-b border-slate-200/50 pb-1.5">Phát sinh mới: ${grossToday.toLocaleString()} đ</div>
+                        <div class="text-[8px] md:text-[10px] mt-1.5 md:mt-2 bg-white/60 p-1 md:p-1.5 rounded-lg inline-block w-fit border border-slate-100 shadow-sm">${revTrendHtml}</div>
                     </div>
-                    <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-4 rounded-2xl shadow-lg flex flex-col justify-center relative overflow-hidden text-white">
-                        <div class="absolute -right-4 -bottom-4 text-white/10 text-5xl md:text-7xl"><i class="fa-solid fa-bullseye"></i></div>
+                    <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(8,58,156,0.25)] flex flex-col justify-center relative overflow-hidden text-white transform transition hover:-translate-y-1">
+                        <div class="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-7xl"><i class="fa-solid fa-bullseye"></i></div>
                         <div class="flex justify-between items-end mb-2 relative z-10">
                             <span class="text-[9px] md:text-xs font-bold text-sky-200 uppercase">Mục tiêu</span>
                             <span class="text-[10px] md:text-sm font-bold text-white">${progressPct}%</span>
                         </div>
-                        <div class="w-full bg-navy-900/50 rounded-full h-2 md:h-3.5 relative z-10 overflow-hidden shadow-inner border border-white/10">
+                        <div class="w-full bg-navy-900/60 rounded-full h-2 md:h-3.5 relative z-10 overflow-hidden shadow-inner border border-white/10">
                             <div class="bg-gradient-to-r from-emerald-400 to-emerald-300 h-full rounded-full transition-all duration-1000 relative overflow-hidden" style="width: ${progressPct}%">
                                 <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
                             </div>
                         </div>
-                        <div class="text-[8px] md:text-[11px] mt-1.5 md:mt-2 font-medium text-sky-100 z-10 line-clamp-1">${progressPct >= 100 ? '🎉 Đạt chỉ tiêu!' : `Còn ${(goal - revToday).toLocaleString()}đ nữa`}</div>
+                        <div class="text-[8px] md:text-[11px] mt-2 font-medium text-sky-100 z-10 line-clamp-1">${progressPct >= 100 ? '🎉 Đạt chỉ tiêu!' : `Còn ${(goal - revToday).toLocaleString()}đ nữa`}</div>
                     </div>
                 </div>
             `;
 
-            // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Không icon, đẹp và tinh tế) ---
+            // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Đổi Text, Style sang trọng) ---
             const totalPipeline = cReceived + cProcessing + cProcessed;
             const wRec = totalPipeline ? Math.max((cReceived/totalPipeline)*100, 15) : 33;
             const wPro = totalPipeline ? Math.max((cProcessing/totalPipeline)*100, 15) : 33;
             const wDone = totalPipeline ? Math.max((cProcessed/totalPipeline)*100, 15) : 34;
 
             document.getElementById('dash-block-2').innerHTML = `
-                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2"><i class="fa-solid fa-chart-bar text-sky-500"></i> Tình trạng hiện tại</h2>
-                <div class="bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="flex h-12 md:h-14 w-full rounded-xl overflow-hidden text-white text-[10px] md:text-xs font-bold text-center leading-none shadow-inner">
-                        <div style="width: ${wRec}%" class="bg-slate-400 flex flex-col items-center justify-center border-r border-white/50 px-1">
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1"><i class="fa-solid fa-chart-bar text-sky-500"></i> Tình trạng hiện tại</h2>
+                <div class="bg-white/80 backdrop-blur-xl p-1.5 md:p-2 rounded-[2rem] shadow-[0_8px_30px_rgba(11,25,44,0.03)] border border-white/60 mx-1">
+                    <div class="flex h-12 md:h-14 w-full rounded-[1.5rem] overflow-hidden text-white text-[10px] md:text-xs font-bold text-center leading-none shadow-inner">
+                        <div style="width: ${wRec}%" class="bg-slate-400 flex flex-col items-center justify-center border-r border-white/30 px-1">
                             <span class="opacity-90 mb-0.5 hidden md:block">Mới Nhận</span>
-                            <span class="text-base md:text-xl font-extrabold">${cReceived}</span>
+                            <span class="text-base md:text-xl font-extrabold drop-shadow-sm">${cReceived}</span>
                         </div>
-                        <div style="width: ${wPro}%" class="bg-amber-500 flex flex-col items-center justify-center border-r border-white/50 px-1 shadow-inner text-amber-950">
+                        <div style="width: ${wPro}%" class="bg-amber-500 flex flex-col items-center justify-center border-r border-white/30 px-1 shadow-inner text-amber-950">
                             <span class="opacity-90 mb-0.5 hidden md:block">Đang Làm</span>
                             <span class="text-base md:text-xl font-extrabold">${cProcessing}</span>
                         </div>
                         <div style="width: ${wDone}%" class="bg-emerald-500 flex flex-col items-center justify-center px-1 shadow-inner">
                             <span class="opacity-90 mb-0.5 hidden md:block">Chờ Lấy</span>
-                            <span class="text-base md:text-xl font-extrabold">${cProcessed}</span>
+                            <span class="text-base md:text-xl font-extrabold drop-shadow-sm">${cProcessed}</span>
                         </div>
                     </div>
-                    <div class="flex justify-between px-2 pt-1.5 pb-0.5 md:hidden text-[9px] font-bold text-slate-500 text-center uppercase tracking-wider">
+                    <div class="flex justify-between px-3 pt-1.5 pb-0.5 md:hidden text-[9px] font-bold text-slate-500 text-center uppercase tracking-wider">
                         <div style="width: ${wRec}%">Nhận</div>
                         <div style="width: ${wPro}%" class="text-amber-600">Đang làm</div>
                         <div style="width: ${wDone}%" class="text-emerald-600">Chờ lấy</div>
@@ -4776,95 +4780,100 @@ function updateExpenseCharts() {
                 </div>
             `;
 
-            // --- KHỐI 3: CẢNH BÁO (Chia danh mục, thanh cuộn, nút Kiểm tra) ---
+            // --- KHỐI 3: CẢNH BÁO (Chia danh mục, cuộn riêng) ---
             let urgentCardsHtml = '';
             urgentOrders.forEach(o => {
                 urgentCardsHtml += `
-                <div class="bg-red-50/80 border border-red-100 p-2 md:p-3 rounded-xl flex flex-col gap-2 shadow-sm shrink-0">
+                <div class="bg-white/70 backdrop-blur-md border border-red-100 p-3 rounded-[1.5rem] flex flex-col gap-2.5 shadow-sm shrink-0">
                     <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                            <span class="text-[9px] md:text-[10px] text-red-600 font-bold bg-red-100 px-1.5 py-0.5 rounded">Trễ ${o.diffDays} ngày</span>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 md:w-10 md:h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-sm md:text-base shrink-0 shadow-inner"><i class="fa-solid fa-triangle-exclamation animate-pulse"></i></div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
+                                <div class="text-[9px] md:text-[10px] text-red-600 font-bold mt-0.5">Đã trễ ${o.diffDays} ngày</div>
+                            </div>
                         </div>
-                        <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow transition active:scale-95">Kiểm tra</button>
+                        <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[9px] md:text-[10px] font-bold px-3 py-2 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
                     </div>
-                    <div class="bg-white p-1.5 rounded border border-red-200 flex items-center gap-1.5 shadow-inner">
-                        <i class="fa-solid fa-pen-to-square text-red-300 text-[10px]"></i>
-                        <input type="text" placeholder="Ghi chú lý do trễ..." value="${escapeHtml(o.delayNote || '')}" onchange="updateDelayNote('${o.id}', this.value)" class="w-full text-[10px] md:text-xs outline-none bg-transparent text-slate-700 font-medium">
+                    <div class="bg-white/90 p-1.5 md:p-2 rounded-xl border border-red-100 flex items-center gap-2 shadow-inner">
+                        <i class="fa-solid fa-pen-to-square text-red-300 text-[10px] md:text-xs ml-1"></i>
+                        <input type="text" id="delay_note_${o.id}" placeholder="Ghi chú lý do tại sao trễ..." value="${escapeHtml(o.delayNote || '')}" class="w-full text-[10px] md:text-xs outline-none bg-transparent text-slate-700 font-medium">
+                        <button onclick="updateDelayNote('${o.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-bold transition active:scale-95 shadow-sm whitespace-nowrap">Lưu</button>
                     </div>
                 </div>`;
             });
 
             let forgottenCardsHtml = '';
             forgottenOrders.forEach(o => {
-                // Thuật toán kiểm tra đủ ảnh hay chưa
-                let requiredAfterCount = 0;
-                if (o.shoes && o.shoes.length > 0) {
-                    requiredAfterCount = o.shoes.reduce((acc, s) => acc + Math.max((s.images || []).length, 1), 0);
-                } else {
-                    requiredAfterCount = Math.max((o.images || []).length, 1);
-                }
+                let requiredAfterCount = o.shoes && o.shoes.length > 0 ? o.shoes.reduce((acc, s) => acc + Math.max((s.images || []).length, 1), 0) : Math.max((o.images || []).length, 1);
                 const validAfterCount = (o.imagesAfter || []).filter(url => url && url.trim() !== '').length;
                 const isEnough = validAfterCount >= requiredAfterCount && requiredAfterCount > 0;
+                
                 const imageStatusHtml = isEnough 
                     ? `<span class="text-[8px] md:text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-200">Đủ ảnh</span>`
                     : `<span class="text-[8px] md:text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold border border-amber-200">Chưa đủ ảnh</span>`;
 
                 forgottenCardsHtml += `
-                <div class="bg-emerald-50 border border-emerald-100 p-2 md:p-3 rounded-xl flex items-center justify-between gap-2 shadow-sm shrink-0">
-                    <div>
-                        <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                        <div class="flex items-center gap-1.5 mt-1">
-                            <span class="text-[9px] md:text-[10px] text-emerald-600 font-semibold">Tồn kho ${o.diffDays} ngày</span>
-                            ${imageStatusHtml}
+                <div class="bg-white/70 backdrop-blur-md border border-emerald-100 p-3 rounded-[1.5rem] flex items-center justify-between gap-2 shadow-sm shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 md:w-10 md:h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm md:text-base shrink-0 shadow-inner"><i class="fa-solid fa-box-open"></i></div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <span class="text-[9px] md:text-[10px] text-emerald-600 font-semibold">Tồn ${o.diffDays} ngày</span>
+                                ${imageStatusHtml}
+                            </div>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-bold px-3 py-2 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
                 </div>`;
             });
 
             let notedCardsHtml = '';
             notedOrders.forEach(o => {
                 notedCardsHtml += `
-                <div class="bg-indigo-50 border border-indigo-100 p-2 md:p-3 rounded-xl flex items-center justify-between gap-2 shadow-sm shrink-0">
-                    <div class="flex-1">
-                        <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                        <div class="text-[9px] md:text-[10px] text-indigo-700 font-bold italic mt-0.5 line-clamp-1">"${escapeHtml(o.customer.note)}"</div>
+                <div class="bg-white/70 backdrop-blur-md border border-indigo-100 p-3 rounded-[1.5rem] flex items-center justify-between gap-2 shadow-sm shrink-0">
+                    <div class="flex items-center gap-2.5 flex-1 overflow-hidden">
+                        <div class="w-8 h-8 md:w-10 md:h-10 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center text-sm md:text-base shrink-0 shadow-inner"><i class="fa-solid fa-comment-dots"></i></div>
+                        <div class="flex-1 overflow-hidden pr-2">
+                            <div class="font-bold text-slate-800 text-[11px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
+                            <div class="text-[9px] md:text-[10px] text-indigo-600 font-bold italic mt-1 line-clamp-1">"${escapeHtml(o.customer.note)}"</div>
+                        </div>
                     </div>
-                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm transition active:scale-95">Kiểm tra</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-bold px-3 py-2 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
                 </div>`;
             });
 
-            // Lắp ráp 3 danh sách vào giao diện
+            // Lắp ráp 3 danh mục vào khối
             document.getElementById('dash-block-3').innerHTML = `
-                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 pt-2 border-t border-slate-200"><i class="fa-solid fa-clipboard-list text-indigo-500"></i> Cảnh báo & Tồn đọng</h2>
-                
-                ${urgentOrders.length > 0 ? `
-                <div class="mb-3">
-                    <h3 class="font-bold text-red-600 text-[10px] md:text-xs mb-1.5 uppercase flex items-center gap-1.5"><i class="fa-solid fa-circle-exclamation"></i> Quá hạn chưa xong (${urgentOrders.length})</h3>
-                    <div class="flex flex-col gap-2 w-full max-h-[220px] overflow-y-auto hide-scroll pr-1 pb-1">${urgentCardsHtml}</div>
-                </div>` : ''}
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1 pt-3 border-t border-slate-200/60"><i class="fa-solid fa-clipboard-list text-indigo-500"></i> Cảnh báo & Tồn đọng</h2>
+                <div class="px-1">
+                    ${urgentOrders.length > 0 ? `
+                    <div class="mb-4">
+                        <h3 class="font-bold text-red-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-circle-exclamation"></i> Quá hạn chưa xong (${urgentOrders.length})</h3>
+                        <div class="flex flex-col gap-2.5 w-full max-h-[300px] overflow-y-auto hide-scroll px-1 pb-2">${urgentCardsHtml}</div>
+                    </div>` : ''}
 
-                ${forgottenOrders.length > 0 ? `
-                <div class="mb-3">
-                    <h3 class="font-bold text-emerald-600 text-[10px] md:text-xs mb-1.5 uppercase flex items-center gap-1.5"><i class="fa-solid fa-box-open"></i> Đã xong chờ khách lấy (${forgottenOrders.length})</h3>
-                    <div class="flex flex-col gap-2 w-full max-h-[220px] overflow-y-auto hide-scroll pr-1 pb-1">${forgottenCardsHtml}</div>
-                </div>` : ''}
+                    ${forgottenOrders.length > 0 ? `
+                    <div class="mb-4">
+                        <h3 class="font-bold text-emerald-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-box-open"></i> Đã xong chờ khách lấy (${forgottenOrders.length})</h3>
+                        <div class="flex flex-col gap-2.5 w-full max-h-[300px] overflow-y-auto hide-scroll px-1 pb-2">${forgottenCardsHtml}</div>
+                    </div>` : ''}
 
-                ${notedOrders.length > 0 ? `
-                <div class="mb-1">
-                    <h3 class="font-bold text-indigo-600 text-[10px] md:text-xs mb-1.5 uppercase flex items-center gap-1.5"><i class="fa-solid fa-comment-dots"></i> Đơn có ghi chú riêng (${notedOrders.length})</h3>
-                    <div class="flex flex-col gap-2 w-full max-h-[220px] overflow-y-auto hide-scroll pr-1 pb-1">${notedCardsHtml}</div>
-                </div>` : ''}
+                    ${notedOrders.length > 0 ? `
+                    <div class="mb-4">
+                        <h3 class="font-bold text-indigo-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-comment-dots"></i> Đơn có ghi chú riêng (${notedOrders.length})</h3>
+                        <div class="flex flex-col gap-2.5 w-full max-h-[300px] overflow-y-auto hide-scroll px-1 pb-2">${notedCardsHtml}</div>
+                    </div>` : ''}
 
-                ${(urgentOrders.length === 0 && forgottenOrders.length === 0 && notedOrders.length === 0) ? `
-                <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center flex flex-col items-center justify-center gap-2">
-                    <i class="fa-regular fa-face-smile-wink text-3xl text-emerald-400"></i>
-                    <span class="text-slate-500 text-xs md:text-sm font-semibold">Tuyệt vời! Không có việc nào bị tồn đọng.</span>
-                </div>` : ''}
+                    ${(urgentOrders.length === 0 && forgottenOrders.length === 0 && notedOrders.length === 0) ? `
+                    <div class="p-6 bg-white/70 backdrop-blur-xl border border-slate-200 rounded-[2rem] text-center flex flex-col items-center justify-center gap-2 shadow-[0_8px_30px_rgba(11,25,44,0.03)] mt-2">
+                        <i class="fa-regular fa-face-smile-wink text-3xl md:text-4xl text-emerald-400"></i>
+                        <span class="text-slate-500 text-xs md:text-sm font-semibold mt-1">Tuyệt vời! Không có việc nào bị tồn đọng.</span>
+                    </div>` : ''}
+                </div>
             `;
         }
-
         async function fetchLatestDataFromCloud(showLoading = true) {
             if (!navigator.onLine) return;
             if (showLoading) { const loader = document.getElementById('globalLoading'); if (loader) { loader.style.display = 'flex'; loader.querySelector('.text-sm').innerText = 'Đang tải dữ liệu mới...'; } }
