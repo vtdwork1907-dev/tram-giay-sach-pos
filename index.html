@@ -780,6 +780,12 @@
         el.innerText = value;
     }
 }
+        / HÀM GIẢI PHÓNG RAM CHO ẢNH PREVIEW
+function revokeIfBlob(url) {
+    if (url && typeof url === 'string' && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+    }
+}
         // =========================================================================
         // 1. ĐĂNG KÝ SERVICE WORKER (OFFLINE-FIRST PWA)
         // =========================================================================
