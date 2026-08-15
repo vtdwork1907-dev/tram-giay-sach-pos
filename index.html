@@ -4775,36 +4775,41 @@ window.editDelayNote = async function(orderId) {
         </div>
     `;
 
-    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Thiết kế Card sinh động, Căn Giữa) ---
+    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (4 Ô Ngang Bằng) ---
     document.getElementById('dash-block-2').innerHTML = `
         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1"><i class="fa-solid fa-chart-bar text-sky-500"></i> Tình trạng hiện tại</h2>
-        <div class="flex items-center justify-center gap-3 px-1 w-full max-w-sm mx-auto">
-            <!-- Thẻ Mới Nhận -->
-            <div class="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-3.5 rounded-[1.5rem] border border-white shadow-sm flex flex-col justify-center relative overflow-hidden">
-                <div class="absolute -right-2 -bottom-2 text-slate-300/40 text-5xl"><i class="fa-solid fa-boxes-stacked"></i></div>
-                <div class="flex items-center gap-2.5 relative z-10">
-                    <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-500 shrink-0"><i class="fa-solid fa-box"></i></div>
-                    <div class="flex flex-col">
-                        <span class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mới Nhận</span>
-                        <span class="text-xl md:text-2xl font-extrabold text-slate-700 leading-none">${cReceived}</span>
-                    </div>
-                </div>
+        <div class="grid grid-cols-4 gap-2 md:gap-4 px-1 w-full">
+            <!-- Mới Nhận -->
+            <div class="bg-gradient-to-br from-slate-100 to-slate-200 p-2 md:p-5 rounded-[1rem] md:rounded-[2.5rem] border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center relative overflow-hidden text-center transition hover:-translate-y-1 h-full">
+                <div class="text-slate-400 mb-1 md:mb-2 text-sm md:text-2xl"><i class="fa-solid fa-box"></i></div>
+                <div class="text-[13px] md:text-3xl font-extrabold text-slate-700 leading-none drop-shadow-sm">${cReceived}</div>
+                <div class="text-[7px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1.5 whitespace-nowrap">Mới Nhận</div>
             </div>
-            <!-- Thẻ Đang Làm -->
-            <div class="flex-1 bg-gradient-to-br from-amber-400 to-amber-500 p-3.5 rounded-[1.5rem] border border-amber-300 shadow-sm flex flex-col justify-center relative overflow-hidden text-white">
-                <div class="absolute -right-2 -bottom-3 text-white/20 text-5xl"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                <div class="flex items-center gap-2.5 relative z-10">
-                    <div class="w-8 h-8 rounded-full bg-white/20 shadow-inner flex items-center justify-center text-white shrink-0"><i class="fa-solid fa-clock-rotate-left fa-spin-pulse"></i></div>
-                    <div class="flex flex-col">
-                        <span class="text-[9px] md:text-[10px] font-bold text-amber-100 uppercase tracking-wider">Đang Làm</span>
-                        <span class="text-xl md:text-2xl font-extrabold text-white leading-none">${cProcessing}</span>
-                    </div>
-                </div>
+            
+            <!-- Đang Làm -->
+            <div class="bg-gradient-to-br from-amber-400 to-amber-500 p-2 md:p-5 rounded-[1rem] md:rounded-[2.5rem] border border-amber-300 shadow-[0_4px_15px_rgba(245,158,11,0.2)] flex flex-col items-center justify-center relative overflow-hidden text-center transition hover:-translate-y-1 h-full text-white">
+                <div class="text-amber-100 mb-1 md:mb-2 text-sm md:text-2xl"><i class="fa-solid fa-clock-rotate-left fa-spin-pulse"></i></div>
+                <div class="text-[13px] md:text-3xl font-extrabold leading-none drop-shadow-sm">${cProcessing}</div>
+                <div class="text-[7px] md:text-[10px] font-bold text-amber-100 uppercase tracking-wider mt-1.5 whitespace-nowrap">Đang Làm</div>
+            </div>
+
+            <!-- Đã Xong -->
+            <div class="bg-gradient-to-br from-emerald-400 to-emerald-500 p-2 md:p-5 rounded-[1rem] md:rounded-[2.5rem] border border-emerald-300 shadow-[0_4px_15px_rgba(16,185,129,0.2)] flex flex-col items-center justify-center relative overflow-hidden text-center transition hover:-translate-y-1 h-full text-white">
+                <div class="text-emerald-100 mb-1 md:mb-2 text-sm md:text-2xl"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="text-[13px] md:text-3xl font-extrabold leading-none drop-shadow-sm">${cProcessed}</div>
+                <div class="text-[7px] md:text-[10px] font-bold text-emerald-100 uppercase tracking-wider mt-1.5 whitespace-nowrap">Đã Xong</div>
+            </div>
+
+            <!-- Đã Trả -->
+            <div class="bg-gradient-to-br from-indigo-400 to-indigo-500 p-2 md:p-5 rounded-[1rem] md:rounded-[2.5rem] border border-indigo-300 shadow-[0_4px_15px_rgba(99,102,241,0.2)] flex flex-col items-center justify-center relative overflow-hidden text-center transition hover:-translate-y-1 h-full text-white">
+                <div class="text-indigo-100 mb-1 md:mb-2 text-sm md:text-2xl"><i class="fa-solid fa-handshake"></i></div>
+                <div class="text-[13px] md:text-3xl font-extrabold leading-none drop-shadow-sm">${cDelivered}</div>
+                <div class="text-[7px] md:text-[10px] font-bold text-indigo-100 uppercase tracking-wider mt-1.5 whitespace-nowrap">Đã Trả</div>
             </div>
         </div>
     `;
 
-    // --- KHỐI 3: CẢNH BÁO (Thu nhỏ Card, Đưa nút Xem/Kiểm tra lên cùng hàng) ---
+    // --- KHỐI 3: CẢNH BÁO ---
     let urgentCardsHtml = '';
     urgentOrders.forEach(o => {
         const delayNoteHtml = (o.delayNote && !o.isEditingDelayNote) 
@@ -4823,19 +4828,19 @@ window.editDelayNote = async function(orderId) {
 
         urgentCardsHtml += `
         <div class="bg-white/70 backdrop-blur-md border border-red-100 p-2.5 rounded-[1.25rem] flex flex-col shadow-sm shrink-0">
-            <div class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center justify-between gap-1.5 w-full">
                 <!-- Tên Khách & Cảnh báo -->
-                <div class="flex items-center gap-2 flex-1 overflow-hidden">
+                <div class="flex items-center gap-1.5 flex-1 min-w-0">
                     <div class="w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-triangle-exclamation animate-pulse"></i></div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
+                    <div class="flex flex-col flex-1 min-w-0">
                         <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
                         <span class="text-[8px] md:text-[9px] text-red-600 font-bold leading-none mt-0.5">Đã trễ ${o.diffDays} ngày</span>
                     </div>
                 </div>
                 <!-- 2 Nút (Nằm cùng hàng Tên) -->
                 <div class="flex items-center gap-1 shrink-0">
-                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>
-                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> KT</button>
+                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-eye"></i> Xem</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
                 </div>
             </div>
             ${delayNoteHtml}
@@ -4853,35 +4858,43 @@ window.editDelayNote = async function(orderId) {
             : `<span class="text-[8px] md:text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-bold border border-amber-200">Chưa đủ ảnh</span>`;
 
         forgottenCardsHtml += `
-        <div class="bg-white/70 backdrop-blur-md border border-emerald-100 p-2.5 rounded-[1.25rem] flex items-center justify-between gap-1.5 shadow-sm shrink-0">
-            <div class="flex items-center gap-2 flex-1 overflow-hidden">
-                <div class="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-box-open"></i></div>
-                <div class="flex flex-col flex-1 overflow-hidden">
-                    <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
-                    <div class="flex items-center gap-1 mt-0.5">
-                        <span class="text-[8px] md:text-[9px] text-emerald-600 font-semibold leading-none">Tồn ${o.diffDays} ngày</span>
-                        ${imageStatusHtml}
+        <div class="bg-white/70 backdrop-blur-md border border-emerald-100 p-2.5 rounded-[1.25rem] flex flex-col gap-1.5 shadow-sm shrink-0">
+            <div class="flex items-center justify-between gap-1.5 w-full">
+                <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                    <div class="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-box-open"></i></div>
+                    <div class="flex flex-col flex-1 min-w-0">
+                        <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            <span class="text-[8px] md:text-[9px] text-emerald-600 font-semibold leading-none whitespace-nowrap">Tồn ${o.diffDays} ngày</span>
+                            ${imageStatusHtml}
+                        </div>
                     </div>
                 </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-eye"></i> Xem</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                </div>
             </div>
-            <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
         </div>`;
     });
 
     let notedCardsHtml = '';
     notedOrders.forEach(o => {
         notedCardsHtml += `
-        <div class="bg-white/70 backdrop-blur-md border border-indigo-100 p-2.5 rounded-[1.25rem] flex flex-col gap-1 shadow-sm shrink-0">
-            <div class="flex items-center justify-between gap-1.5">
-                <div class="flex items-center gap-2 flex-1 overflow-hidden">
+        <div class="bg-white/70 backdrop-blur-md border border-indigo-100 p-2.5 rounded-[1.25rem] flex flex-col gap-1.5 shadow-sm shrink-0">
+            <div class="flex items-center justify-between gap-1.5 w-full">
+                <div class="flex items-center gap-1.5 flex-1 min-w-0">
                     <div class="w-7 h-7 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-comment-dots"></i></div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
+                    <div class="flex flex-col flex-1 min-w-0">
                         <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
+                        <span class="text-[9px] md:text-[10px] text-indigo-600 font-bold italic truncate bg-indigo-50 px-1.5 py-0.5 rounded mt-0.5 border border-indigo-100 w-fit">"${escapeHtml(o.customer.note)}"</span>
                     </div>
                 </div>
-                <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-eye"></i> Xem</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                </div>
             </div>
-            <div class="text-[9px] md:text-[10px] text-indigo-600 font-bold italic line-clamp-1 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 ml-9 mr-1">"${escapeHtml(o.customer.note)}"</div>
         </div>`;
     });
 
