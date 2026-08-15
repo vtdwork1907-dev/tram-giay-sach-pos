@@ -2841,6 +2841,23 @@
             state.qrConfig.accountName = document.getElementById('cfgAccountName').value.trim();
             await saveSettingsToDB(); updateQRView(); showNotification("Đã lưu", "Lưu cấu hình mã QR thành công!");
         }
+        // HÀM LƯU MỤC TIÊU DOANH THU MỚI
+        async function saveDailyGoal() {
+            const val = parseInt(document.getElementById('cfgDailyGoal').value);
+            if (!val || val <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+            
+            // Cập nhật biến bộ nhớ
+            state.dailyGoal = val;
+            
+            // Lưu vào LocalStorage / IndexedDB
+            await saveLocalState(); 
+            
+            // Vẽ lại giao diện trang chủ
+            renderDashboard(); 
+            
+            // Báo thành công
+            showNotification("Đã lưu", "Cập nhật mục tiêu ngày thành công!");
+        }
         
         function updateQRView() {
             const bank = state.qrConfig.bank || 'ICB'; const acc = state.qrConfig.accountNo || '000000000'; const nameStr = state.qrConfig.accountName || 'TRAM GIAY SACH';
