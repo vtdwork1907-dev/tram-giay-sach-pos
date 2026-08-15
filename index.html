@@ -1286,8 +1286,12 @@
         }
 
         function mapOrderJsToDb(o) {
-    let pmDb = o.paymentMethod || null;
-    if (pmDb && o.payment_date) pmDb = `${pmDb}|${o.payment_date}`;
+    let pmDb = o.paymentMethod || 'NONE'; // Dùng 'NONE' làm mỏ neo nếu chưa biết phương thức
+    if (o.payment_date) {
+        pmDb = `${pmDb}|${o.payment_date}`;
+    } else if (pmDb === 'NONE') {
+        pmDb = null;
+    }
 
     return {
         id: o.id, tracking_id: o.tracking_id || null, date: o.date,
@@ -1295,9 +1299,10 @@
         items: o.items || [], shoes: o.shoes || null,
         images: o.images || [], images_after: o.imagesAfter || [],
         subtotal_val: o.subtotalVal || 0, discount_val: o.discountVal || 0, total: o.total || 0,
-        status: o.status || 'RECEIVED', payment_method: pmDb,
+        status: o.status || 'RECEIVED', 
+        payment_method: pmDb, // Ngày thu tiền giờ đã được an toàn
         extra_fee_val: o.extraFeeVal || 0, extra_fee_reason: o.extraFeeReason || '',
-        delay_note: o.delayNote || '' // Map lên server
+        delay_note: o.delayNote || '' 
     };
 }
 
@@ -1309,7 +1314,7 @@ function mapOrderDbToJs(db) {
     let pDate = null;
     if (pm && pm.includes('|')) {
         const parts = pm.split('|');
-        pm = parts[0];
+        pm = parts[0] === 'NONE' ? null : parts[0];
         pDate = parts[1];
     }
 
@@ -1320,9 +1325,11 @@ function mapOrderDbToJs(db) {
         items: db.items || [], shoes: db.shoes || null,
         images: db.images || [], imagesAfter: db.images_after || [],
         subtotalVal: db.subtotal_val || 0, discountVal: db.discount_val || 0, total: db.total || 0,
-        status: db.status || 'RECEIVED', paymentMethod: pm, payment_date: pDate,
+        status: db.status || 'RECEIVED', 
+        paymentMethod: pm, 
+        payment_date: pDate,
         extraFeeVal: db.extra_fee_val || 0, extraFeeReason: db.extra_fee_reason || '',
-        delayNote: db.delay_note || '' // Tải từ server về
+        delayNote: db.delay_note || '' 
     };
 }
 
