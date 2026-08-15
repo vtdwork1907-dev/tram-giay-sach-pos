@@ -3316,12 +3316,19 @@ function revokeIfBlob(url) {
         }
 
         function removeUploadedImage(idOrUrl) { 
-            state.uploadedImages = state.uploadedImages.filter(img => { 
-                if(typeof img === 'string') return img !== idOrUrl; 
-                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
-            }); 
-            renderPreviewImages(); 
+    state.uploadedImages = state.uploadedImages.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === idOrUrl);
+            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
+        } else {
+            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
         }
+        return !isMatch; 
+    }); 
+    renderPreviewImages(); 
+}
 
         function removeShoeImage(shoeId, imgIdOrUrl) { 
             const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return; 
