@@ -4761,73 +4761,81 @@ window.editDelayNote = async function(orderId) {
         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 ml-1"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
         <div class="grid grid-cols-2 gap-3 md:gap-4 px-1">
             <div class="bg-white/80 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgba(11,25,44,0.04)] flex flex-col justify-center transform transition hover:-translate-y-1">
-                <span class="text-[9px] md:text-xs font-bold text-slate-500 uppercase mb-1 flex items-center justify-between">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
-                <div class="text-lg md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
+                <span class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center justify-between tracking-wide">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
+                <div class="text-[17px] md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
                 <div class="text-[8px] md:text-[10px] mt-2 md:mt-3 bg-slate-50 p-1 md:p-1.5 rounded-lg inline-block w-fit border border-slate-100 shadow-sm">${revTrendHtml}</div>
             </div>
             
             <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(8,58,156,0.25)] flex flex-col justify-center relative overflow-hidden text-white transform transition hover:-translate-y-1">
                 <div class="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-7xl"><i class="fa-solid fa-chart-line"></i></div>
-                <span class="text-[9px] md:text-xs font-bold text-sky-200 uppercase mb-1 flex items-center justify-between relative z-10">Doanh số hôm nay</span>
-                <div class="text-lg md:text-3xl font-extrabold text-white leading-tight relative z-10">${grossToday.toLocaleString()} đ</div>
-                <div class="text-[10px] md:text-xs mt-2 md:mt-3 font-semibold text-sky-100 relative z-10 bg-white/10 w-fit px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/10 shadow-sm"><i class="fa-solid fa-box mr-1"></i> Đã nhận ${ordersTodayCount} đơn mới</div>
+                <span class="text-[9px] md:text-[10px] font-bold text-sky-200 uppercase mb-1 flex items-center justify-between relative z-10 tracking-wide">Doanh số hôm nay</span>
+                <div class="text-[17px] md:text-3xl font-extrabold text-white leading-tight relative z-10">${grossToday.toLocaleString()} đ</div>
+                <div class="text-[9px] md:text-xs mt-2 md:mt-3 font-semibold text-sky-100 relative z-10 bg-white/10 w-fit px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10 shadow-sm"><i class="fa-solid fa-box mr-1"></i> Đã nhận ${ordersTodayCount} đơn</div>
             </div>
         </div>
     `;
 
-    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Chỉ còn Nhận & Đang Làm, nhỏ gọn) ---
-    const totalActive = cReceived + cProcessing;
-    const wRec = totalActive ? Math.max((cReceived/totalActive)*100, 20) : 50;
-    const wPro = totalActive ? Math.max((cProcessing/totalActive)*100, 20) : 50;
-
+    // --- KHỐI 2: TÌNH TRẠNG HIỆN TẠI (Thiết kế Card sinh động, Căn Giữa) ---
     document.getElementById('dash-block-2').innerHTML = `
         <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1"><i class="fa-solid fa-chart-bar text-sky-500"></i> Tình trạng hiện tại</h2>
-        <div class="bg-white/90 backdrop-blur-xl p-2 rounded-[2rem] shadow-[0_4px_20px_rgba(11,25,44,0.04)] border border-white mx-1 max-w-sm">
-            <div class="flex h-12 md:h-14 w-full rounded-[1.5rem] overflow-hidden text-white font-bold text-center leading-none shadow-inner">
-                <div style="width: ${wRec}%" class="bg-slate-400 flex flex-col items-center justify-center border-r border-white/30 px-1 transition-all duration-500">
-                    <span class="opacity-90 mb-1 uppercase tracking-wider text-[8px] md:text-[10px]">Mới Nhận</span>
-                    <span class="text-lg md:text-2xl font-extrabold drop-shadow-sm">${cReceived}</span>
+        <div class="flex items-center justify-center gap-3 px-1 w-full max-w-sm mx-auto">
+            <!-- Thẻ Mới Nhận -->
+            <div class="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 p-3.5 rounded-[1.5rem] border border-white shadow-sm flex flex-col justify-center relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 text-slate-300/40 text-5xl"><i class="fa-solid fa-boxes-stacked"></i></div>
+                <div class="flex items-center gap-2.5 relative z-10">
+                    <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-500 shrink-0"><i class="fa-solid fa-box"></i></div>
+                    <div class="flex flex-col">
+                        <span class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mới Nhận</span>
+                        <span class="text-xl md:text-2xl font-extrabold text-slate-700 leading-none">${cReceived}</span>
+                    </div>
                 </div>
-                <div style="width: ${wPro}%" class="bg-gradient-to-b from-amber-400 to-amber-500 flex flex-col items-center justify-center px-1 shadow-inner text-amber-950 transition-all duration-500">
-                    <span class="opacity-90 mb-1 uppercase tracking-wider text-[8px] md:text-[10px]">Đang Làm</span>
-                    <span class="text-lg md:text-2xl font-extrabold drop-shadow-sm">${cProcessing}</span>
+            </div>
+            <!-- Thẻ Đang Làm -->
+            <div class="flex-1 bg-gradient-to-br from-amber-400 to-amber-500 p-3.5 rounded-[1.5rem] border border-amber-300 shadow-sm flex flex-col justify-center relative overflow-hidden text-white">
+                <div class="absolute -right-2 -bottom-3 text-white/20 text-5xl"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div class="flex items-center gap-2.5 relative z-10">
+                    <div class="w-8 h-8 rounded-full bg-white/20 shadow-inner flex items-center justify-center text-white shrink-0"><i class="fa-solid fa-clock-rotate-left fa-spin-pulse"></i></div>
+                    <div class="flex flex-col">
+                        <span class="text-[9px] md:text-[10px] font-bold text-amber-100 uppercase tracking-wider">Đang Làm</span>
+                        <span class="text-xl md:text-2xl font-extrabold text-white leading-none">${cProcessing}</span>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
-    // --- KHỐI 3: CẢNH BÁO ---
+    // --- KHỐI 3: CẢNH BÁO (Thu nhỏ Card, Đưa nút Xem/Kiểm tra lên cùng hàng) ---
     let urgentCardsHtml = '';
     urgentOrders.forEach(o => {
-        // UI logic: Nếu có ghi chú VÀ không ở chế độ sửa thì hiển thị text. Ngược lại hiển thị ô input có sẵn text cũ.
         const delayNoteHtml = (o.delayNote && !o.isEditingDelayNote) 
             ? `
-            <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex items-center justify-between shadow-inner transition">
-                <span class="text-[10px] md:text-xs text-amber-800 font-semibold italic flex-1 truncate"><i class="fa-solid fa-thumbtack text-amber-500 mr-1.5"></i> ${escapeHtml(o.delayNote)}</span>
-                <button onclick="editDelayNote('${o.id}')" class="text-sky-600 hover:text-sky-800 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-white shadow-sm transition active:scale-95 ml-2 border border-sky-100">Sửa</button>
+            <div class="mt-2 bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-center justify-between shadow-inner">
+                <span class="text-[9px] md:text-[10px] text-amber-800 font-semibold italic flex-1 truncate"><i class="fa-solid fa-thumbtack text-amber-500 mr-1.5"></i> ${escapeHtml(o.delayNote)}</span>
+                <button onclick="editDelayNote('${o.id}')" class="text-sky-600 hover:text-sky-800 text-[9px] font-bold px-2.5 py-1 rounded bg-white shadow-sm ml-2 border border-sky-100 transition active:scale-95">Sửa</button>
             </div>
             `
             : `
-            <div class="bg-white/90 p-1.5 md:p-2 rounded-xl border border-red-100 flex items-center gap-2 shadow-inner transition">
-                <i class="fa-solid fa-pen-to-square text-red-300 text-[10px] md:text-xs ml-1"></i>
-                <input type="text" id="delay_note_${o.id}" placeholder="Ghi chú lý do trễ (để trống để xóa)..." value="${escapeHtml(o.delayNote || '')}" class="w-full text-[10px] md:text-xs outline-none bg-transparent text-slate-700 font-medium">
-                <button onclick="updateDelayNote('${o.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-bold transition active:scale-95 shadow-sm whitespace-nowrap">Lưu</button>
+            <div class="mt-2 bg-white/90 p-1.5 rounded-lg border border-red-100 flex items-center gap-2 shadow-inner">
+                <input type="text" id="delay_note_${o.id}" placeholder="Ghi chú trễ..." value="${escapeHtml(o.delayNote || '')}" class="w-full text-[9px] md:text-[10px] outline-none bg-transparent text-slate-700 font-medium px-1">
+                <button onclick="updateDelayNote('${o.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded text-[9px] md:text-[10px] font-bold transition active:scale-95 shadow-sm whitespace-nowrap">Lưu</button>
             </div>
             `;
 
         urgentCardsHtml += `
-        <div class="bg-white/70 backdrop-blur-md border border-red-100 p-3 md:p-4 rounded-[1.5rem] flex flex-col gap-3 shadow-sm shrink-0">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-base md:text-lg shrink-0 shadow-inner"><i class="fa-solid fa-triangle-exclamation animate-pulse"></i></div>
-                    <div>
-                        <div class="font-bold text-slate-800 text-[12px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                        <div class="text-[10px] md:text-[11px] text-red-600 font-bold mt-1 bg-red-50 inline-block px-2 py-0.5 rounded-md border border-red-100">Đã trễ ${o.diffDays} ngày</div>
+        <div class="bg-white/70 backdrop-blur-md border border-red-100 p-2.5 rounded-[1.25rem] flex flex-col shadow-sm shrink-0">
+            <div class="flex items-center justify-between gap-1.5">
+                <!-- Tên Khách & Cảnh báo -->
+                <div class="flex items-center gap-2 flex-1 overflow-hidden">
+                    <div class="w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-triangle-exclamation animate-pulse"></i></div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
+                        <span class="text-[8px] md:text-[9px] text-red-600 font-bold leading-none mt-0.5">Đã trễ ${o.diffDays} ngày</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[10px] md:text-xs font-bold px-3 py-2 md:py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-eye"></i> Xem</button>
-                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold px-3 py-2 md:py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+                <!-- 2 Nút (Nằm cùng hàng Tên) -->
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="openComparison('${o.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-eye"></i> Xem</button>
+                    <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-red-500 hover:bg-red-600 text-white text-[9px] md:text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> KT</button>
                 </div>
             </div>
             ${delayNoteHtml}
@@ -4841,59 +4849,61 @@ window.editDelayNote = async function(orderId) {
         const isEnough = validAfterCount >= requiredAfterCount && requiredAfterCount > 0;
         
         const imageStatusHtml = isEnough 
-            ? `<span class="text-[9px] md:text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-bold border border-emerald-200">Đủ ảnh</span>`
-            : `<span class="text-[9px] md:text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md font-bold border border-amber-200">Chưa đủ ảnh</span>`;
+            ? `<span class="text-[8px] md:text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-bold border border-emerald-200">Đủ ảnh</span>`
+            : `<span class="text-[8px] md:text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-bold border border-amber-200">Chưa đủ ảnh</span>`;
 
         forgottenCardsHtml += `
-        <div class="bg-white/70 backdrop-blur-md border border-emerald-100 p-3 md:p-4 rounded-[1.5rem] flex items-center justify-between gap-2 shadow-sm shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-base md:text-lg shrink-0 shadow-inner"><i class="fa-solid fa-box-open"></i></div>
-                <div>
-                    <div class="font-bold text-slate-800 text-[12px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                    <div class="flex items-center gap-2 mt-1.5">
-                        <span class="text-[10px] md:text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Tồn ${o.diffDays} ngày</span>
+        <div class="bg-white/70 backdrop-blur-md border border-emerald-100 p-2.5 rounded-[1.25rem] flex items-center justify-between gap-1.5 shadow-sm shrink-0">
+            <div class="flex items-center gap-2 flex-1 overflow-hidden">
+                <div class="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-box-open"></i></div>
+                <div class="flex flex-col flex-1 overflow-hidden">
+                    <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="text-[8px] md:text-[9px] text-emerald-600 font-semibold leading-none">Tồn ${o.diffDays} ngày</span>
                         ${imageStatusHtml}
                     </div>
                 </div>
             </div>
-            <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] md:text-xs font-bold px-3.5 py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+            <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
         </div>`;
     });
 
     let notedCardsHtml = '';
     notedOrders.forEach(o => {
         notedCardsHtml += `
-        <div class="bg-white/70 backdrop-blur-md border border-indigo-100 p-3 md:p-4 rounded-[1.5rem] flex items-center justify-between gap-2 shadow-sm shrink-0">
-            <div class="flex items-center gap-3 flex-1 overflow-hidden">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center text-base md:text-lg shrink-0 shadow-inner"><i class="fa-solid fa-comment-dots"></i></div>
-                <div class="flex-1 overflow-hidden pr-2">
-                    <div class="font-bold text-slate-800 text-[12px] md:text-sm leading-tight">${o.id} - ${escapeHtml(o.customer.name)}</div>
-                    <div class="text-[10px] md:text-[11px] text-indigo-600 font-bold italic mt-1.5 line-clamp-1 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">"${escapeHtml(o.customer.note)}"</div>
+        <div class="bg-white/70 backdrop-blur-md border border-indigo-100 p-2.5 rounded-[1.25rem] flex flex-col gap-1 shadow-sm shrink-0">
+            <div class="flex items-center justify-between gap-1.5">
+                <div class="flex items-center gap-2 flex-1 overflow-hidden">
+                    <div class="w-7 h-7 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-inner"><i class="fa-solid fa-comment-dots"></i></div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <span class="font-bold text-slate-800 text-[11px] md:text-xs truncate">${o.id} - ${escapeHtml(o.customer.name)}</span>
+                    </div>
                 </div>
+                <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-bold px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
             </div>
-            <button onclick="document.getElementById('searchOrderInput').value='${o.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] md:text-xs font-bold px-3.5 py-2.5 rounded-xl shrink-0 shadow-sm transition active:scale-95 flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Kiểm tra</button>
+            <div class="text-[9px] md:text-[10px] text-indigo-600 font-bold italic line-clamp-1 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 ml-9 mr-1">"${escapeHtml(o.customer.note)}"</div>
         </div>`;
     });
 
     document.getElementById('dash-block-3').innerHTML = `
-        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-2 ml-1 pt-3 border-t border-slate-200/60"><i class="fa-solid fa-clipboard-list text-indigo-500"></i> Cảnh báo & Tồn đọng</h2>
+        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 mt-3 ml-1 pt-3 border-t border-slate-200/60"><i class="fa-solid fa-clipboard-list text-indigo-500"></i> Cảnh báo & Tồn đọng</h2>
         <div class="px-1">
             ${urgentOrders.length > 0 ? `
             <div class="mb-4">
-                <h3 class="font-bold text-red-600 text-[11px] md:text-xs mb-2.5 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-circle-exclamation"></i> Quá hạn chưa xong (${urgentOrders.length})</h3>
-                <div class="flex flex-col gap-3 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${urgentCardsHtml}</div>
+                <h3 class="font-bold text-red-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-circle-exclamation"></i> Quá hạn chưa xong (${urgentOrders.length})</h3>
+                <div class="flex flex-col gap-2.5 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${urgentCardsHtml}</div>
             </div>` : ''}
 
             ${forgottenOrders.length > 0 ? `
             <div class="mb-4">
-                <h3 class="font-bold text-emerald-600 text-[11px] md:text-xs mb-2.5 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-box-open"></i> Đã xong chờ khách lấy (${forgottenOrders.length})</h3>
-                <div class="flex flex-col gap-3 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${forgottenCardsHtml}</div>
+                <h3 class="font-bold text-emerald-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-box-open"></i> Đã xong chờ khách lấy (${forgottenOrders.length})</h3>
+                <div class="flex flex-col gap-2.5 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${forgottenCardsHtml}</div>
             </div>` : ''}
 
             ${notedOrders.length > 0 ? `
             <div class="mb-4">
-                <h3 class="font-bold text-indigo-600 text-[11px] md:text-xs mb-2.5 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-comment-dots"></i> Đơn có ghi chú riêng (${notedOrders.length})</h3>
-                <div class="flex flex-col gap-3 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${notedCardsHtml}</div>
+                <h3 class="font-bold text-indigo-600 text-[10px] md:text-xs mb-2 uppercase flex items-center gap-1.5 ml-1"><i class="fa-solid fa-comment-dots"></i> Đơn có ghi chú riêng (${notedOrders.length})</h3>
+                <div class="flex flex-col gap-2.5 w-full max-h-[350px] overflow-y-auto hide-scroll px-1 pb-2">${notedCardsHtml}</div>
             </div>` : ''}
 
             ${(urgentOrders.length === 0 && forgottenOrders.length === 0 && notedOrders.length === 0) ? `
