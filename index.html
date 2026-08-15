@@ -943,12 +943,14 @@
                 await idbPut('settings', { 
                     id: 'main_state', 
                     data: {
+                        dailyGoal: state.dailyGoal, // <-- LƯU VÀO INDEXED DB
                         users: state.users, logo: state.logo || '', services: state.services,
                         orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig,
                         brands: state.brands, soleImages: state.soleImages
                     }
                 });
                 localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify({
+                    dailyGoal: state.dailyGoal, // <-- LƯU VÀO LOCAL STORAGE
                     users: state.users, logo: state.logo || '', services: state.services,
                     orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig,
                     brands: state.brands, soleImages: state.soleImages
