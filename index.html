@@ -2712,13 +2712,16 @@
         }
 
         async function handleLogout() {
-            if(confirm("Bạn muốn đăng xuất? Vui lòng đảm bảo các đơn hàng đã được đẩy hết lên Cloud trước khi đăng xuất.")) {
-                const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
-                if (navigator.onLine) { await supabaseClient.auth.signOut(); }
-                state.currentUser = null; localStorage.removeItem('TRAM_LAST_TAB'); await idbClear('settings');
-                loading.style.display = 'none'; document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
-            }
-        }
+    if(confirm("Bạn muốn đăng xuất? Vui lòng đảm bảo các đơn hàng đã được đẩy hết lên Cloud trước khi đăng xuất.")) {
+        const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
+        if (navigator.onLine) { await supabaseClient.auth.signOut(); }
+        state.currentUser = null; localStorage.removeItem('TRAM_LAST_TAB'); 
+        await idbClear('settings');
+        await idbClear('pending_sync'); // Thêm dòng này để dọn sạch đơn kẹt
+        await idbClear('upload_queue'); // Thêm dòng này để dọn sạch ảnh kẹt
+        loading.style.display = 'none'; document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+    }
+}
 
         function changeRole(r) {
             state.role = r; 
