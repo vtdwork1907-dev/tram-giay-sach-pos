@@ -3276,22 +3276,46 @@
             e.target.value = '';
         }
 
-        function removeUploadedImage(idOrUrl) { 
-            state.uploadedImages = state.uploadedImages.filter(img => { 
-                if(typeof img === 'string') return img !== idOrUrl; 
-                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
-            }); 
-            renderPreviewImages(); 
+        // HÀM GIẢI PHÓNG RAM CHO ẢNH PREVIEW
+function revokeIfBlob(url) {
+    try {
+        if (url && typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
         }
+    } catch (e) { console.error(e); }
+}
 
-        function removeShoeImage(shoeId, imgIdOrUrl) { 
-            const shoe = state.shoes.find(s => s.id === shoeId); if (!shoe) return; 
-            shoe.images = shoe.images.filter(img => { 
-                if (typeof img === 'string') return img !== imgIdOrUrl; 
-                return img.id !== imgIdOrUrl && img.localUrl !== imgIdOrUrl; 
-            }); 
-            renderMultiShoeList(); 
+function removeUploadedImage(idOrUrl) { 
+    state.uploadedImages = state.uploadedImages.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === idOrUrl);
+            if (isMatch) revokeIfBlob(img);
+        } else {
+            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl);
         }
+        return !isMatch; 
+    }); 
+    renderPreviewImages(); 
+}
+
+function removeShoeImage(shoeId, imgIdOrUrl) { 
+    const shoe = state.shoes.find(s => s.id === shoeId); 
+    if (!shoe) return; 
+    shoe.images = shoe.images.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === imgIdOrUrl);
+            if (isMatch) revokeIfBlob(img);
+        } else {
+            isMatch = (img.id === imgIdOrUrl || img.localUrl === imgIdOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl);
+        }
+        return !isMatch; 
+    }); 
+    renderMultiShoeList(); 
+}
 
         function renderPreviewImages() { 
             const c = document.getElementById('renderedImagesBox'); 
