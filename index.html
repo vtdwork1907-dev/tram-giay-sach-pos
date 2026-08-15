@@ -3314,6 +3314,23 @@
         // 18. ZERO-LATENCY SAVE: LƯU ĐƠN NHANH
         // =========================================================================
         async function processOrder() {
+            // --- BẮT ĐẦU: KHÓA NÚT 3 GIÂY CHỐNG BẤM ĐÚP ---
+            const saveBtn = document.getElementById('saveOrderBtn');
+            if (saveBtn) {
+                // Vô hiệu hóa và làm mờ nút, đổi icon thành vòng xoay loading
+                saveBtn.disabled = true;
+                saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG LƯU...';
+                
+                // Hẹn giờ đúng 3 giây (3000ms) sau tự động mở lại nút
+                setTimeout(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    saveBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG';
+                }, 3000);
+            }
+            // --- KẾT THÚC: KHÓA NÚT ---
+
             let finalCartItems = []; 
             let finalImageUrls = []; 
             let mainBrand = 'Asics'; // Đã đổi thành Asics
