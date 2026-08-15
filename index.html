@@ -1150,6 +1150,45 @@
                             if (dataToPush.shoes) { dataToPush.shoes.forEach(shoe => { if (shoe.images) { shoe.images = shoe.images.map(imgObj => { const blobUrl = typeof imgObj === 'string' ? imgObj : imgObj.url; const m = rel.find(u => u.localUrl === blobUrl); return m ? { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' } : imgObj; }); } }); }
                             
                             let error;
+                            if (item.type === 'INSERT_ORDER' || item.type === 'UPDATE_ORDER') {
+                            const rel = uploads.filter(u => u.orderId === item.data.id);
+                            
+                            // 1. Xử lý ảnh Before (Cắt bỏ link blob chết)
+                            if (dataToPush.images && dataToPush.images.length > 0) { 
+                                dataToPush.images = dataToPush.images.map(url => { 
+                                    const m = rel.find(u => u.localUrl === url); 
+                                    if (m && m.r2Url) return m.r2Url;
+                                    if (url && url.startsWith('blob:')) return null; // Ảnh bị mất do thoát sớm -> Bỏ
+                                    return url; 
+                                }).filter(Boolean); 
+                            }
+                            
+                            // 2. Xử lý ảnh After (Cắt bỏ link blob chết)
+                            if (dataToPush.imagesAfter && dataToPush.imagesAfter.length > 0) { 
+                                dataToPush.imagesAfter = dataToPush.imagesAfter.map(url => { 
+                                    const m = rel.find(u => u.localUrl === url); 
+                                    if (m && m.r2Url) return m.r2Url;
+                                    if (url && url.startsWith('blob:')) return null; // Ảnh bị mất do thoát sớm -> Bỏ
+                                    return url; 
+                                }).filter(Boolean); 
+                            }
+                            
+                            // 3. Xử lý ảnh cho chế độ Nhiều Đôi Giày
+                            if (dataToPush.shoes) { 
+                                dataToPush.shoes.forEach(shoe => { 
+                                    if (shoe.images) { 
+                                        shoe.images = shoe.images.map(imgObj => { 
+                                            const url = typeof imgObj === 'string' ? imgObj : imgObj.url; 
+                                            const m = rel.find(u => u.localUrl === url); 
+                                            if (m && m.r2Url) return { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' };
+                                            if (url && url.startsWith('blob:')) return null;
+                                            return imgObj;
+                                        }).filter(Boolean); 
+                                    } 
+                                }); 
+                            }
+                            
+                            let error;
                             if (item.type === 'INSERT_ORDER') { error = (await supabaseClient.from('orders').insert([mapOrderJsToDb(dataToPush)])).error; } 
                             else { error = (await supabaseClient.from('orders').update(mapOrderJsToDb(dataToPush)).eq('id', dataToPush.id)).error; }
 
