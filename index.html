@@ -4308,19 +4308,36 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
         }
         
         function removeExpenseUploadedImage(idOrUrl) { 
-            expenseTempImages = expenseTempImages.filter(img => { 
-                if (typeof img === 'string') return img !== idOrUrl; 
-                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
-            }); 
-            renderExpensePreviewImages(); 
+    expenseTempImages = expenseTempImages.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === idOrUrl);
+            if (isMatch) revokeIfBlob(img);
+        } else {
+            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl);
         }
-        
-        function openAddExpenseModal() { 
-            expenseTempImages = []; 
-            renderExpensePreviewImages(); 
-            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
-            document.getElementById('addExpenseModal').classList.remove('hidden'); 
-        }
+        return !isMatch; 
+    }); 
+    renderExpensePreviewImages(); 
+}
+
+function openAddExpenseModal() { 
+    if (typeof expenseTempImages !== 'undefined') {
+        expenseTempImages.forEach(img => {
+            const url = typeof img === 'string' ? img : img.localUrl;
+            revokeIfBlob(url);
+        });
+    }
+    expenseTempImages = []; 
+    renderExpensePreviewImages(); 
+    
+    const expDateEl = document.getElementById('expDate');
+    if (expDateEl) expDateEl.value = new Date().toISOString().split('T')[0]; 
+    
+    const modalEl = document.getElementById('addExpenseModal');
+    if (modalEl) modalEl.classList.remove('hidden'); 
+}
         
         function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
