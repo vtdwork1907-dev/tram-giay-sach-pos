@@ -22,13 +22,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 3. Cài đặt Tailwind CSS
-        run: npm install tailwindcss
+      - name: 3. Tải và chạy lệnh Build CSS
+        run: npx --yes tailwindcss@latest -i ./input.css -o ./style.css --minify
 
-      - name: 4. Chạy lệnh Build CSS
-        run: npx tailwindcss -i ./input.css -o ./style.css --minify
-
-      - name: 5. Lưu file style.css lên Github
+      - name: 4. Lưu file style.css lên Github
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
