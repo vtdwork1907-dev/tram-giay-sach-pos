@@ -4304,12 +4304,19 @@ function revokeIfBlob(url) {
         }
         
         function removeExpenseUploadedImage(idOrUrl) { 
-            expenseTempImages = expenseTempImages.filter(img => { 
-                if (typeof img === 'string') return img !== idOrUrl; 
-                return img.id !== idOrUrl && img.localUrl !== idOrUrl; 
-            }); 
-            renderExpensePreviewImages(); 
+    expenseTempImages = expenseTempImages.filter(img => { 
+        let isMatch = false;
+        if (typeof img === 'string') {
+            isMatch = (img === idOrUrl);
+            if (isMatch) revokeIfBlob(img); // Giải phóng RAM
+        } else {
+            isMatch = (img.id === idOrUrl || img.localUrl === idOrUrl); 
+            if (isMatch && img.localUrl) revokeIfBlob(img.localUrl); // Giải phóng RAM
         }
+        return !isMatch; 
+    }); 
+    renderExpensePreviewImages(); 
+}
         
         function openAddExpenseModal() { 
             expenseTempImages = []; 
