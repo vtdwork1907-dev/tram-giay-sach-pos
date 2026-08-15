@@ -2832,6 +2832,9 @@
             document.getElementById('cfgBank').value = state.qrConfig.bank || 'ICB'; 
             document.getElementById('cfgAccountNo').value = state.qrConfig.accountNo || ''; 
             document.getElementById('cfgAccountName').value = state.qrConfig.accountName || '';
+            if(document.getElementById('cfgDailyGoal')) {
+                document.getElementById('cfgDailyGoal').value = state.dailyGoal || 2000000;
+            }
             updateQRView();
         }
         
