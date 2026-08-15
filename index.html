@@ -1138,33 +1138,50 @@
 
                 for (const item of syncItems) {
                     if (!navigator.onLine) break;
-                    let dataToPush = item.data;
                     
-                    if (item.type === 'INSERT_ORDER' || item.type === 'UPDATE_ORDER') {
-                        const rel = uploads.filter(u => u.orderId === item.data.id);
-                        if (dataToPush.images && dataToPush.images.length > 0) { dataToPush.images = dataToPush.images.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
-                        if (dataToPush.imagesAfter && dataToPush.imagesAfter.length > 0) { dataToPush.imagesAfter = dataToPush.imagesAfter.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
-                        if (dataToPush.shoes) { dataToPush.shoes.forEach(shoe => { if (shoe.images) { shoe.images = shoe.images.map(imgObj => { const blobUrl = typeof imgObj === 'string' ? imgObj : imgObj.url; const m = rel.find(u => u.localUrl === blobUrl); return m ? { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' } : imgObj; }); } }); }
+                    // THÊM TRY...CATCH BỌC TỪNG ĐƠN HÀNG ĐỂ CHỐNG KẸT DÂY CHUYỀN
+                    try {
+                        let dataToPush = item.data;
                         
-                        let error;
-                        if (item.type === 'INSERT_ORDER') { error = (await supabaseClient.from('orders').insert([mapOrderJsToDb(dataToPush)])).error; } 
-                        else { error = (await supabaseClient.from('orders').update(mapOrderJsToDb(dataToPush)).eq('id', dataToPush.id)).error; }
+                        if (item.type === 'INSERT_ORDER' || item.type === 'UPDATE_ORDER') {
+                            const rel = uploads.filter(u => u.orderId === item.data.id);
+                            if (dataToPush.images && dataToPush.images.length > 0) { dataToPush.images = dataToPush.images.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
+                            if (dataToPush.imagesAfter && dataToPush.imagesAfter.length > 0) { dataToPush.imagesAfter = dataToPush.imagesAfter.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
+                            if (dataToPush.shoes) { dataToPush.shoes.forEach(shoe => { if (shoe.images) { shoe.images = shoe.images.map(imgObj => { const blobUrl = typeof imgObj === 'string' ? imgObj : imgObj.url; const m = rel.find(u => u.localUrl === blobUrl); return m ? { ...imgObj, r2Url: m.r2Url, url: m.r2Url, status: 'done' } : imgObj; }); } }); }
+                            
+                            let error;
+                            if (item.type === 'INSERT_ORDER') { error = (await supabaseClient.from('orders').insert([mapOrderJsToDb(dataToPush)])).error; } 
+                            else { error = (await supabaseClient.from('orders').update(mapOrderJsToDb(dataToPush)).eq('id', dataToPush.id)).error; }
 
-                        if (!error) { await idbDelete('pending_sync', item.syncId); for (const u of rel) await idbDelete('upload_queue', u.imgId); } else throw error;
-                    }
-                    else if (item.type === 'DELETE_ORDER') {
-                        const { error } = await supabaseClient.from('orders').delete().eq('id', dataToPush.id);
-                        if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
-                    }
-                    else if (item.type === 'INSERT_EXPENSE') {
-                        const rel = uploads.filter(u => u.expenseId === item.data.id);
-                        if (dataToPush.images && dataToPush.images.length > 0) { dataToPush.images = dataToPush.images.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
-                        const { error } = await supabaseClient.from('expenses').insert([dataToPush]);
-                        if (!error) { await idbDelete('pending_sync', item.syncId); for (const u of rel) await idbDelete('upload_queue', u.imgId); } else throw error;
-                    }
-                    else if (item.type === 'DELETE_EXPENSE') {
-                        const { error } = await supabaseClient.from('expenses').delete().eq('id', dataToPush.id);
-                        if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
+                            if (!error) { await idbDelete('pending_sync', item.syncId); for (const u of rel) await idbDelete('upload_queue', u.imgId); } else throw error;
+                        }
+                        else if (item.type === 'DELETE_ORDER') {
+                            const { error } = await supabaseClient.from('orders').delete().eq('id', dataToPush.id);
+                            if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
+                        }
+                        else if (item.type === 'INSERT_EXPENSE') {
+                            const rel = uploads.filter(u => u.expenseId === item.data.id);
+                            if (dataToPush.images && dataToPush.images.length > 0) { dataToPush.images = dataToPush.images.map(blobUrl => { const m = rel.find(u => u.localUrl === blobUrl); return m ? m.r2Url : blobUrl; }); }
+                            const { error } = await supabaseClient.from('expenses').insert([dataToPush]);
+                            if (!error) { await idbDelete('pending_sync', item.syncId); for (const u of rel) await idbDelete('upload_queue', u.imgId); } else throw error;
+                        }
+                        else if (item.type === 'DELETE_EXPENSE') {
+                            const { error } = await supabaseClient.from('expenses').delete().eq('id', dataToPush.id);
+                            if (!error) await idbDelete('pending_sync', item.syncId); else throw error;
+                        }
+                    } catch (itemError) {
+                        // CƠ CHẾ TỰ CHỮA LÀNH (AUTO-HEALING)
+                        console.error("Lỗi đồng bộ 1 mục:", itemError);
+                        item.retryCount = (item.retryCount || 0) + 1; // Cộng dồn số lần thử
+                        
+                        if (item.retryCount >= 3) {
+                            // Nếu đã thất bại 3 lần -> Trực tiếp đá khỏi hàng đợi để không chặn các đơn khác
+                            await idbDelete('pending_sync', item.syncId);
+                            showNotification("⚠️ Cảnh báo nghẽn mạng", "Có 1 thao tác bị lỗi kết nối liên tục và đã được hệ thống tự động loại bỏ để chống kẹt app.");
+                        } else {
+                            // Chưa đủ 3 lần thì lưu lại số lần lỗi và đợi vòng lặp sau thử lại
+                            await idbPut('pending_sync', item);
+                        }
                     }
                 }
             } catch (err) { console.error("Lỗi đồng bộ dữ liệu ngầm:", err); } 
