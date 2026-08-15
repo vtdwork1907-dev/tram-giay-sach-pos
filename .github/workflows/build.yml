@@ -1,0 +1,29 @@
+name: Tự động Build Tailwind CSS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Chạy lệnh Build CSS
+        run: npx tailwindcss -i ./input.css -o ./style.css --minify
+
+      - name: Tự động lưu file style.css lên Github
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add style.css
+          git commit -m "Tự động tạo file style.css" || echo "Không có thay đổi"
+          git push
