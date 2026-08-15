@@ -976,6 +976,7 @@
                     state.logo = parsed.logo || null;
                     state.brands = parsed.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
                     state.soleImages = parsed.soleImages || [];
+                    state.dailyGoal = parsed.dailyGoal || 2000000;
                 }
             } catch(e) { console.error("Lỗi khi loadLocalState:", e); }
         }
