@@ -3229,14 +3229,49 @@
             calculateFinalTotal();
         }
         function clearCart() {
-            state.cart = []; state.uploadedImages = []; state.multiShoeMode = false; state.shoes = []; state.activeShoeId = null;
-            const toggle = document.getElementById('multiShoeToggle'); if (toggle) toggle.checked = false; toggleMultiShoeMode(false);
-            
-            ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            document.getElementById('cartOrderStatus').value = 'RECEIVED'; 
-            
-            setCurrentDateTimeForOrder(); renderCart(); renderPreviewImages();
-        }
+    // 1. Quét sạch RAM ảnh ở giỏ hàng đơn thường
+    if (state.uploadedImages) {
+        state.uploadedImages.forEach(img => {
+            const url = typeof img === 'string' ? img : img.localUrl;
+            revokeIfBlob(url);
+        });
+    }
+
+    // 2. Quét sạch RAM ảnh ở các đôi giày (Multi-shoe)
+    if (state.shoes) {
+        state.shoes.forEach(shoe => {
+            if (shoe && shoe.images) {
+                shoe.images.forEach(img => {
+                    const url = typeof img === 'string' ? img : img.localUrl;
+                    revokeIfBlob(url);
+                });
+            }
+        });
+    }
+
+    // 3. Tiến hành reset state như cũ
+    state.cart = []; 
+    state.uploadedImages = []; 
+    state.multiShoeMode = false; 
+    state.shoes = []; 
+    state.activeShoeId = null;
+    
+    const toggle = document.getElementById('multiShoeToggle'); 
+    if (toggle) toggle.checked = false; 
+    toggleMultiShoeMode(false);
+    
+    ['custPhone','custName','custNote','discountInput', 'subtotalInput'].forEach(id => { 
+        const el = document.getElementById(id); 
+        if(el) el.value = ''; 
+    });
+    
+    const statusEl = document.getElementById('cartOrderStatus');
+    if (statusEl) statusEl.value = 'RECEIVED'; 
+    
+    setCurrentDateTimeForOrder(); 
+    renderCart(); 
+    renderPreviewImages();
+}
 
         // =========================================================================
         // 17. POS: XỬ LÝ ẢNH TRƯỚC (BEFORE) KHI TẠO ĐƠN
