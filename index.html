@@ -4664,27 +4664,45 @@ function updateExpenseCharts() {
             }, 1000); 
         }
         // HÀM LƯU GHI CHÚ LÝ DO TRỄ CỦA NHÂN VIÊN (NỘI BỘ)
-        window.updateDelayNote = async function(orderId) {
+       window.updateDelayNote = async function(orderId) {
     const inputEl = document.getElementById('delay_note_' + orderId);
     if(!inputEl) return;
-    const val = inputEl.value.trim();
-    if (!val) return alert("Vui lòng nhập ghi chú!");
+    const val = inputEl.value.trim(); // Bỏ trống thì val = ''
     
     const o = state.orders.find(x => x.id === orderId);
     if (o) {
         o.delayNote = val;
+        o.isEditingDelayNote = false; // Tắt trạng thái sửa
         await saveLocalState();
-        await dbUpdateOrder(orderId); // Bắt buộc đẩy vào hàng đợi đồng bộ máy chủ
-        showNotification("✅ Đã lưu", "Đã lưu lại ghi chú nội bộ cho đơn này!");
-        renderDashboard(); // Render lại ngay lập tức để ẩn ô input và hiện note dạng text
+        await dbUpdateOrder(orderId);
+        
+        if (val === '') {
+            showNotification("✅ Đã xóa", "Ghi chú đã được xóa bỏ!");
+        } else {
+            showNotification("✅ Đã lưu", "Đã lưu lại ghi chú nội bộ cho đơn này!");
+        }
+        
+        renderDashboard(); // Làm mới lại UI
     }
 };
 
 window.editDelayNote = async function(orderId) {
     const o = state.orders.find(x => x.id === orderId);
     if (o) {
-        o.delayNote = ''; // Xóa note tạm thời để hiện lại ô input
+        o.isEditingDelayNote = true; // Bật trạng thái sửa
         renderDashboard();
+        
+        // Focus vào input sau khi UI render lại
+        setTimeout(() => {
+            const inputEl = document.getElementById('delay_note_' + orderId);
+            if (inputEl) {
+                inputEl.focus();
+                // Nhảy con trỏ xuống cuối text
+                const val = inputEl.value;
+                inputEl.value = '';
+                inputEl.value = val;
+            }
+        }, 50);
     }
 };
 
