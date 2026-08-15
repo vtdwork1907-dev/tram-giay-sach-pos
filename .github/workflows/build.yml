@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Chạy lệnh Build CSS
-        run: npx tailwindcss -i ./input.css -o ./style.css --minify
+        run: npx --yes tailwindcss -i ./input.css -o ./style.css --minify
 
       - name: Tự động lưu file style.css lên Github
         run: |
