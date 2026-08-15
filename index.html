@@ -4346,11 +4346,17 @@ function revokeIfBlob(url) {
 }
         
         function openAddExpenseModal() { 
-            expenseTempImages = []; 
-            renderExpensePreviewImages(); 
-            document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
-            document.getElementById('addExpenseModal').classList.remove('hidden'); 
-        }
+    // Dọn sạch rác RAM từ lần thêm chi phí trước (nếu người dùng tải ảnh lên nhưng không bấm lưu)
+    expenseTempImages.forEach(img => {
+        const url = typeof img === 'string' ? img : img.localUrl;
+        revokeIfBlob(url);
+    });
+
+    expenseTempImages = []; 
+    renderExpensePreviewImages(); 
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; 
+    document.getElementById('addExpenseModal').classList.remove('hidden'); 
+}
         
         function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
