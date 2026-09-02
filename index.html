@@ -5446,11 +5446,34 @@ function initSwipeToCloseModals() {
             handleScannedData(decodedText);
         }
 
-        // --- CÁC HÀM XỬ LÝ POPUP MÃ QR TEST KHI BẤM VÀO TÊN ---
+       // --- CÁC HÀM XỬ LÝ POPUP MÃ QR TEST KHI BẤM VÀO TÊN ---
+        let currentTestOrderId = '';
+
         function showTestQRCode(orderId, customerName) {
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(orderId)}&margin=1`;
-            document.getElementById('testQRImg').src = qrUrl;
+            currentTestOrderId = orderId;
             document.getElementById('testQRCustomerName').innerText = customerName;
+            
+            const o = state.orders.find(x => x.id === orderId);
+            const selector = document.getElementById('testQRShoeSelector');
+            const dropdown = document.getElementById('testQRShoeDropdown');
+
+            // Xử lý nảy Dropdown nếu là đơn Nhiều đôi (Multi-shoe)
+            if (o && o.shoes && o.shoes.length > 0) {
+                selector.classList.remove('hidden');
+                let optionsHtml = `<option value="${orderId}">Toàn bộ đơn (Đã gom)</option>`;
+                o.shoes.forEach((s, idx) => {
+                    const name = s.note ? `${s.name} (${s.note})` : s.name;
+                    optionsHtml += `<option value="${orderId}|${s.id}">Đôi #${idx + 1}: ${escapeHtml(name)}</option>`;
+                });
+                dropdown.innerHTML = optionsHtml;
+                // Mặc định chọn ngay đôi đầu tiên để bạn dễ test Truy xuất 1 chiếc
+                dropdown.value = `${orderId}|${o.shoes[0].id}`; 
+            } else {
+                selector.classList.add('hidden');
+                dropdown.innerHTML = `<option value="${orderId}">${orderId}</option>`;
+            }
+
+            updateTestQRImage(); // Render QR tương ứng
             
             const modal = document.getElementById('testQRModal');
             const box = document.getElementById('testQRBox');
@@ -5461,6 +5484,13 @@ function initSwipeToCloseModals() {
             }, 10);
         }
 
+        function updateTestQRImage() {
+            const val = document.getElementById('testQRShoeDropdown').value || currentTestOrderId;
+            // Dùng api tạo QR với kích thước 250x250
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(val)}&margin=1`;
+            document.getElementById('testQRImg').src = qrUrl;
+        }
+
         function closeTestQRModal() {
             const modal = document.getElementById('testQRModal');
             const box = document.getElementById('testQRBox');
@@ -5468,7 +5498,6 @@ function initSwipeToCloseModals() {
             box.classList.add('scale-95');
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
-
         // 4. XỬ LÝ DỮ LIỆU SAU KHI QUÉT (ĐỔ RA MODAL CHI TIẾT)
         function handleScannedData(data) {
             const parts = data.split('|');
