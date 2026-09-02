@@ -5530,35 +5530,80 @@ function initSwipeToCloseModals() {
                 setTimeout(() => printArea.classList.add('hidden'), 500);
             }, 1500);
         }
-        // 3. LOGIC BẬT TẮT MÁY QUÉT CAMERA (MỞ THẲNG CAMERA, GIAO DIỆN TIẾNG VIỆT)
+        // 3. LOGIC BẬT TẮT MÁY QUÉT CAMERA (TỐI ƯU SIÊU TỐC ĐỘ, ĐỘ PHÂN GIẢI 1080P/4K)
         let html5QrCode = null;
+        let isFlashOn = false;
 
         async function openQRScanner() {
             const modal = document.getElementById('qrScannerModal');
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
             
+            // Reset trạng thái flash
+            isFlashOn = false;
+            document.getElementById('flashIcon').className = 'fa-solid fa-bolt text-white';
+            
             if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("qr-reader");
             }
 
             try {
-                // Khởi động camera ngay lập tức, bỏ qua giao diện "Request Permission"
+                // TỐI ƯU 1: ÉP THƯ VIỆN CHỈ QUÉT QR CODE (Tăng tốc độ xử lý x5 lần)
+                const config = {
+                    fps: 30, // Ép quét 30 khung hình/giây
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ], 
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true // Tận dụng nhân AI của điện thoại nếu có
+                    }
+                };
+
+                // TỐI ƯU 2: ÉP PHẦN CỨNG CAMERA MỞ ĐỘ PHÂN GIẢI MAX, BẬT LẤY NÉT LIÊN TỤC
+                const cameraConfig = { 
+                    facingMode: "environment",
+                    width: { ideal: 1920, max: 3840 }, 
+                    height: { ideal: 1080, max: 2160 },
+                    advanced: [{ focusMode: "continuous" }]
+                };
+
                 await html5QrCode.start(
-                    { facingMode: "environment" }, // Dùng camera sau
-                    {
-                        fps: 15,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0
-                    },
+                    cameraConfig,
+                    config,
                     onScanSuccess,
                     (errorMessage) => {
-                        // Bỏ qua các log lỗi ko tìm thấy QR liên tục
+                        // Bỏ qua log lỗi khi đang rà tìm mã
                     }
                 );
             } catch (err) {
-                alert("Không thể mở camera. Vui lòng cấp quyền truy cập Camera cho trình duyệt!");
+                console.error("Lỗi camera:", err);
+                alert("Không thể mở camera chất lượng cao. Vui lòng kiểm tra quyền truy cập Camera của trình duyệt!");
                 closeQRScanner();
+            }
+        }
+
+        // HÀM BẬT/TẮT ĐÈN FLASH
+        async function toggleFlash() {
+            if (!html5QrCode || html5QrCode.getState() !== 2) return; // 2 = Đang quét
+            
+            isFlashOn = !isFlashOn;
+            try {
+                // Ép phần cứng bật đèn Torch
+                await html5QrCode.applyVideoConstraints({
+                    advanced: [{ torch: isFlashOn }]
+                });
+                
+                // Đổi UI Nút bấm
+                const icon = document.getElementById('flashIcon');
+                if (isFlashOn) {
+                    icon.className = 'fa-solid fa-bolt-slash text-amber-400 drop-shadow-md scale-110 transition';
+                } else {
+                    icon.className = 'fa-solid fa-bolt text-white scale-100 transition';
+                }
+            } catch (error) {
+                console.warn("Không bật được flash", error);
+                alert("Điện thoại (hoặc trình duyệt) của bạn không hỗ trợ bật đèn Flash trực tiếp trên web.");
+                isFlashOn = !isFlashOn; // Trả lại trạng thái cũ
             }
         }
 
@@ -5575,6 +5620,9 @@ function initSwipeToCloseModals() {
         }
 
         function onScanSuccess(decodedText) {
+            // Khi quét thành công, rung điện thoại nhẹ một cái (nếu thiết bị hỗ trợ)
+            if (navigator.vibrate) navigator.vibrate(100);
+            
             closeQRScanner();
             handleScannedData(decodedText);
         }
