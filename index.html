@@ -3436,6 +3436,9 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
             }
             
             await dbInsertOrder(newOrder);
+            autoPrintOrderLabels(newOrder); // <-- Dòng code vừa thêm để kích hoạt máy in tự động
+            
+            clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
             if (navigator.onLine) { sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`); }
         }
         
