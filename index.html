@@ -5177,8 +5177,12 @@ function initSwipeToCloseModals() {
             initSwipeToCloseModals();
             
             // XỬ LÝ KHÁCH HÀNG MỞ LINK TRACKING
-            // Thêm lệnh giải mã (decode) ngay khi mới lấy hash từ trình duyệt
-            let currentHash = decodeURIComponent(window.location.hash);
+            let currentHash = "";
+            try { 
+                currentHash = decodeURIComponent(window.location.hash); 
+            } catch(e) { 
+                currentHash = window.location.hash; 
+            }
             
             if (currentHash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none'; 
@@ -5191,7 +5195,6 @@ function initSwipeToCloseModals() {
                 const fullTrackingStr = currentHash.replace('#track=', '');
                 let trackingId = fullTrackingStr;
                 
-                // Cắt bỏ phần mã chiếc giày để lấy ID đơn hàng gốc
                 if (fullTrackingStr.includes('&shoe=')) {
                     trackingId = fullTrackingStr.split('&shoe=')[0];
                 } else if (fullTrackingStr.includes('|')) {
@@ -5212,7 +5215,8 @@ function initSwipeToCloseModals() {
                             state.orders = [mapOrderDbToJs(data[0])]; 
                             checkUrlTracking(); 
                         } else {
-                            document.getElementById('trackingContentBox').innerHTML = '<div class="text-center py-10 px-4 text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">Không tìm thấy thông tin đơn hàng. Có thể mã QR không hợp lệ hoặc đơn hàng đã bị xóa.</div>';
+                            const box = document.getElementById('trackingContentBox');
+                            if(box) box.innerHTML = '<div class="text-center py-10 px-4 text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">Không tìm thấy thông tin đơn hàng. Có thể mã QR không hợp lệ hoặc đơn hàng đã bị xóa.</div>';
                         }
                     } catch (e) {
                         console.error("Lỗi tải dữ liệu tracking", e);
