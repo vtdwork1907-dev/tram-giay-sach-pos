@@ -496,13 +496,14 @@
                     <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm relative min-h-[250px] flex flex-col items-center"><span class="text-[10px] font-bold text-slate-600 mb-2 uppercase text-center w-full">Phân bổ chi phí</span><div class="flex-1 w-full h-full relative"><canvas id="reportExpensesPieChart"></canvas></div></div>
                 </div>
                 <!-- THẺ QUỸ CỬA HÀNG -->
-                <div class="owner-only bg-gradient-to-r from-emerald-500 to-teal-600 p-4 md:p-5 rounded-2xl shadow-lg text-white flex justify-between items-center w-full max-w-full mt-4">
+                <div class="owner-only bg-gradient-to-r from-emerald-500 to-teal-600 p-4 md:p-5 rounded-2xl shadow-lg text-white flex justify-between items-center w-full max-w-full mt-4 relative group">
+                    <button onclick="editActualFund()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 shadow-sm" title="Điều chỉnh Quỹ Thực Tế"><i class="fa-solid fa-pen text-xs"></i></button>
                     <div>
-                        <span class="text-[11px] md:text-sm font-bold opacity-90 uppercase tracking-wider"><i class="fa-solid fa-vault mr-1"></i> Quỹ Cửa Hàng (Gốc 12.5Tr)</span>
-                        <div id="repStoreFund" class="text-2xl md:text-4xl font-extrabold mt-1">12,500,000 đ</div>
-                        <div class="text-[9px] md:text-[11px] opacity-80 mt-1.5">*Chỉ cộng/trừ các khoản phát sinh từ 10/08/2026</div>
+                        <span class="text-[11px] md:text-sm font-bold opacity-90 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-vault"></i> Quỹ Thực Tế</span>
+                        <div id="repStoreFund" class="text-2xl md:text-4xl font-extrabold mt-1">0 đ</div>
+                        <div id="repBaseFundLabel" class="text-[9px] md:text-[11px] opacity-80 mt-1.5">*Gốc: 12.5Tr + Doanh thu - Chi phí</div>
                     </div>
-                    <div class="text-5xl md:text-6xl opacity-20 pr-2"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <div class="text-5xl md:text-6xl opacity-20 pr-10"><i class="fa-solid fa-piggy-bank"></i></div>
                 </div>
             </section>
 
