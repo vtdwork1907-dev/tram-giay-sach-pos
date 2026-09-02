@@ -5426,22 +5426,57 @@ function initSwipeToCloseModals() {
         // =========================================================================
 
         // 1. HÀM TỰ ĐỘNG IN TEM (ĐÃ CHUẨN HOÁ URL BẢO MẬT)
+        // 1. HÀM TỰ ĐỘNG IN TEM (TỐI ƯU QR 17MM, CHỮ 1 DÒNG GỌN GÀNG)
         function autoPrintOrderLabels(order) {
             let pagesHtml = '';
             const baseUrl = `${window.location.origin}${window.location.pathname}#track=`;
             const trackingId = order.tracking_id || order.id; 
 
             if (order.shoes && order.shoes.length > 0) {
-                order.shoes.forEach((shoe) => {
-                    // ĐỔI DẤU "|" THÀNH "&shoe=" ĐỂ CAMERA ĐIỆN THOẠI KHÔNG BỊ LỖI
+                // XỬ LÝ ĐƠN NHIỀU ĐÔI
+                order.shoes.forEach((shoe, index) => {
                     const qrData = `${baseUrl}${trackingId}&shoe=${shoe.id}`;
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&margin=0`;
-                    pagesHtml += `<div class="print-label-page"><img src="${qrUrl}" style="width: 20mm; height: 20mm; object-fit: contain;"></div>`;
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}&margin=0`;
+                    
+                    // Tạo tên đôi giày (VD: Đôi #1)
+                    const shoeText = shoe.note ? `Đôi #${index + 1} (${shoe.note})` : `Đôi #${index + 1}`;
+                    
+                    // Lấy danh sách dịch vụ (VD: thay đế giày)
+                    let svcsText = "";
+                    if (shoe.services && shoe.services.length > 0) {
+                        svcsText = shoe.services.map(s => s.name).join(', ');
+                    }
+                    
+                    // Ghép chung vào 1 dòng: "Đôi #1, thay đế giày"
+                    const combinedText = svcsText ? `${shoeText}, ${svcsText}` : shoeText;
+                    
+                    pagesHtml += `
+                    <div class="print-label-page" style="padding: 1mm !important; justify-content: center;">
+                        <img src="${qrUrl}" style="width: 17mm; height: 17mm; object-fit: contain; image-rendering: pixelated; image-rendering: -moz-crisp-edges; margin-bottom: 2px;">
+                        <div style="font-family: sans-serif; font-size: 8px; font-weight: bold; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1;">
+                            ${combinedText}
+                        </div>
+                    </div>`;
                 });
             } else {
+                // XỬ LÝ ĐƠN 1 ĐÔI
                 const qrData = `${baseUrl}${trackingId}`;
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&margin=0`;
-                pagesHtml += `<div class="print-label-page"><img src="${qrUrl}" style="width: 20mm; height: 20mm; object-fit: contain;"></div>`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}&margin=0`;
+                
+                // Lấy danh sách dịch vụ
+                let svcsText = "";
+                if (order.items && order.items.length > 0) {
+                    svcsText = order.items.map(s => s.name).join(', ');
+                }
+                const combinedText = svcsText ? svcsText : "Sản phẩm spa";
+
+                pagesHtml += `
+                <div class="print-label-page" style="padding: 1mm !important; justify-content: center;">
+                    <img src="${qrUrl}" style="width: 17mm; height: 17mm; object-fit: contain; image-rendering: pixelated; image-rendering: -moz-crisp-edges; margin-bottom: 2px;">
+                    <div style="font-family: sans-serif; font-size: 8px; font-weight: bold; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1;">
+                        ${combinedText}
+                    </div>
+                </div>`;
             }
             
             const printArea = document.getElementById('printLabelArea');
