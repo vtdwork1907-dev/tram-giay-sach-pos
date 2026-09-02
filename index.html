@@ -5165,7 +5165,12 @@ function initSwipeToCloseModals() {
 }
         window.addEventListener('DOMContentLoaded', async () => {
             initSwipeToCloseModals();
-            if (window.location.hash.startsWith('#track=')) {
+            
+            // XỬ LÝ KHÁCH HÀNG MỞ LINK TRACKING
+            // Thêm lệnh giải mã (decode) ngay khi mới lấy hash từ trình duyệt
+            let currentHash = decodeURIComponent(window.location.hash);
+            
+            if (currentHash.startsWith('#track=')) {
                 document.getElementById('globalLoading').style.display = 'none'; 
                 state.logo = "https://pub-d0286c0054894952a1babf1f9cc3e58d.r2.dev/uploads/1785661533368_ttzv4cr.png"; 
                 renderLogo();
@@ -5173,7 +5178,15 @@ function initSwipeToCloseModals() {
                 document.getElementById('authScreen')?.remove(); document.querySelector('header')?.remove(); document.querySelector('.flex.flex-1.overflow-hidden')?.remove();
                 document.getElementById('customerTrackingScreen').classList.remove('hidden');
                 
-                const trackingId = window.location.hash.replace('#track=', '');
+                const fullTrackingStr = currentHash.replace('#track=', '');
+                let trackingId = fullTrackingStr;
+                
+                // Cắt bỏ phần mã chiếc giày để lấy ID đơn hàng gốc
+                if (fullTrackingStr.includes('&shoe=')) {
+                    trackingId = fullTrackingStr.split('&shoe=')[0];
+                } else if (fullTrackingStr.includes('|')) {
+                    trackingId = fullTrackingStr.split('|')[0];
+                }
                 
                 if (navigator.onLine) {
                     supabaseClient.from('store_settings').select('logo').eq('id', 'main').maybeSingle().then(({data}) => { 
@@ -5185,11 +5198,19 @@ function initSwipeToCloseModals() {
                     if (!navigator.onLine) return;
                     try { 
                         const { data } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId }); 
-                        if (data && data.length > 0) { state.orders = [mapOrderDbToJs(data[0])]; checkUrlTracking(); } 
-                    } catch (e) {} 
+                        if (data && data.length > 0) { 
+                            state.orders = [mapOrderDbToJs(data[0])]; 
+                            checkUrlTracking(); 
+                        } else {
+                            document.getElementById('trackingContentBox').innerHTML = '<div class="text-center py-10 px-4 text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">Không tìm thấy thông tin đơn hàng. Có thể mã QR không hợp lệ hoặc đơn hàng đã bị xóa.</div>';
+                        }
+                    } catch (e) {
+                        console.error("Lỗi tải dữ liệu tracking", e);
+                    } 
                 };
                 
-                fetchTrackingData(); setInterval(fetchTrackingData, 3000); 
+                fetchTrackingData(); 
+                setInterval(fetchTrackingData, 3000); 
                 return; 
             }
 
