@@ -5161,25 +5161,57 @@ function initSwipeToCloseModals() {
         window.addEventListener('resize', adjustPOSLayout);
         function updateStoreFundUI() {
             const START_DATE = '2026-08-10'; // Chốt sổ 
-            let currentFund = 12500000;
+            
+            // 1. Tính toán quỹ theo lý thuyết (Gốc + Thu - Chi)
+            let calculatedFund = 12500000;
 
-            // SỬ DỤNG TRỰC TIẾP state.orders ĐỂ QUỸ NHẢY NGAY LẬP TỨC, KHÔNG BỊ ĐỘ TRỄ MÁY CHỦ ĐÈ LÊN
             state.orders.forEach(o => {
                 const payDateStr = o.payment_date ? o.payment_date.split(' ')[0] : (o.date ? o.date.split(' ')[0] : '');
                 if (payDateStr >= START_DATE && (o.status === 'PAID' || o.status === 'DELIVERED')) {
-                    currentFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+                    calculatedFund += (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
                 }
             });
 
             state.expenses.forEach(e => {
                 const expDateStr = e.date ? e.date.split(' ')[0] : '';
                 if (expDateStr >= START_DATE) {
-                    currentFund -= (Number(e.amount) || 0);
+                    calculatedFund -= (Number(e.amount) || 0);
                 }
             });
 
+            // 2. Cộng thêm khoản Chênh lệch do bạn điều chỉnh thủ công
+            let fundOffset = parseInt(localStorage.getItem('TRAM_FUND_OFFSET')) || 0;
+            let finalActualFund = calculatedFund + fundOffset;
+
+            // 3. Hiển thị ra màn hình
             const fundEl = document.getElementById('repStoreFund');
-            if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
+            if (fundEl) fundEl.innerText = finalActualFund.toLocaleString('vi-VN') + ' đ';
+            
+            const labelEl = document.getElementById('repBaseFundLabel');
+            if (labelEl) {
+                let offsetText = fundOffset !== 0 ? ` | Điều chỉnh: ${fundOffset > 0 ? '+' : ''}${fundOffset.toLocaleString()}đ` : '';
+                labelEl.innerText = `Máy tính: ${calculatedFund.toLocaleString()}đ${offsetText}`;
+            }
+            
+            // Lưu biến tạm để dùng cho hàm sửa bên dưới
+            window.currentCalculatedFund = calculatedFund;
+            window.currentActualFund = finalActualFund;
+        }
+
+        // HÀM MỚI: SỬA QUỸ THỰC TẾ
+        function editActualFund() {
+            const newVal = prompt("Nhập số tiền THỰC TẾ đang có trong Quỹ (VNĐ):", window.currentActualFund);
+            if (newVal === null) return; 
+            
+            const numVal = parseInt(newVal.replace(/\D/g, ''));
+            if (isNaN(numVal)) return alert("Vui lòng nhập số tiền hợp lệ (chỉ nhập số)!");
+            
+            // Tính ra chênh lệch: Thực tế nhập vào trừ đi Số máy tính
+            const newOffset = numVal - window.currentCalculatedFund;
+            localStorage.setItem('TRAM_FUND_OFFSET', newOffset);
+            
+            updateStoreFundUI(); // Cập nhật ngay lập tức
+            showNotification("✅ Đã điều chỉnh Quỹ", `Số dư quỹ thực tế đã được chốt thành: ${numVal.toLocaleString('vi-VN')} đ`);
         }
         // =========================================================================
         // CAMERA CHỤP LIÊN TỤC (WEB RTC)
