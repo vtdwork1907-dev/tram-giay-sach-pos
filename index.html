@@ -5681,6 +5681,48 @@ function initSwipeToCloseModals() {
             renderOrdersTable(); renderDashboard(); await dbUpdateOrder(orderId);
             handleScannedData(`${orderId}|${shoeIdStr||''}`);
         }
+        // =========================================================================
+        // GLOBAL MODAL CONTROLLER: BẤM RA NGOÀI (HOẶC NHẤN ESC) ĐỂ ĐÓNG MODAL
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Danh sách ánh xạ ID của Modal và Hàm đóng tương ứng
+            const modalCloseMap = [
+                { id: 'imageViewerModal', closeFn: closeImageViewer },
+                { id: 'qrScannerModal', closeFn: closeQRScanner },
+                { id: 'scannedShoeModal', closeFn: closeScannedShoeModal },
+                { id: 'comparisonModal', closeFn: closeComparisonModal },
+                { id: 'collectPaymentModal', closeFn: closeCollectPaymentModal },
+                { id: 'extraFeeModal', closeFn: closeExtraFeeModal },
+                { id: 'addExpenseModal', closeFn: closeExpenseModal },
+                { id: 'customCameraModal', closeFn: closeCustomCamera },
+                { id: 'testQRModal', closeFn: closeTestQRModal }
+            ];
+
+            // Xử lý sự kiện bấm chuột (hoặc chạm tay) vào vùng khoảng đen (Overlay)
+            document.addEventListener('mousedown', function(e) {
+                modalCloseMap.forEach(modal => {
+                    const el = document.getElementById(modal.id);
+                    // Kiểm tra: Nếu Modal đang hiện, VÀ vị trí bấm chính xác là vùng nền đen (e.target === el)
+                    // (Lưu ý: Không kích hoạt nếu bấm vào khung nội dung bên trong vùng đen)
+                    if (el && !el.classList.contains('hidden') && e.target === el) {
+                        modal.closeFn();
+                    }
+                });
+            });
+
+            // Xử lý sự kiện bấm phím ESC trên bàn phím máy tính
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    modalCloseMap.forEach(modal => {
+                        const el = document.getElementById(modal.id);
+                        // Đóng tất cả các Modal đang ở trạng thái hiện (không có class hidden)
+                        if (el && !el.classList.contains('hidden')) {
+                            modal.closeFn();
+                        }
+                    });
+                }
+            });
+        });
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
