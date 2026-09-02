@@ -705,6 +705,29 @@
             </section>
         </main>
     </div>
+    <!-- MODAL QUÉT MÃ QR BẰNG CAMERA -->
+    <div id="qrScannerModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col">
+        <div class="flex justify-between items-center p-4 bg-black text-white relative z-10 border-b border-slate-800">
+            <h3 class="font-bold text-lg"><i class="fa-solid fa-qrcode text-emerald-400 mr-2"></i> Đưa mã QR vào khung</h3>
+            <button onclick="closeQRScanner()" class="text-3xl leading-none w-10 h-10 flex items-center justify-center bg-white/20 rounded-full active:scale-95">&times;</button>
+        </div>
+        <div class="flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
+            <div id="qr-reader" class="w-full max-w-md mx-auto rounded-2xl overflow-hidden border-2 border-slate-800"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT TRUY XUẤT ĐÔI GIÀY (TỪ QR) -->
+    <div id="scannedShoeModal" class="fixed inset-0 bg-slate-900/90 z-[99999] hidden flex-col justify-end md:justify-center items-center p-0 md:p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-t-3xl md:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl transition-transform duration-300 translate-y-full" id="scannedShoeBox">
+            <div class="bg-navy-800 text-white p-3 md:p-4 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-sm md:text-base flex items-center gap-2"><i class="fa-solid fa-shoe-prints text-sky-400"></i> Truy Xuất Thần Tốc</h3>
+                <button onclick="closeScannedShoeModal()" class="text-2xl leading-none">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto bg-slate-100 p-3 md:p-5 hide-scroll" id="scannedShoeContent">
+                <!-- Nội dung sẽ được render tự động -->
+            </div>
+        </div>
+    </div>
 
     <!-- MODALS DƯỚI ĐÂY GIỮ NGUYÊN HOÀN TOÀN TỪ BẢN CŨ -->
     <div id="comparisonModal" class="fixed inset-0 bg-slate-900/90 z-[70] hidden flex flex-col justify-end md:justify-center items-center pt-12 pb-2 px-2 md:p-4 backdrop-blur-sm">
