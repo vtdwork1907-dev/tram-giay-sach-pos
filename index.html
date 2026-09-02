@@ -1550,18 +1550,21 @@ function mapOrderDbToJs(db) {
             } catch(e) { console.error("Lỗi chia sẻ:", e); alert("Không thể chia sẻ ảnh này. Bạn có thể bấm xem to rồi tải về thủ công."); }
         }
 
-       async function checkUrlTracking() {
-            const hash = window.location.hash;
+      async function checkUrlTracking() {
+            // Giải mã URL phòng trường hợp camera đổi ký tự
+            let hash = decodeURIComponent(window.location.hash);
+            
             if (hash.startsWith('#track=')) {
-                // Tách bỏ phần mã giày (nếu là tem của đơn nhiều đôi) để lấy đúng ID đơn hàng
                 const fullTrackingStr = hash.replace('#track=', '');
-                const trackingId = fullTrackingStr.split('|')[0];
+                
+                let trackingId = fullTrackingStr;
+                if (fullTrackingStr.includes('&shoe=')) {
+                    trackingId = fullTrackingStr.split('&shoe=')[0];
+                } else if (fullTrackingStr.includes('|')) {
+                    trackingId = fullTrackingStr.split('|')[0];
+                }
                 
                 let order = state.orders.find(o => o.tracking_id === trackingId || o.id === trackingId);
-                
-                if (!order) {
-                    try {
-                        const { data, error } = await supabaseClient.rpc('get_tracking_order', { p_tracking_id: trackingId });
                         if (data && data.length > 0) order = mapOrderDbToJs(data[0]);
                     } catch(e) { console.error("Lỗi tra cứu đơn hàng từ server:", e); }
                 }
