@@ -5392,16 +5392,16 @@ function initSwipeToCloseModals() {
 
         // 1. HÀM TỰ ĐỘNG IN TEM KHỔ SIÊU NHỎ NGAY KHI LƯU ĐƠN
         // 1. HÀM TỰ ĐỘNG IN TEM (ĐÃ NÂNG CẤP CHỨA LINK TRACKING CHO KHÁCH)
+        // 1. HÀM TỰ ĐỘNG IN TEM (ĐÃ CHUẨN HOÁ URL BẢO MẬT)
         function autoPrintOrderLabels(order) {
             let pagesHtml = '';
             const baseUrl = `${window.location.origin}${window.location.pathname}#track=`;
-            
-            // Lấy mã tracking_id bảo mật (KA9n9dDXsJP) thay vì BON-xxxx
             const trackingId = order.tracking_id || order.id; 
 
             if (order.shoes && order.shoes.length > 0) {
                 order.shoes.forEach((shoe) => {
-                    const qrData = `${baseUrl}${trackingId}|${shoe.id}`;
+                    // ĐỔI DẤU "|" THÀNH "&shoe=" ĐỂ CAMERA ĐIỆN THOẠI KHÔNG BỊ LỖI
+                    const qrData = `${baseUrl}${trackingId}&shoe=${shoe.id}`;
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&margin=0`;
                     pagesHtml += `<div class="print-label-page"><img src="${qrUrl}" style="width: 20mm; height: 20mm; object-fit: contain;"></div>`;
                 });
