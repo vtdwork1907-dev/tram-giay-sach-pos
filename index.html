@@ -5471,12 +5471,11 @@ function initSwipeToCloseModals() {
 
        // --- CÁC HÀM XỬ LÝ POPUP MÃ QR TEST KHI BẤM VÀO TÊN ---
         let currentTestOrderId = '';
-        let currentTestTrackingId = ''; // Thêm biến lưu mã Tracking
+        let currentTestTrackingId = ''; 
 
         function showTestQRCode(orderId, customerName) {
             currentTestOrderId = orderId;
             const o = state.orders.find(x => x.id === orderId);
-            // Lấy mã tracking_id bảo mật
             currentTestTrackingId = o ? (o.tracking_id || o.id) : orderId;
             
             document.getElementById('testQRCustomerName').innerText = customerName;
@@ -5489,10 +5488,11 @@ function initSwipeToCloseModals() {
                 let optionsHtml = `<option value="${currentTestTrackingId}">Toàn bộ đơn (Đã gom)</option>`;
                 o.shoes.forEach((s, idx) => {
                     const name = s.note ? `${s.name} (${s.note})` : s.name;
-                    optionsHtml += `<option value="${currentTestTrackingId}|${s.id}">Đôi #${idx + 1}: ${escapeHtml(name)}</option>`;
+                    // ĐỔI DẤU "|" THÀNH "&shoe="
+                    optionsHtml += `<option value="${currentTestTrackingId}&shoe=${s.id}">Đôi #${idx + 1}: ${escapeHtml(name)}</option>`;
                 });
                 dropdown.innerHTML = optionsHtml;
-                dropdown.value = `${currentTestTrackingId}|${o.shoes[0].id}`; 
+                dropdown.value = `${currentTestTrackingId}&shoe=${o.shoes[0].id}`; 
             } else {
                 selector.classList.add('hidden');
                 dropdown.innerHTML = `<option value="${currentTestTrackingId}">${currentTestTrackingId}</option>`;
