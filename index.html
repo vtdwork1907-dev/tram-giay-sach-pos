@@ -3679,6 +3679,21 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
                         modified = true; 
                     } 
                 });
+
+                // SỬA LỖI: Đồng bộ ngược vào mảng shoes khi cập nhật hàng loạt nhiều đơn
+                if (modified && o.shoes) {
+                    o.shoes.forEach(shoe => {
+                        if (shoe.services) {
+                            shoe.services.forEach(svc => {
+                                const svcInfo = state.services.find(s => s.id === svc.id);
+                                const cat = svcInfo ? svcInfo.category : 'KHÁC';
+                                if (serviceFilter === 'ALL' || cat === serviceFilter) {
+                                    svc.status = targetStatus;
+                                }
+                            });
+                        }
+                    });
+                }
                 
                 if (modified) { 
                     recalculateOrderStatus(o); 
