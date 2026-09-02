@@ -5180,6 +5180,100 @@ function initSwipeToCloseModals() {
             const fundEl = document.getElementById('repStoreFund');
             if (fundEl) fundEl.innerText = currentFund.toLocaleString('vi-VN') + ' đ';
         }
+        // =========================================================================
+        // CAMERA CHỤP LIÊN TỤC (WEB RTC)
+        // =========================================================================
+        let cameraStream = null;
+        let cameraTargetShoeId = null; 
+        let tempSessionPhotos = 0;
+
+        async function openCustomCamera(shoeId = null) {
+            cameraTargetShoeId = shoeId;
+            tempSessionPhotos = 0;
+            document.getElementById('cameraPhotoCount').innerText = '0';
+            
+            const modal = document.getElementById('customCameraModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            try {
+                // Yêu cầu quyền mở camera sau
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                });
+                document.getElementById('cameraVideo').srcObject = cameraStream;
+            } catch (err) {
+                alert("Lỗi mở camera: Vui lòng cấp quyền truy cập Camera cho trình duyệt!");
+                closeCustomCamera();
+            }
+        }
+
+        function closeCustomCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop()); // Tắt đèn camera
+                cameraStream = null;
+            }
+            const modal = document.getElementById('customCameraModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+
+        function captureCameraPhoto() {
+            const video = document.getElementById('cameraVideo');
+            if (!cameraStream || !video.videoWidth) return;
+
+            // Hiệu ứng chớp nháy (Flash) khi chụp
+            const modal = document.getElementById('customCameraModal');
+            const flash = document.createElement('div');
+            flash.className = 'absolute inset-0 bg-white opacity-100 transition-opacity duration-300 z-50 pointer-events-none';
+            modal.appendChild(flash);
+            setTimeout(() => { flash.classList.remove('opacity-100'); flash.classList.add('opacity-0'); }, 50);
+            setTimeout(() => flash.remove(), 350);
+
+            // Cắt ảnh từ Video
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            // Chuyển ảnh thành File và lưu thẳng vào giỏ hàng
+            canvas.toBlob(blob => {
+                const file = new File([blob], `capture_${Date.now()}.jpg`, { type: "image/jpeg" });
+                const mockEvent = { target: { files: [file] } }; // Giả lập event tải file
+                
+                if (cameraTargetShoeId) {
+                    handleShoeImageUpload(mockEvent, cameraTargetShoeId); // Chế độ nhiều đôi
+                } else {
+                    handleImageUpload(mockEvent, true); // Chế độ 1 đôi
+                }
+                
+                tempSessionPhotos++;
+                document.getElementById('cameraPhotoCount').innerText = tempSessionPhotos;
+            }, 'image/jpeg', 0.9);
+        }
     </script>
+<!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
+    <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
+        <!-- Khung hiển thị Camera -->
+        <video id="cameraVideo" class="w-full h-full object-cover flex-1" autoplay playsinline></video>
+        
+        <!-- Nút Xong (Góc trên phải) -->
+        <button onclick="closeCustomCamera()" class="absolute top-6 right-4 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg active:scale-95 transition z-10">
+            Xong <i class="fa-solid fa-check ml-1"></i>
+        </button>
+
+        <!-- Hiển thị số ảnh đã chụp (Góc dưới trái) -->
+        <div class="absolute bottom-10 left-6 text-white text-xs font-bold bg-black/50 px-3 py-1.5 rounded-lg z-10 backdrop-blur-sm border border-white/20">
+            Đã chụp: <span id="cameraPhotoCount" class="text-sky-400 text-base">0</span>
+        </div>
+
+        <!-- Nút Chụp (Chính giữa dưới) -->
+        <div class="absolute bottom-8 left-0 right-0 flex justify-center items-center z-10">
+            <button onclick="captureCameraPhoto()" class="w-16 h-16 bg-white/90 rounded-full border-[5px] border-slate-300 shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-90 active:bg-slate-200 transition-all flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full border border-slate-400"></div>
+            </button>
+        </div>
+    </div>
 </body>
 </html>
