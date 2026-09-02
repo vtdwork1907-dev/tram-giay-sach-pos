@@ -5528,16 +5528,27 @@ function initSwipeToCloseModals() {
 
         // 4. XỬ LÝ DỮ LIỆU SAU KHI QUÉT (ĐỔ RA MODAL CHI TIẾT)
         function handleScannedData(data) {
-            let actualData = data;
-            if (data.includes('#track=')) {
-                actualData = data.split('#track=')[1];
+            // Giải mã URL phòng trường hợp camera điện thoại tự động mã hóa ký tự
+            let actualData = decodeURIComponent(data);
+            
+            if (actualData.includes('#track=')) {
+                actualData = actualData.split('#track=')[1];
             }
 
-            const parts = actualData.split('|');
-            const parsedId = parts[0]; // Có thể là BON-xxxx hoặc mã KA9n9dDXsJP
-            const shoeId = parts[1] || null;
+            let parsedId = '';
+            let shoeId = null;
+
+            // Hỗ trợ bóc tách cho cả chuẩn "&shoe=" mới và dấu "|" cũ
+            if (actualData.includes('&shoe=')) {
+                const parts = actualData.split('&shoe=');
+                parsedId = parts[0];
+                shoeId = parts[1];
+            } else {
+                const parts = actualData.split('|');
+                parsedId = parts[0];
+                shoeId = parts[1] || null;
+            }
             
-            // SỬA LỖI Ở ĐÂY: Tìm đơn hàng bằng CẢ ID hệ thống VÀ Tracking ID
             const o = state.orders.find(x => x.id === parsedId || x.tracking_id === parsedId);
             
             if (!o) return showNotification("❌ Lỗi", "Mã đơn hàng không tồn tại trên máy này!");
