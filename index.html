@@ -5512,8 +5512,13 @@ function initSwipeToCloseModals() {
 
         function updateTestQRImage() {
             const val = document.getElementById('testQRShoeDropdown').value || currentTestOrderId;
-            // Dùng api tạo QR với kích thước 250x250
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(val)}&margin=1`;
+            
+            // Lấy đường link trang web hiện tại của bạn và ghép với mã đơn
+            const baseUrl = `${window.location.origin}${window.location.pathname}#track=`;
+            const qrData = `${baseUrl}${val}`;
+            
+            // Tạo mã QR chứa toàn bộ đường link
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}&margin=1`;
             document.getElementById('testQRImg').src = qrUrl;
         }
 
