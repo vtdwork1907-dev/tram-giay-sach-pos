@@ -5557,9 +5557,9 @@ function initSwipeToCloseModals() {
 
         // 4. XỬ LÝ DỮ LIỆU SAU KHI QUÉT (ĐỔ RA MODAL CHI TIẾT)
         function handleScannedData(data) {
-            // Giải mã URL phòng trường hợp camera điện thoại tự động mã hóa ký tự
-            let actualData = decodeURIComponent(data);
-            
+            let actualData = data;
+            try { actualData = decodeURIComponent(data); } catch(e) {}
+
             if (actualData.includes('#track=')) {
                 actualData = actualData.split('#track=')[1];
             }
@@ -5567,7 +5567,6 @@ function initSwipeToCloseModals() {
             let parsedId = '';
             let shoeId = null;
 
-            // Hỗ trợ bóc tách cho cả chuẩn "&shoe=" mới và dấu "|" cũ
             if (actualData.includes('&shoe=')) {
                 const parts = actualData.split('&shoe=');
                 parsedId = parts[0];
@@ -5595,7 +5594,6 @@ function initSwipeToCloseModals() {
                     shoeTitle = targetShoe.note ? `${targetShoe.name} (${targetShoe.note})` : targetShoe.name;
                     svcs = targetShoe.services || [];
                     
-                    // Xác định vị trí ảnh After của đôi này trong mảng tổng
                     for(let i=0; i<o.shoes.length; i++) { 
                         if(o.shoes[i].id === targetShoe.id) {
                             slotCount = Math.max((o.shoes[i].images || []).length, 1);
@@ -5603,7 +5601,6 @@ function initSwipeToCloseModals() {
                         }
                         flatSlotStart += Math.max((o.shoes[i].images || []).length, 1); 
                     }
-                    // Lấy trạng thái của dịch vụ đầu tiên làm đại diện
                     if (svcs.length > 0) currentStatus = svcs[0].status; 
                 }
             } else {
@@ -5614,7 +5611,6 @@ function initSwipeToCloseModals() {
 
             const svcsHtml = svcs.map(s => `<span class="bg-white border border-sky-200 text-sky-800 text-[10px] md:text-xs px-2.5 py-1 rounded-lg font-bold shadow-sm whitespace-nowrap"><i class="fa-solid fa-wrench mr-1 text-sky-500"></i>${escapeHtml(s.name)} (x${s.qty})</span>`).join('');
 
-            // Khung điều khiển trạng thái đồng bộ
             const statusBtns = [
                 { k: 'RECEIVED', n: '📦 Đã Nhận', c: 'bg-slate-200 text-slate-700' },
                 { k: 'PROCESSING', n: '⏳ Đang Làm', c: 'bg-amber-500 text-white shadow-md' },
@@ -5627,7 +5623,6 @@ function initSwipeToCloseModals() {
                 return `<button onclick="syncScannerStatus('${o.id}', '${shoeId || ''}', '${btn.k}')" class="flex-1 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold transition active:scale-95 ${isActive ? btn.c + ' ring-2 ring-offset-1 ring-' + btn.c.split('-')[1] : 'bg-white border border-slate-300 text-slate-500 hover:bg-slate-50'}">${btn.n}</button>`;
             }).join('');
 
-            // Render khung Ảnh Before / After (Cho phép chụp nhồi After trực tiếp)
             let imgHtml = '';
             for (let i = 0; i < slotCount; i++) {
                 const slotIdx = flatSlotStart + i;
@@ -5685,7 +5680,6 @@ function initSwipeToCloseModals() {
             modal.style.display = 'flex';
             setTimeout(() => box.classList.remove('translate-y-full'), 10);
         }
-
         function closeScannedShoeModal() {
             const box = document.getElementById('scannedShoeBox');
             box.classList.add('translate-y-full');
