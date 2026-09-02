@@ -3629,6 +3629,16 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
             else if (cur === 'PROCESSING') item.status = 'PROCESSED'; 
             else item.status = 'RECEIVED';
             
+            // SỬA LỖI: Đồng bộ ngược trạng thái vào mảng shoes (nếu có) để khi quét QR lại nó hiển thị chuẩn xác
+            if (o.shoes) {
+                o.shoes.forEach(shoe => {
+                    if (shoe.services) {
+                        const svc = shoe.services.find(s => String(s.cartId || s.id) === String(itemIdKey));
+                        if (svc) svc.status = item.status;
+                    }
+                });
+            }
+
             recalculateOrderStatus(o); 
             renderOrdersTable(); 
             renderDashboard(); 
