@@ -5388,19 +5388,25 @@ function initSwipeToCloseModals() {
         // =========================================================================
 
         // 1. HÀM TỰ ĐỘNG IN TEM KHỔ SIÊU NHỎ NGAY KHI LƯU ĐƠN
+        // 1. HÀM TỰ ĐỘNG IN TEM (ĐÃ NÂNG CẤP CHỨA LINK TRACKING CHO KHÁCH)
         function autoPrintOrderLabels(order) {
             let pagesHtml = '';
+            
+            // Lấy domain hiện tại của web ghép vào mã QR
+            const baseUrl = `${window.location.origin}${window.location.pathname}#track=`;
             
             // Xử lý đơn nhiều đôi: In mỗi đôi 1 tem
             if (order.shoes && order.shoes.length > 0) {
                 order.shoes.forEach((shoe) => {
-                    const qrData = `${order.id}|${shoe.id}`;
+                    // Cấu trúc mới: URL + ID Đơn + ID Giày
+                    const qrData = `${baseUrl}${order.id}|${shoe.id}`;
                     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&margin=0`;
                     pagesHtml += `<div class="print-label-page"><img src="${qrUrl}" style="width: 20mm; height: 20mm; object-fit: contain;"></div>`;
                 });
             } else {
                 // Xử lý đơn 1 đôi: In 1 tem duy nhất
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(order.id)}&margin=0`;
+                const qrData = `${baseUrl}${order.id}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&margin=0`;
                 pagesHtml += `<div class="print-label-page"><img src="${qrUrl}" style="width: 20mm; height: 20mm; object-fit: contain;"></div>`;
             }
             
@@ -5414,12 +5420,6 @@ function initSwipeToCloseModals() {
                 setTimeout(() => printArea.classList.add('hidden'), 500);
             }, 1500);
         }
-
-        // 2. TÍCH HỢP VÀO NÚT "LƯU ĐƠN HÀNG"
-        // (Sửa hàm processOrder() cũ: Tìm dòng `await dbInsertOrder(newOrder);` và dán hàm autoPrintOrderLabels(newOrder); xuống ngay bên dưới nó). Mẫu:
-        // await dbInsertOrder(newOrder);
-        // autoPrintOrderLabels(newOrder); 
-
         // 3. LOGIC BẬT TẮT MÁY QUÉT CAMERA (MỞ THẲNG CAMERA, GIAO DIỆN TIẾNG VIỆT)
         let html5QrCode = null;
 
