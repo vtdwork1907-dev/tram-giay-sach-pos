@@ -5059,21 +5059,43 @@ window.editDelayNote = async function(orderId) {
             if (!navigator.onLine) return;
             if (showLoading) { const loader = document.getElementById('globalLoading'); if (loader) { loader.style.display = 'flex'; loader.querySelector('.text-sm').innerText = 'Đang tải dữ liệu mới...'; } }
             try {
-                const [usersRes, svcsRes, settingsRes, ordersRes, expRes] = await Promise.all([
-                    supabaseClient.from('users').select('*'), supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
-                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(), supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(150), supabaseClient.from('expenses').select('*').order('created_at', { ascending: false }).limit(5000)
+                // Tải các dữ liệu cấu hình trước
+                const [usersRes, svcsRes, settingsRes, ordersRes] = await Promise.all([
+                    supabaseClient.from('users').select('*'), 
+                    supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
+                    supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(), 
+                    supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(150)
                 ]);
                 
+                // TẢI VÔ HẠN CHI PHÍ BẰNG VÒNG LẶP (PHÁ GIỚI HẠN 5000)
+                let allFetchedExp = [];
+                let fromE = 0; 
+                let fetchE = true;
+                while (fetchE) {
+                    const { data, error } = await supabaseClient.from('expenses')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .range(fromE, fromE + 1000 - 1);
+                    if (data && data.length > 0) {
+                        allFetchedExp = allFetchedExp.concat(data);
+                        fromE += 1000;
+                        if (data.length < 1000) fetchE = false; // Đã tải hết
+                    } else {
+                        fetchE = false;
+                    }
+                }
+                
+                // Cập nhật State
                 if (usersRes.data) state.users = usersRes.data; 
                 if (svcsRes.data) state.services = svcsRes.data.map(mapServiceDbToJs);
                 if (settingsRes.data) { 
                     state.qrConfig = settingsRes.data.qr_config || state.qrConfig; 
                     state.logo = settingsRes.data.logo || null; 
                     state.brands = settingsRes.data.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
-                    state.soleImages = settingsRes.data.sole_images || []; // Lấy kho ảnh từ mây
+                    state.soleImages = settingsRes.data.sole_images || []; 
                 }
                 if (ordersRes.data) state.orders = ordersRes.data.map(mapOrderDbToJs); 
-                if (expRes.data) state.expenses = expRes.data;
+                state.expenses = allFetchedExp; // Gán toàn bộ chi phí không giới hạn
 
                 await saveLocalState(); 
                 renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable(); renderExpensesTable(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable(); renderSettingsBrandsTable();
