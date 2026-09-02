@@ -720,6 +720,19 @@
             </div>
         </div>
     </div>
+    <!-- MODAL HIỂN THỊ MÃ QR TEST -->
+    <div id="testQRModal" class="fixed inset-0 bg-slate-900/80 z-[99999] hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div id="testQRBox" class="bg-white rounded-3xl w-full max-w-xs overflow-hidden shadow-2xl flex flex-col items-center text-center p-6 relative transform scale-95 transition-transform duration-300">
+            <button onclick="closeTestQRModal()" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full text-lg leading-none transition">&times;</button>
+            <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center text-xl mb-2 shadow-inner"><i class="fa-solid fa-qrcode"></i></div>
+            <h3 class="font-bold text-slate-800 text-base mb-1">Mã QR Đơn Hàng</h3>
+            <p id="testQRCustomerName" class="text-xs font-bold text-sky-700 mb-4 uppercase">Tên Khách Hàng</p>
+            <div class="p-2 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl w-full flex justify-center bg-white shadow-sm mb-2">
+                <img id="testQRImg" src="" class="w-48 h-48 object-contain rounded-xl">
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2">Dùng máy khác quét mã này để test tính năng</p>
+        </div>
+    </div>
 
     <!-- MODAL CHI TIẾT TRUY XUẤT ĐÔI GIÀY (TỪ QR) -->
     <div id="scannedShoeModal" class="fixed inset-0 bg-slate-900/90 z-[99999] hidden flex-col justify-end md:justify-center items-center p-0 md:p-4 backdrop-blur-sm">
