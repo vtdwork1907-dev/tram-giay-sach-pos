@@ -5633,17 +5633,32 @@ function initSwipeToCloseModals() {
 
             if (shoeId && o.shoes) {
                 const shoe = o.shoes.find(s => s.id === shoeId);
-                if (shoe && shoe.services) shoe.services.forEach(svc => svc.status = newStatus);
+                if (shoe && shoe.services) {
+                    shoe.services.forEach(svc => {
+                        svc.status = newStatus;
+                        // SỬA LỖI: Đồng bộ chéo sang mảng items tổng để bảng Kho Đơn tự cập nhật
+                        if (o.items) {
+                            const flatItem = o.items.find(i => i.cartId === svc.cartId);
+                            if (flatItem) flatItem.status = newStatus;
+                        }
+                    });
+                }
             } else {
                 if (o.items) o.items.forEach(i => i.status = newStatus);
+                // Nếu chọn cập nhật toàn bộ đơn, đồng bộ sâu vào mảng các đôi giày
+                if (o.shoes) {
+                    o.shoes.forEach(shoe => {
+                        if (shoe.services) shoe.services.forEach(svc => svc.status = newStatus);
+                    });
+                }
             }
             
-            recalculateOrderStatus(o);
-            renderOrdersTable();
+            recalculateOrderStatus(o); // Tính toán lại xem đơn đã xong hết chưa
+            renderOrdersTable(); // Vẽ lại kho đơn
             renderDashboard();
             await dbUpdateOrder(orderId);
             
-            handleScannedData(`${orderId}|${shoeId||''}`); // Render lại Modal
+            handleScannedData(`${orderId}|${shoeId||''}`); // Render lại Modal QR
             showNotification("✅ Đồng bộ thành công", `Trạng thái đã cập nhật trên toàn hệ thống!`);
         }
 
