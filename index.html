@@ -1550,10 +1550,13 @@ function mapOrderDbToJs(db) {
             } catch(e) { console.error("Lỗi chia sẻ:", e); alert("Không thể chia sẻ ảnh này. Bạn có thể bấm xem to rồi tải về thủ công."); }
         }
 
-        async function checkUrlTracking() {
+       async function checkUrlTracking() {
             const hash = window.location.hash;
             if (hash.startsWith('#track=')) {
-                const trackingId = hash.replace('#track=', '');
+                // Tách bỏ phần mã giày (nếu là tem của đơn nhiều đôi) để lấy đúng ID đơn hàng
+                const fullTrackingStr = hash.replace('#track=', '');
+                const trackingId = fullTrackingStr.split('|')[0];
+                
                 let order = state.orders.find(o => o.tracking_id === trackingId || o.id === trackingId);
                 
                 if (!order) {
