@@ -5523,7 +5523,13 @@ function initSwipeToCloseModals() {
         }
         // 4. XỬ LÝ DỮ LIỆU SAU KHI QUÉT (ĐỔ RA MODAL CHI TIẾT)
         function handleScannedData(data) {
-            const parts = data.split('|');
+            // Tách lấy mã ID thực sự nếu tem mới quét được là 1 đường link URL
+            let actualData = data;
+            if (data.includes('#track=')) {
+                actualData = data.split('#track=')[1];
+            }
+
+            const parts = actualData.split('|');
             const orderId = parts[0];
             const shoeId = parts[1] || null;
             
