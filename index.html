@@ -157,6 +157,16 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800 relative w-full max-w-full">
+    <!-- KHUNG CHỨA TEM IN (Chỉ hiện khi in) -->
+    <style>
+        @media print {
+            body * { visibility: hidden !important; }
+            #printLabelArea, #printLabelArea * { visibility: visible !important; }
+            #printLabelArea { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; display: block !important; }
+            .print-label-page { width: 35mm; height: 22mm; margin: 0; padding: 1mm; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-after: always; overflow: hidden; }
+        }
+    </style>
+    <div id="printLabelArea" class="hidden"></div>
 
     <div id="globalLoading">
         <div class="spinner mb-3"></div>
