@@ -4533,6 +4533,8 @@ async function updateReportMetrics(forceFetch = false) {
     const start = startInput ? startInput.value : '';
     const end = endInput ? endInput.value : '';
 
+    // 1. TẠO LÁ CHẮN BẢO VỆ DỮ LIỆU LOCAL
+    // Dùng Map để lưu các đơn hàng đang có trên máy (tươi nhất, vừa thao tác xong)
     let reportOrdersMap = new Map();
     if (state.orders && state.orders.length > 0) {
         state.orders.forEach(o => reportOrdersMap.set(o.id, o));
@@ -4541,6 +4543,7 @@ async function updateReportMetrics(forceFetch = false) {
 
     const isReportTabActive = !document.getElementById('tab-reports').classList.contains('hidden');
 
+    // 2. TẢI THÊM TỪ ĐÁM MÂY (CHỈ LẤY NHỮNG ĐƠN MÁY CHƯA CÓ)
     if (navigator.onLine && (isReportTabActive || forceFetch)) {
         const iconRep = document.querySelector('#tab-reports .fa-chart-pie');
         if (iconRep) { iconRep.classList.remove('fa-chart-pie'); iconRep.classList.add('fa-spinner', 'fa-spin'); }
@@ -4548,11 +4551,16 @@ async function updateReportMetrics(forceFetch = false) {
         try {
             const step = 1000; 
 
-            // =========================================================================
-            // LUỒNG 1: LẤY ĐƠN HÀNG ĐỂ TÍNH DOANH SỐ (Dựa vào Ngày TẠO ĐƠN)
-            // =========================================================================
+            // LUỒNG 1: LẤY ĐƠN HÀNG ĐỂ TÍNH DOANH SỐ (Dựa vào Ngày TẠO ĐƠN - Kéo lùi 120 ngày)
             let fromO1 = 0; 
             let fetchO1 = true;
+            
+            let fetchStartDate = start;
+            if (start) {
+                const sDate = new Date(start);
+                sDate.setDate(sDate.getDate() - 120);
+                fetchStartDate = sDate.toISOString().split('T')[0];
+            }
             
             while (fetchO1) {
                 let q = supabaseClient.from('orders')
@@ -4560,14 +4568,19 @@ async function updateReportMetrics(forceFetch = false) {
                     .order('date', { ascending: false })
                     .range(fromO1, fromO1 + step - 1);
 
-                if (start) q = q.gte('date', start + ' 00:00:00');
+                if (fetchStartDate) q = q.gte('date', fetchStartDate + ' 00:00:00');
                 if (end) q = q.lte('date', end + ' 23:59:59');
 
                 const { data, error } = await q;
                 if (error) throw error;
                 
                 if (data && data.length > 0) {
-                    data.forEach(db => reportOrdersMap.set(db.id, db));
+                    data.forEach(db => {
+                        // LÁ CHẮN: Chỉ đưa vào Map nếu máy chưa có (Chống ghi đè trạng thái vừa bấm)
+                        if (!reportOrdersMap.has(db.id)) {
+                            reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                        }
+                    });
                     fromO1 += step;
                     if (data.length < step) fetchO1 = false;
                 } else {
@@ -4575,11 +4588,8 @@ async function updateReportMetrics(forceFetch = false) {
                 }
             }
 
-            // =========================================================================
             // LUỒNG 2: LẤY ĐƠN HÀNG ĐỂ TÍNH DOANH THU (Bắt mọi thời đại qua Ngày THANH TOÁN)
-            // =========================================================================
             if (start || end) {
-                // Tạo danh sách các ngày cần quét (VD: ['2026-09-01', '2026-09-02'])
                 let targetDates = [];
                 let currDate = start ? new Date(start) : new Date(end);
                 let endDateObj = end ? new Date(end) : new Date(start);
@@ -4587,14 +4597,12 @@ async function updateReportMetrics(forceFetch = false) {
                 while (currDate <= endDateObj) {
                     targetDates.push(currDate.toISOString().split('T')[0]);
                     currDate.setDate(currDate.getDate() + 1);
-                    if (targetDates.length > 365) break; // Cắt cầu dao nếu chọn quá 1 năm
+                    if (targetDates.length > 365) break; 
                 }
 
-                // Chia nhỏ danh sách ngày (30 ngày/lần) để chống lỗi quá tải đường truyền
                 const chunkSize = 30;
                 for (let i = 0; i < targetDates.length; i += chunkSize) {
                     const dateChunk = targetDates.slice(i, i + chunkSize);
-                    // Ép Đám mây tìm các đơn có chữ ký thanh toán chứa các ngày này (Mặc kệ ngày tạo)
                     const orQueryStr = dateChunk.map(d => `payment_method.ilike.%${d}%`).join(',');
                     
                     let fromO2 = 0;
@@ -4607,8 +4615,12 @@ async function updateReportMetrics(forceFetch = false) {
                         
                         if (error2) throw error2;
                         if (data2 && data2.length > 0) {
-                            // Cập nhật hoặc thêm mới vào Map để không bị trùng đơn với Luồng 1
-                            data2.forEach(db => reportOrdersMap.set(db.id, db));
+                            data2.forEach(db => {
+                                // LÁ CHẮN AN TOÀN
+                                if (!reportOrdersMap.has(db.id)) {
+                                    reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                                }
+                            });
                             fromO2 += step;
                             if (data2.length < step) fetchO2 = false;
                         } else {
@@ -4617,7 +4629,7 @@ async function updateReportMetrics(forceFetch = false) {
                     }
                 }
             } else {
-                // NẾU KHÔNG CHỌN NGÀY NÀO (XEM TOÀN THỜI GIAN)
+                // XEM TOÀN THỜI GIAN
                 let fromO2 = 0;
                 let fetchO2 = true;
                 while (fetchO2) {
@@ -4628,7 +4640,11 @@ async function updateReportMetrics(forceFetch = false) {
                         
                     if (error2) throw error2;
                     if (data2 && data2.length > 0) {
-                        data2.forEach(db => reportOrdersMap.set(db.id, db));
+                        data2.forEach(db => {
+                            if (!reportOrdersMap.has(db.id)) {
+                                reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                            }
+                        });
                         fromO2 += step;
                         if (data2.length < step) fetchO2 = false;
                     } else {
@@ -4637,9 +4653,7 @@ async function updateReportMetrics(forceFetch = false) {
                 }
             }
 
-            // =========================================================================
             // LUỒNG 3: TẢI CHI PHÍ
-            // =========================================================================
             let allFetchedExp = [];
             let fromE = 0; 
             let fetchE = true;
@@ -4672,31 +4686,9 @@ async function updateReportMetrics(forceFetch = false) {
         }
     }
 
-    // CHUYỂN DỮ LIỆU TỪ MAP SANG MẢNG ĐỂ TÍNH TOÁN
-    const reportOrders = Array.from(reportOrdersMap.values()).map(db => {
-        let pm = db.payment_method || null;
-        let pDate = null;
-        if (pm && pm.includes('|')) {
-            const parts = pm.split('|');
-            pm = parts[0];
-            pDate = parts[1];
-        }
-        // Giữ nguyên chuẩn cho offline object nếu nó đã được map từ trước
-        if (db.customer) return db; 
-        
-        return {
-            date: db.date,
-            customer: { phone: db.customer_phone },
-            total: db.total || 0,
-            extraFeeVal: db.extra_fee_val || 0,
-            status: db.status || 'RECEIVED',
-            paymentMethod: pm,
-            payment_date: pDate, 
-            items: db.items || []
-        };
-    });
-
-    // TÍNH TOÁN BÁO CÁO JS
+    // TÍNH TOÁN BÁO CÁO JS TỪ MAP DỮ LIỆU ĐÃ HỢP NHẤT
+    const reportOrders = Array.from(reportOrdersMap.values());
+    
     let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
     let totalOrdersCount = 0;
@@ -4723,7 +4715,7 @@ async function updateReportMetrics(forceFetch = false) {
         reportOrders.forEach(o => {
             const finalTotal = (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
 
-            // 1. Tính TỔNG SỐ ĐƠN và DOANH SỐ (dựa vào Ngày tạo đơn)
+            // 1. Tính DOANH SỐ
             if (inRangeOrderDate(o.date)) {
                 totalOrdersCount++;
                 if (o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone);
@@ -4743,7 +4735,7 @@ async function updateReportMetrics(forceFetch = false) {
                 }
             }
 
-            // 2. Tính DOANH THU THỰC TẾ (dựa vào Ngày thanh toán - payment_date)
+            // 2. Tính DOANH THU THỰC TẾ
             const payDateToUse = o.payment_date || o.date; 
 
             if ((o.status === 'PAID' || o.status === 'DELIVERED') && inRangePaymentDate(payDateToUse)) {
