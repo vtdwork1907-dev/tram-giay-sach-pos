@@ -4633,14 +4633,24 @@ async function updateReportMetrics(forceFetch = false) {
         }
     }
 
-    // TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC LỖI
+    <!-- TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC LỖI -->
     let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
     let totalOrdersCount = 0;
     const uniqueCustomersPhones = new Set();
     let ckRev = 0, tmRev = 0;
 
-    const inRange = (dStr) => {
+    // Bộ lọc ngày tạo đơn (Dùng cho Tổng số đơn và Doanh số)
+    const inRangeOrderDate = (dStr) => {
+        if (!dStr) return false; 
+        const d = dStr.split(' ')[0].split('T')[0];
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+    };
+
+    // Bộ lọc ngày thanh toán (Dùng cho Doanh thu thực tế)
+    const inRangePaymentDate = (dStr) => {
         if (!dStr) return false; 
         const d = dStr.split(' ')[0].split('T')[0];
         if (start && d < start) return false;
@@ -4650,17 +4660,13 @@ async function updateReportMetrics(forceFetch = false) {
 
     try {
         reportOrders.forEach(o => {
-            if (inRange(o.date)) {
+            const finalTotal = (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
+
+            // 1. Tính TỔNG SỐ ĐƠN và DOANH SỐ (dựa vào Ngày tạo đơn)
+            if (inRangeOrderDate(o.date)) {
                 totalOrdersCount++;
                 if (o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone);
-
-                const finalTotal = (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
                 grossSales += finalTotal;
-
-                if (o.status === 'PAID' || o.status === 'DELIVERED') {
-                    rev += finalTotal;
-                    if (o.paymentMethod === 'CASH') tmRev += finalTotal; else ckRev += finalTotal;
-                }
 
                 if (o.items && Array.isArray(o.items)) {
                     o.items.forEach(item => {
@@ -4675,10 +4681,19 @@ async function updateReportMetrics(forceFetch = false) {
                     });
                 }
             }
+
+            // 2. Tính DOANH THU THỰC TẾ (dựa vào Ngày thanh toán - payment_date)
+            // Lấy ngày thanh toán, nếu không có thì lấy tạm ngày tạo đơn để dự phòng
+            const payDateToUse = o.payment_date || o.date; 
+
+            if ((o.status === 'PAID' || o.status === 'DELIVERED') && inRangePaymentDate(payDateToUse)) {
+                rev += finalTotal;
+                if (o.paymentMethod === 'CASH') tmRev += finalTotal; else ckRev += finalTotal;
+            }
         });
 
         reportExpenses.forEach(e => {
-            if (inRange(e.date)) exp += (Number(e.amount) || 0);
+            if (inRangeOrderDate(e.date)) exp += (Number(e.amount) || 0);
         });
     } catch(e) {
         console.error("Lỗi khi lặp dữ liệu tính toán báo cáo:", e);
