@@ -1640,7 +1640,15 @@ function mapOrderDbToJs(db) {
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-sm">
-                            <div class="flex justify-between gap-4"><span class="text-slate-500">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span></div>
+                            <div class="flex justify-between items-center gap-2">
+    <span class="text-slate-500 shrink-0">Khách hàng:</span>
+    <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span>
+        <button onclick="closeScannedShoeModal(); document.getElementById('searchOrderInput').value='${order.id}'; switchTab('orders'); debouncedSearchOrder();" class="bg-sky-100 hover:bg-sky-200 text-sky-700 border border-sky-200 text-[9px] md:text-[10px] font-bold px-2 py-1 rounded-md shadow-sm transition active:scale-95 flex items-center gap-1 whitespace-nowrap shrink-0">
+            <i class="fa-solid fa-magnifying-glass"></i> Kiểm tra
+        </button>
+    </div>
+</div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${formattedDate}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền (Gốc):</span><span class="font-bold text-slate-700 text-sm">${order.total.toLocaleString()} đ</span></div>
