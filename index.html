@@ -4526,7 +4526,6 @@ function clearDateFilter() {
 }
 
 async function updateReportMetrics(forceFetch = false) {
-    // Bọc trong try-catch để dù biểu đồ chi phí lỗi thì báo cáo tổng vẫn tính bình thường
     try { updateExpenseCharts(); } catch(e) { console.error("Lỗi vẽ biểu đồ chi phí:", e); }
 
     const startInput = document.getElementById('reportStartDate');
@@ -4534,29 +4533,29 @@ async function updateReportMetrics(forceFetch = false) {
     const start = startInput ? startInput.value : '';
     const end = endInput ? endInput.value : '';
 
-    // Luôn sử dụng dữ liệu offline đang có sẵn làm phao cứu sinh
-    let reportOrders = Array.isArray(state.orders) ? [...state.orders] : [];
+    let reportOrdersMap = new Map(); // Dùng Map để chống trùng lặp đơn hàng
     let reportExpenses = Array.isArray(state.expenses) ? [...state.expenses] : [];
 
     const isReportTabActive = !document.getElementById('tab-reports').classList.contains('hidden');
 
-    // Bắt đầu gọi lên Server nếu có mạng
     if (navigator.onLine && (isReportTabActive || forceFetch)) {
         const iconRep = document.querySelector('#tab-reports .fa-chart-pie');
         if (iconRep) { iconRep.classList.remove('fa-chart-pie'); iconRep.classList.add('fa-spinner', 'fa-spin'); }
 
         try {
-            // Tải đơn hàng (tối ưu tốc độ: tải theo lô từng 1000 đơn, không tải hình ảnh)
-            let allFetchedOrders = [];
-            let fromO = 0; 
             const step = 1000; 
-            let fetchO = true;
+
+            // =========================================================================
+            // LUỒNG 1: Tải các đơn hàng ĐƯỢC TẠO trong khoảng thời gian (Tính Doanh Số)
+            // =========================================================================
+            let fromO1 = 0; 
+            let fetchO1 = true;
             
-            while (fetchO) {
+            while (fetchO1) {
                 let q = supabaseClient.from('orders')
                     .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
                     .order('date', { ascending: false })
-                    .range(fromO, fromO + step - 1);
+                    .range(fromO1, fromO1 + step - 1);
 
                 if (start) q = q.gte('date', start + ' 00:00:00');
                 if (end) q = q.lte('date', end + ' 23:59:59');
@@ -4565,36 +4564,47 @@ async function updateReportMetrics(forceFetch = false) {
                 if (error) throw error;
                 
                 if (data && data.length > 0) {
-                    allFetchedOrders = allFetchedOrders.concat(data);
-                    fromO += step;
-                    if (data.length < step) fetchO = false;
+                    data.forEach(db => reportOrdersMap.set(db.id, db));
+                    fromO1 += step;
+                    if (data.length < step) fetchO1 = false;
                 } else {
-                    fetchO = false;
+                    fetchO1 = false;
                 }
             }
-            
-            if (allFetchedOrders.length > 0 || start || end) {
-                reportOrders = allFetchedOrders.map(db => {
-                    // Giải mã ngày thanh toán ẩn từ DB
-                    let pm = db.payment_method || null;
-                    let pDate = null;
-                    if (pm && pm.includes('|')) {
-                        const parts = pm.split('|');
-                        pm = parts[0];
-                        pDate = parts[1];
-                    }
+
+            // =========================================================================
+            // LUỒNG 2: Tải các đơn hàng ĐƯỢC THANH TOÁN trong khoảng thời gian 
+            // (Tuyệt chiêu bắt trọn các đơn "ngâm" 6 tháng - 1 năm mới lấy)
+            // =========================================================================
+            if (start || end) {
+                let fromO2 = 0; 
+                let fetchO2 = true;
+                
+                while (fetchO2) {
+                    let q2 = supabaseClient.from('orders')
+                        .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                        .order('payment_date', { ascending: false })
+                        .range(fromO2, fromO2 + step - 1);
+
+                    // Quét theo payment_date thay vì date
+                    if (start) q2 = q2.gte('payment_date', start + ' 00:00:00');
+                    if (end) q2 = q2.lte('payment_date', end + ' 23:59:59');
+
+                    const { data: data2, error: error2 } = await q2;
+                    if (error2) throw error2;
                     
-                    return {
-                        date: db.date,
-                        customer: { phone: db.customer_phone },
-                        total: db.total || 0,
-                        extraFeeVal: db.extra_fee_val || 0,
-                        status: db.status || 'RECEIVED',
-                        paymentMethod: pm,
-                        payment_date: pDate, // Đã bổ sung ngày thanh toán vào đây để quỹ đọc được
-                        items: db.items || []
-                    };
-                });
+                    if (data2 && data2.length > 0) {
+                        data2.forEach(db => {
+                            if (!reportOrdersMap.has(db.id)) {
+                                reportOrdersMap.set(db.id, db);
+                            }
+                        });
+                        fromO2 += step;
+                        if (data2.length < step) fetchO2 = false;
+                    } else {
+                        fetchO2 = false;
+                    }
+                }
             }
 
             // Tải chi phí (theo lô 1000)
@@ -4622,25 +4632,43 @@ async function updateReportMetrics(forceFetch = false) {
                     fetchE = false;
                 }
             }
-            
-            if (allFetchedExp.length > 0 || start || end) {
-                reportExpenses = allFetchedExp;
-            }
+            if (allFetchedExp.length > 0 || start || end) reportExpenses = allFetchedExp;
+
         } catch(e) {
-            console.error("Lỗi đồng bộ full data báo cáo, dùng lại dữ liệu nội bộ:", e);
+            console.error("Lỗi đồng bộ full data báo cáo:", e);
         } finally {
             if (iconRep) { iconRep.classList.add('fa-chart-pie'); iconRep.classList.remove('fa-spinner', 'fa-spin'); }
         }
     }
 
-    <!-- TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC LỖI -->
+    // MAP DỮ LIỆU DB SANG JS
+    const reportOrders = Array.from(reportOrdersMap.values()).map(db => {
+        let pm = db.payment_method || null;
+        let pDate = null;
+        if (pm && pm.includes('|')) {
+            const parts = pm.split('|');
+            pm = parts[0];
+            pDate = parts[1];
+        }
+        return {
+            date: db.date,
+            customer: { phone: db.customer_phone },
+            total: db.total || 0,
+            extraFeeVal: db.extra_fee_val || 0,
+            status: db.status || 'RECEIVED',
+            paymentMethod: pm,
+            payment_date: pDate, 
+            items: db.items || []
+        };
+    });
+
+    // TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC
     let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
     let totalOrdersCount = 0;
     const uniqueCustomersPhones = new Set();
     let ckRev = 0, tmRev = 0;
 
-    // Bộ lọc ngày tạo đơn (Dùng cho Tổng số đơn và Doanh số)
     const inRangeOrderDate = (dStr) => {
         if (!dStr) return false; 
         const d = dStr.split(' ')[0].split('T')[0];
@@ -4649,7 +4677,6 @@ async function updateReportMetrics(forceFetch = false) {
         return true;
     };
 
-    // Bộ lọc ngày thanh toán (Dùng cho Doanh thu thực tế)
     const inRangePaymentDate = (dStr) => {
         if (!dStr) return false; 
         const d = dStr.split(' ')[0].split('T')[0];
@@ -4683,7 +4710,6 @@ async function updateReportMetrics(forceFetch = false) {
             }
 
             // 2. Tính DOANH THU THỰC TẾ (dựa vào Ngày thanh toán - payment_date)
-            // Lấy ngày thanh toán, nếu không có thì lấy tạm ngày tạo đơn để dự phòng
             const payDateToUse = o.payment_date || o.date; 
 
             if ((o.status === 'PAID' || o.status === 'DELIVERED') && inRangePaymentDate(payDateToUse)) {
