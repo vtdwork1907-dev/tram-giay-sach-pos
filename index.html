@@ -4533,8 +4533,6 @@ async function updateReportMetrics(forceFetch = false) {
     const start = startInput ? startInput.value : '';
     const end = endInput ? endInput.value : '';
 
-    // 1. TẠO LÁ CHẮN BẢO VỆ DỮ LIỆU LOCAL
-    // Dùng Map để lưu các đơn hàng đang có trên máy (tươi nhất, vừa thao tác xong)
     let reportOrdersMap = new Map();
     if (state.orders && state.orders.length > 0) {
         state.orders.forEach(o => reportOrdersMap.set(o.id, o));
@@ -4543,7 +4541,6 @@ async function updateReportMetrics(forceFetch = false) {
 
     const isReportTabActive = !document.getElementById('tab-reports').classList.contains('hidden');
 
-    // 2. TẢI THÊM TỪ ĐÁM MÂY (CHỈ LẤY NHỮNG ĐƠN MÁY CHƯA CÓ)
     if (navigator.onLine && (isReportTabActive || forceFetch)) {
         const iconRep = document.querySelector('#tab-reports .fa-chart-pie');
         if (iconRep) { iconRep.classList.remove('fa-chart-pie'); iconRep.classList.add('fa-spinner', 'fa-spin'); }
@@ -4564,7 +4561,7 @@ async function updateReportMetrics(forceFetch = false) {
             
             while (fetchO1) {
                 let q = supabaseClient.from('orders')
-                    .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                    .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items, shoes')
                     .order('date', { ascending: false })
                     .range(fromO1, fromO1 + step - 1);
 
@@ -4576,9 +4573,8 @@ async function updateReportMetrics(forceFetch = false) {
                 
                 if (data && data.length > 0) {
                     data.forEach(db => {
-                        // LÁ CHẮN: Chỉ đưa vào Map nếu máy chưa có (Chống ghi đè trạng thái vừa bấm)
                         if (!reportOrdersMap.has(db.id)) {
-                            reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                            reportOrdersMap.set(db.id, db);
                         }
                     });
                     fromO1 += step;
@@ -4609,16 +4605,15 @@ async function updateReportMetrics(forceFetch = false) {
                     let fetchO2 = true;
                     while (fetchO2) {
                         const { data: data2, error: error2 } = await supabaseClient.from('orders')
-                            .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                            .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items, shoes')
                             .or(orQueryStr)
                             .range(fromO2, fromO2 + step - 1);
                         
                         if (error2) throw error2;
                         if (data2 && data2.length > 0) {
                             data2.forEach(db => {
-                                // LÁ CHẮN AN TOÀN
                                 if (!reportOrdersMap.has(db.id)) {
-                                    reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                                    reportOrdersMap.set(db.id, db);
                                 }
                             });
                             fromO2 += step;
@@ -4629,12 +4624,11 @@ async function updateReportMetrics(forceFetch = false) {
                     }
                 }
             } else {
-                // XEM TOÀN THỜI GIAN
                 let fromO2 = 0;
                 let fetchO2 = true;
                 while (fetchO2) {
                     const { data: data2, error: error2 } = await supabaseClient.from('orders')
-                        .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                        .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items, shoes')
                         .in('status', ['PAID', 'DELIVERED'])
                         .range(fromO2, fromO2 + step - 1);
                         
@@ -4642,7 +4636,7 @@ async function updateReportMetrics(forceFetch = false) {
                     if (data2 && data2.length > 0) {
                         data2.forEach(db => {
                             if (!reportOrdersMap.has(db.id)) {
-                                reportOrdersMap.set(db.id, mapOrderDbToJs(db));
+                                reportOrdersMap.set(db.id, db);
                             }
                         });
                         fromO2 += step;
@@ -4686,13 +4680,39 @@ async function updateReportMetrics(forceFetch = false) {
         }
     }
 
-    // TÍNH TOÁN BÁO CÁO JS TỪ MAP DỮ LIỆU ĐÃ HỢP NHẤT
-    const reportOrders = Array.from(reportOrdersMap.values());
-    
+    // CHUYỂN DỮ LIỆU TỪ MAP SANG MẢNG ĐỂ TÍNH TOÁN
+    const reportOrders = Array.from(reportOrdersMap.values()).map(db => {
+        let pm = db.payment_method || null;
+        let pDate = null;
+        if (pm && pm.includes('|')) {
+            const parts = pm.split('|');
+            pm = parts[0];
+            pDate = parts[1];
+        }
+        if (db.customer) return db; 
+        
+        return {
+            date: db.date,
+            customer: { phone: db.customer_phone },
+            total: db.total || 0,
+            extraFeeVal: db.extra_fee_val || 0,
+            status: db.status || 'RECEIVED',
+            paymentMethod: pm,
+            payment_date: pDate, 
+            items: db.items || [],
+            shoes: db.shoes || null // Cần lấy mảng shoes để đếm số đôi giày
+        };
+    });
+
+    // TÍNH TOÁN BÁO CÁO JS
     let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
-    let totalOrdersCount = 0;
-    const uniqueCustomersPhones = new Set();
+    
+    // 🔥 CÁC BIẾN ĐẾM ĐƯỢC TÁCH RA RÕ RÀNG
+    let totalOrdersCount = 0;     // Số hóa đơn
+    let totalShoesCount = 0;      // TỔNG SỐ ĐÔI GIÀY
+    const uniqueCustomersPhones = new Set(); // Số khách hàng
+    
     let ckRev = 0, tmRev = 0;
 
     const inRangeOrderDate = (dStr) => {
@@ -4715,10 +4735,20 @@ async function updateReportMetrics(forceFetch = false) {
         reportOrders.forEach(o => {
             const finalTotal = (Number(o.total) || 0) + (Number(o.extraFeeVal) || 0);
 
-            // 1. Tính DOANH SỐ
+            // 1. Tính TỔNG SỐ LƯỢNG và DOANH SỐ
             if (inRangeOrderDate(o.date)) {
-                totalOrdersCount++;
-                if (o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone);
+                totalOrdersCount++; // Đếm số lượng hóa đơn
+                if (o.customer && o.customer.phone) uniqueCustomersPhones.add(o.customer.phone); // Đếm số khách
+                
+                // Đếm TỔNG SỐ ĐÔI GIÀY
+                // Nếu là đơn tạo từ tính năng "Nhiều đôi", đếm số phần tử trong mảng shoes
+                if (o.shoes && o.shoes.length > 0) {
+                    totalShoesCount += o.shoes.length;
+                } else {
+                    // Nếu là đơn thường (không tích chọn nhiều đôi), mặc định nó là 1 đôi
+                    totalShoesCount += 1;
+                }
+
                 grossSales += finalTotal;
 
                 if (o.items && Array.isArray(o.items)) {
@@ -4754,13 +4784,21 @@ async function updateReportMetrics(forceFetch = false) {
     // CẬP NHẬT GIAO DIỆN HIỂN THỊ
     const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
     
-    setTxt('repTotalOrders', totalOrdersCount.toLocaleString('vi-VN'));
-    setTxt('repUniqueCustomers', `Từ ${uniqueCustomersPhones.size} khách hàng`);
+    // Đổi logic hiển thị ở ô góc trên cùng bên trái
+    setTxt('repTotalOrders', totalShoesCount.toLocaleString('vi-VN'));
+    setTxt('repUniqueCustomers', `Từ ${totalOrdersCount} đơn / ${uniqueCustomersPhones.size} khách`);
+    
     setTxt('repGrossSales', grossSales.toLocaleString('vi-VN') + ' đ');
     setTxt('repRevenue', rev.toLocaleString('vi-VN') + ' đ');
     setTxt('repRevenueBreakdown', `CK: ${ckRev.toLocaleString('vi-VN')} đ | TM: ${tmRev.toLocaleString('vi-VN')} đ`);
     setTxt('repExpenses', exp.toLocaleString('vi-VN') + ' đ');
     setTxt('repNetProfit', (rev - exp).toLocaleString('vi-VN') + ' đ');
+
+    // Chỉnh lại nhãn nhỏ (Tiêu đề phụ) của ô Tổng số đơn
+    const titleLabel = document.querySelector('#repTotalOrders').previousElementSibling;
+    if (titleLabel) {
+        titleLabel.innerText = "TỔNG SỐ ĐÔI GIÀY";
+    }
 
     if (barChartInst) {
         barChartInst.data.labels = [(start || end) ? `Từ ${start||'...'} đến ${end||'...'}` : `Tổng thời gian`];
