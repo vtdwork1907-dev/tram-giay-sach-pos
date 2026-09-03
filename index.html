@@ -4533,7 +4533,10 @@ async function updateReportMetrics(forceFetch = false) {
     const start = startInput ? startInput.value : '';
     const end = endInput ? endInput.value : '';
 
-    let reportOrdersMap = new Map(); // Dùng Map để chống trùng lặp đơn hàng
+    let reportOrdersMap = new Map();
+    if (state.orders && state.orders.length > 0) {
+        state.orders.forEach(o => reportOrdersMap.set(o.id, o));
+    }
     let reportExpenses = Array.isArray(state.expenses) ? [...state.expenses] : [];
 
     const isReportTabActive = !document.getElementById('tab-reports').classList.contains('hidden');
@@ -4546,7 +4549,7 @@ async function updateReportMetrics(forceFetch = false) {
             const step = 1000; 
 
             // =========================================================================
-            // LUỒNG 1: Tải các đơn hàng ĐƯỢC TẠO trong khoảng thời gian (Tính Doanh Số)
+            // LUỒNG 1: LẤY ĐƠN HÀNG ĐỂ TÍNH DOANH SỐ (Dựa vào Ngày TẠO ĐƠN)
             // =========================================================================
             let fromO1 = 0; 
             let fetchO1 = true;
@@ -4573,32 +4576,59 @@ async function updateReportMetrics(forceFetch = false) {
             }
 
             // =========================================================================
-            // LUỒNG 2: Tải các đơn hàng ĐƯỢC THANH TOÁN trong khoảng thời gian 
-            // (Tuyệt chiêu bắt trọn các đơn "ngâm" 6 tháng - 1 năm mới lấy)
+            // LUỒNG 2: LẤY ĐƠN HÀNG ĐỂ TÍNH DOANH THU (Bắt mọi thời đại qua Ngày THANH TOÁN)
             // =========================================================================
             if (start || end) {
-                let fromO2 = 0; 
-                let fetchO2 = true;
+                // Tạo danh sách các ngày cần quét (VD: ['2026-09-01', '2026-09-02'])
+                let targetDates = [];
+                let currDate = start ? new Date(start) : new Date(end);
+                let endDateObj = end ? new Date(end) : new Date(start);
                 
-                while (fetchO2) {
-                    let q2 = supabaseClient.from('orders')
-                        .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
-                        .order('payment_date', { ascending: false })
-                        .range(fromO2, fromO2 + step - 1);
+                while (currDate <= endDateObj) {
+                    targetDates.push(currDate.toISOString().split('T')[0]);
+                    currDate.setDate(currDate.getDate() + 1);
+                    if (targetDates.length > 365) break; // Cắt cầu dao nếu chọn quá 1 năm
+                }
 
-                    // Quét theo payment_date thay vì date
-                    if (start) q2 = q2.gte('payment_date', start + ' 00:00:00');
-                    if (end) q2 = q2.lte('payment_date', end + ' 23:59:59');
-
-                    const { data: data2, error: error2 } = await q2;
-                    if (error2) throw error2;
+                // Chia nhỏ danh sách ngày (30 ngày/lần) để chống lỗi quá tải đường truyền
+                const chunkSize = 30;
+                for (let i = 0; i < targetDates.length; i += chunkSize) {
+                    const dateChunk = targetDates.slice(i, i + chunkSize);
+                    // Ép Đám mây tìm các đơn có chữ ký thanh toán chứa các ngày này (Mặc kệ ngày tạo)
+                    const orQueryStr = dateChunk.map(d => `payment_method.ilike.%${d}%`).join(',');
                     
+                    let fromO2 = 0;
+                    let fetchO2 = true;
+                    while (fetchO2) {
+                        const { data: data2, error: error2 } = await supabaseClient.from('orders')
+                            .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                            .or(orQueryStr)
+                            .range(fromO2, fromO2 + step - 1);
+                        
+                        if (error2) throw error2;
+                        if (data2 && data2.length > 0) {
+                            // Cập nhật hoặc thêm mới vào Map để không bị trùng đơn với Luồng 1
+                            data2.forEach(db => reportOrdersMap.set(db.id, db));
+                            fromO2 += step;
+                            if (data2.length < step) fetchO2 = false;
+                        } else {
+                            fetchO2 = false;
+                        }
+                    }
+                }
+            } else {
+                // NẾU KHÔNG CHỌN NGÀY NÀO (XEM TOÀN THỜI GIAN)
+                let fromO2 = 0;
+                let fetchO2 = true;
+                while (fetchO2) {
+                    const { data: data2, error: error2 } = await supabaseClient.from('orders')
+                        .select('id, date, total, extra_fee_val, status, payment_method, customer_phone, items')
+                        .in('status', ['PAID', 'DELIVERED'])
+                        .range(fromO2, fromO2 + step - 1);
+                        
+                    if (error2) throw error2;
                     if (data2 && data2.length > 0) {
-                        data2.forEach(db => {
-                            if (!reportOrdersMap.has(db.id)) {
-                                reportOrdersMap.set(db.id, db);
-                            }
-                        });
+                        data2.forEach(db => reportOrdersMap.set(db.id, db));
                         fromO2 += step;
                         if (data2.length < step) fetchO2 = false;
                     } else {
@@ -4607,11 +4637,12 @@ async function updateReportMetrics(forceFetch = false) {
                 }
             }
 
-            // Tải chi phí (theo lô 1000)
+            // =========================================================================
+            // LUỒNG 3: TẢI CHI PHÍ
+            // =========================================================================
             let allFetchedExp = [];
             let fromE = 0; 
             let fetchE = true;
-            
             while (fetchE) {
                 let q = supabaseClient.from('expenses')
                     .select('amount, date, cat')
@@ -4641,7 +4672,7 @@ async function updateReportMetrics(forceFetch = false) {
         }
     }
 
-    // MAP DỮ LIỆU DB SANG JS
+    // CHUYỂN DỮ LIỆU TỪ MAP SANG MẢNG ĐỂ TÍNH TOÁN
     const reportOrders = Array.from(reportOrdersMap.values()).map(db => {
         let pm = db.payment_method || null;
         let pDate = null;
@@ -4650,6 +4681,9 @@ async function updateReportMetrics(forceFetch = false) {
             pm = parts[0];
             pDate = parts[1];
         }
+        // Giữ nguyên chuẩn cho offline object nếu nó đã được map từ trước
+        if (db.customer) return db; 
+        
         return {
             date: db.date,
             customer: { phone: db.customer_phone },
@@ -4662,7 +4696,7 @@ async function updateReportMetrics(forceFetch = false) {
         };
     });
 
-    // TÍNH TOÁN BÁO CÁO TỪ MẢNG DỮ LIỆU ĐÃ LỌC
+    // TÍNH TOÁN BÁO CÁO JS
     let grossSales = 0, rev = 0, exp = 0;
     const svcCounts = {};
     let totalOrdersCount = 0;
@@ -4725,7 +4759,7 @@ async function updateReportMetrics(forceFetch = false) {
         console.error("Lỗi khi lặp dữ liệu tính toán báo cáo:", e);
     }
 
-    // CẬP NHẬT CON SỐ LÊN GIAO DIỆN
+    // CẬP NHẬT GIAO DIỆN HIỂN THỊ
     const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
     
     setTxt('repTotalOrders', totalOrdersCount.toLocaleString('vi-VN'));
@@ -4753,7 +4787,6 @@ async function updateReportMetrics(forceFetch = false) {
         pieChartInst.update();
     }
 }
-
 function updateExpenseCharts() { 
             let targetMonthPrefix = ''; 
             if (document.getElementById('expenseMonthFilter')) targetMonthPrefix = document.getElementById('expenseMonthFilter').value; 
