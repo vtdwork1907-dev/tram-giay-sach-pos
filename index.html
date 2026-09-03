@@ -1640,7 +1640,20 @@ function mapOrderDbToJs(db) {
 
                     box.innerHTML = `
                         <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-sm">
-                            <div class="flex justify-between gap-4"><span class="text-slate-500">Khách hàng:</span><span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span></div>
+                            
+                            <!-- DÒNG TÊN KHÁCH KÈM NÚT KIỂM TRA TỰ ĐỘNG -->
+                            <div class="flex justify-between items-center gap-2 pb-2 border-b border-slate-200">
+                                <span class="text-slate-500 shrink-0">Khách hàng:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-800 uppercase text-right">${escapeHtml(order.customer.name)}</span>
+                                    
+                                    <!-- Nút kiểm tra thần tốc (Ẩn đối với khách, chỉ hiện với nhân viên đang đăng nhập) -->
+                                    <button onclick="document.getElementById('customerTrackingScreen').classList.add('hidden'); document.getElementById('searchOrderInput').value='${order.id}'; switchTab('orders'); debouncedSearchOrder(); window.location.hash='';" class="${state.currentUser ? 'flex' : 'hidden'} bg-sky-100 hover:bg-sky-200 text-sky-700 border border-sky-200 text-[10px] font-bold px-2.5 py-1.5 rounded-lg items-center gap-1.5 whitespace-nowrap shrink-0 transition active:scale-95 shadow-sm">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Kiểm tra
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Số điện thoại:</span><span class="font-mono font-bold text-sky-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${formattedDate}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200"><span class="text-slate-500 font-bold">Tổng tiền (Gốc):</span><span class="font-bold text-slate-700 text-sm">${order.total.toLocaleString()} đ</span></div>
