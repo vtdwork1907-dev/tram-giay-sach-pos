@@ -5524,11 +5524,6 @@ function initSwipeToCloseModals() {
             const printArea = document.getElementById('printLabelArea');
             printArea.innerHTML = pagesHtml;
             printArea.classList.remove('hidden');
-            
-            setTimeout(() => {
-                //window.print();
-                setTimeout(() => printArea.classList.add('hidden'), 500);
-            }, 1500);
         }
        // 3. LOGIC BẬT TẮT MÁY QUÉT CAMERA (AN TOÀN TUYỆT ĐỐI, TƯƠNG THÍCH 100% TRÊN MỌI ĐIỆN THOẠI)
         let html5QrCode = null;
