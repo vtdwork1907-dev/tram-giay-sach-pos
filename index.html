@@ -6306,8 +6306,8 @@ function initSwipeToCloseModals() {
             setTimeout(() => window.handleScannedData(decodedText, true), 300);
         };
 
-        // ===================================================================================
-        // ÉP GHI ĐÈ HÀM QUÉT QR CỦA APP POS (BẢN TỐI GIẢN: 3 NÚT TRẠNG THÁI + CAMERA TRỰC TIẾP)
+       // ===================================================================================
+        // ÉP GHI ĐÈ HÀM QUÉT QR CỦA APP POS (BẢN TỐI GIẢN: 3 NÚT TRẠNG THÁI + CAMERA TRỰC TIẾP + HIỂN THỊ RÕ SĐT)
         // ===================================================================================
         window.handleScannedData = async function(decodedText, isSilent = false) {
             // Chỉ hiện Loading nếu không phải là Silent Mode (Khi quét lần đầu tiên)
@@ -6412,6 +6412,7 @@ function initSwipeToCloseModals() {
                     `;
 
                     box.innerHTML = `
+                        <!-- BOX 1: THÔNG TIN KHÁCH & NÚT KIỂM TRA -->
                         <div class="space-y-2 md:space-y-3 bg-white p-4 rounded-2xl border border-slate-200 text-xs shadow-sm mb-4 relative overflow-hidden">
                             <div class="absolute top-0 right-0 w-16 h-16 bg-sky-50 rounded-bl-full -z-10"></div>
                             <div class="flex justify-between items-center gap-2 pb-2 border-b border-slate-100 relative z-10">
@@ -6424,23 +6425,25 @@ function initSwipeToCloseModals() {
                                 </div>
                             </div>
                             <div class="flex justify-between gap-4 relative z-10"><span class="text-slate-500">Mã đơn:</span><span class="font-mono font-extrabold text-sky-700 text-right">${order.id}</span></div>
-                            <div class="flex justify-between gap-4 relative z-10"><span class="text-slate-500">SĐT:</span><span class="font-mono font-bold text-slate-700 text-right">${escapeHtml(maskPhoneNumber(order.customer.phone))}</span></div>
+                            <!-- SĐT ĐÃ BỎ HÀM maskPhoneNumber() -->
+                            <div class="flex justify-between gap-4 relative z-10"><span class="text-slate-500">SĐT:</span><span class="font-mono font-bold text-slate-700 text-right">${escapeHtml(order.customer.phone)}</span></div>
                             <div class="flex justify-between gap-4 relative z-10"><span class="text-slate-500">Ngày gửi:</span><span class="font-mono text-right">${formattedDate}</span></div>
                             <div class="flex justify-between pt-2 border-t border-slate-200 relative z-10"><span class="text-slate-700 font-bold">Thực Thu:</span><span class="font-extrabold text-emerald-600 text-base">${finalTotal.toLocaleString()} đ</span></div>
                         </div>
 
+                        <!-- BOX 2: NÚT CẬP NHẬT TRẠNG THÁI -->
                         <div class="mb-5">
                             <h3 class="font-bold text-xs uppercase text-slate-500 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-amber-500"></i> Cập nhật nhanh</h3>
                             ${statusButtonsHtml}
                         </div>
 
+                        <!-- BOX 3: HÌNH ẢNH TRƯỚC/SAU -->
                         <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm">
                             <h3 class="font-bold text-xs uppercase text-slate-500 mb-3 border-b border-slate-100 pb-2 flex items-center gap-1.5"><i class="fa-solid fa-images text-sky-500"></i> Hình Ảnh Giày</h3>
                             ${imagesGridHtml}
                         </div>
                     `;
                     
-                    // Chỉ chạy hiệu ứng đẩy Modal lên nếu không phải là quét lại ngầm
                     if (!isSilent) {
                         document.getElementById('scannedShoeModal').classList.remove('hidden');
                         document.getElementById('scannedShoeModal').style.display = 'flex';
@@ -6453,7 +6456,6 @@ function initSwipeToCloseModals() {
                 console.error("Lỗi xử lý QR:", e);
                 if (!isSilent) showNotification("Lỗi", "Mã QR không hợp lệ!");
             } finally {
-                // Đảm bảo loading luôn tắt đi, bất kể chế độ nào
                 document.getElementById('globalLoading').style.display = 'none';
             }
         };
