@@ -153,6 +153,38 @@
             will-change: transform, opacity;
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
         }
+        /* ẨN VÙNG IN KHỎI MÀN HÌNH HIỂN THỊ (CHỐNG GIẬT UI) */
+        @media screen {
+            /* Bạn có thể thay đổi #printContainer bằng đúng ID thẻ div chứa tem in của bạn */
+            #printContainer, .print-container {
+                position: fixed !important;
+                top: -9999px !important;
+                left: -9999px !important;
+                opacity: 0 !important;
+                z-index: -9999 !important;
+                pointer-events: none !important;
+            }
+        }
+        
+        /* CHỈ HIỂN THỊ ĐÚNG FORM KHI MÁY IN CHẠY LỆNH */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printContainer, .print-container,
+            #printContainer *, .print-container * {
+                visibility: visible;
+            }
+            #printContainer, .print-container {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                opacity: 1 !important;
+            }
+        }
     </style>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
