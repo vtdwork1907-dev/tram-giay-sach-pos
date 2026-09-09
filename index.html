@@ -2002,6 +2002,7 @@ function mapOrderDbToJs(db) {
             if(id === 'payment') updateQRView(); 
             if(id === 'dashboard') renderDashboard();
             if(id === 'gallery') { renderGalleryCategoryTabs(); switchGalleryCategory(currentGalleryCategory); }
+            if(id === 'staff') renderStaffManagement();
             
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
