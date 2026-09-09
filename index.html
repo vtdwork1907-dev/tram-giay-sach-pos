@@ -7558,7 +7558,7 @@ function initSwipeToCloseModals() {
                 event.target.value = '';
             }
         }        
-        // Ghi dữ liệu Xin nghỉ thật vào Lịch
+        // (Nhân viên) Gửi đơn xin nghỉ
         function submitLeaveRequest() {
             const start = document.getElementById('leaveStart').value;
             const end = document.getElementById('leaveEnd').value;
@@ -7566,13 +7566,25 @@ function initSwipeToCloseModals() {
             if(!start || !end || !reason) return alert("Bạn cần nhập đủ Ngày Bắt Đầu, Ngày Kết Thúc và Lý do!");
             
             let reqs = state.currentUser.requests || [];
-            reqs.push({ id: Date.now().toString(), type: 'leave', startDate: start, endDate: end, reason: reason, status: 'pending', created_at: Date.now() });
+            reqs.push({ 
+                id: Date.now().toString(), 
+                type: 'leave', 
+                startDate: start, 
+                endDate: end, 
+                reason: reason, 
+                status: 'pending', 
+                created_at: Date.now() 
+            });
             state.currentUser.requests = reqs;
             
-            if(navigator.onLine) supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+            if(navigator.onLine) {
+                supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+            }
             
             showNotification("✅ Gửi Đơn Thành Công", "Đơn của bạn đang chờ Quản lý duyệt.");
-            document.getElementById('leaveStart').value = ''; document.getElementById('leaveEnd').value = ''; document.getElementById('leaveReason').value = '';
+            document.getElementById('leaveStart').value = ''; 
+            document.getElementById('leaveEnd').value = ''; 
+            document.getElementById('leaveReason').value = '';
         }
         // HÀM 1: ĐẨY LỊCH THỰC TẾ LÊN CLOUD (CHẤM CÔNG)
         async function syncAttendanceToCloud(ledger) {
