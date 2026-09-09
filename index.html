@@ -7424,6 +7424,84 @@ function initSwipeToCloseModals() {
                 }
             } catch (e) { console.error(e); }
         }
+        // =========================================================================
+        // JAVASCRIPT: BẢNG GIÁM SÁT DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG
+        // =========================================================================
+
+        function renderStaffManagement() {
+            // Mặc định lấy ngày hôm nay nếu Quản lý chưa chọn ngày
+            const dateInput = document.getElementById('managerAttDate');
+            if (!dateInput.value) {
+                const now = new Date();
+                dateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            }
+            const dateStr = dateInput.value;
+            
+            const tbodyAtt = document.getElementById('managerAttBody');
+            const tbodySched = document.getElementById('managerScheduleBody');
+            
+            let attHtml = '';
+            let schedHtml = '';
+            
+            // Lặp qua toàn bộ user trong hệ thống (state.users đã được đồng bộ từ Supabase)
+            state.users.forEach(u => {
+                if (u.role === 'owner') return; // Không hiển thị sếp trong danh sách
+                
+                // --- 1. XỬ LÝ DỮ LIỆU CHẤM CÔNG ---
+                const ledger = u.attendance || {};
+                const dayData = ledger[dateStr];
+                
+                let statusBadge = '<span class="bg-slate-100 text-slate-400 px-2 py-1 rounded text-[10px] font-bold border border-slate-200">Trống</span>';
+                let timeIn = '--:--';
+                let timeOut = '--:--';
+                let note = '';
+                
+                if (dayData) {
+                    if (dayData.status === 'worked') statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold shadow-sm">Đúng giờ</span>';
+                    else if (dayData.status === 'late') statusBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold shadow-sm">Đi muộn</span>';
+                    else if (dayData.status === 'leave') {
+                        statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold shadow-sm">Nghỉ phép</span>';
+                        note = dayData.reason || '';
+                    } else if (dayData.status === 'registered') {
+                        statusBadge = '<span class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] font-bold border border-blue-200">Có lịch làm</span>';
+                    }
+                    
+                    if(dayData.checkIn) timeIn = dayData.checkIn.split(' - ')[0];
+                    if(dayData.checkOut) timeOut = dayData.checkOut.split(' - ')[0];
+                }
+                
+                attHtml += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                        <td class="p-2.5 font-bold text-slate-700 text-xs sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100">${escapeHtml(u.name)}</td>
+                        <td class="p-2.5 text-center">${statusBadge}</td>
+                        <td class="p-2.5 text-center font-mono text-xs text-emerald-600 font-bold">${timeIn}</td>
+                        <td class="p-2.5 text-center font-mono text-xs text-amber-600 font-bold">${timeOut}</td>
+                        <td class="p-2.5 text-[10px] text-slate-500 font-medium whitespace-normal max-w-[150px] leading-tight">${escapeHtml(note)}</td>
+                    </tr>
+                `;
+
+                // --- 2. XỬ LÝ DỮ LIỆU LỊCH TUẦN ---
+                const sched = u.schedule || {};
+                let daysHtml = '';
+                for (let i = 0; i < 7; i++) {
+                    let s1 = sched[`shift1_${i}`] ? '<span class="bg-blue-100 text-blue-700 w-4 h-4 rounded inline-flex items-center justify-center text-[9px] font-extrabold shadow-sm border border-blue-200">1</span>' : '';
+                    let s2 = sched[`shift2_${i}`] ? '<span class="bg-indigo-100 text-indigo-700 w-4 h-4 rounded inline-flex items-center justify-center text-[9px] font-extrabold shadow-sm border border-indigo-200">2</span>' : '';
+                    
+                    let content = (s1 || s2) ? `${s1} ${s2}` : '<span class="text-slate-200 text-lg leading-none">-</span>';
+                    daysHtml += `<td class="p-2 border-r border-slate-100 text-center">${content}</td>`;
+                }
+                
+                schedHtml += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                        <td class="p-2.5 font-bold text-xs text-slate-700 border-r border-slate-100 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] text-left">${escapeHtml(u.name)}</td>
+                        ${daysHtml}
+                    </tr>
+                `;
+            });
+            
+            if (tbodyAtt) tbodyAtt.innerHTML = attHtml || '<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Chưa có dữ liệu nhân sự</td></tr>';
+            if (tbodySched) tbodySched.innerHTML = schedHtml || '<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">Chưa có dữ liệu nhân sự</td></tr>';
+        }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
