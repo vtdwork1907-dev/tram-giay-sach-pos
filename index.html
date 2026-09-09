@@ -6818,6 +6818,98 @@ function initSwipeToCloseModals() {
             // Ẩn bảng chi tiết khi đổi tháng
             hideDayDetail();
         }
+        let currentDetailDate = '';
+
+        function showDayDetail(dateStr) {
+            currentDetailDate = dateStr;
+            const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+            const dayData = ledger[dateStr];
+            
+            const [y, m, d] = dateStr.split('-');
+            document.getElementById('dayDetailTitle').innerText = `Ngày ${d}/${m}/${y}`;
+            
+            const contentBox = document.getElementById('dayDetailContent');
+            const explainSec = document.getElementById('dayExplanationSection');
+            const detailWrapper = document.getElementById('inlineDayDetail');
+            
+            document.getElementById('dayExplanationText').value = ''; // Reset ô chữ
+
+            let contentHtml = '';
+            let needExplanation = false;
+
+            const targetDate = new Date(y, parseInt(m) - 1, d);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            if (dayData) {
+                if (dayData.status === 'worked' || dayData.status === 'late') {
+                    const statusBadge = dayData.status === 'late' 
+                        ? '<span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-1 rounded font-bold">Đi muộn</span>' 
+                        : '<span class="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded font-bold">Đúng giờ</span>';
+                    
+                    contentHtml = `
+                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                            <span class="font-bold text-slate-600 text-xs">Trạng thái:</span> ${statusBadge}
+                        </div>
+                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 mt-2">
+                            <span class="font-bold text-slate-600 text-xs"><i class="fa-solid fa-right-to-bracket text-emerald-500 mr-1"></i> Giờ Đến:</span>
+                            <span class="font-mono font-bold text-slate-800 text-xs">${dayData.checkIn ? dayData.checkIn.split(' - ')[0] : '--:--:--'}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 mt-2">
+                            <span class="font-bold text-slate-600 text-xs"><i class="fa-solid fa-right-from-bracket text-amber-500 mr-1"></i> Giờ Về:</span>
+                            <span class="font-mono font-bold text-slate-800 text-xs">${dayData.checkOut ? dayData.checkOut.split(' - ')[0] : '--:--:--'}</span>
+                        </div>
+                    `;
+                } else if (dayData.status === 'leave') {
+                    contentHtml = `
+                        <div class="flex flex-col gap-1 p-3 bg-red-50 rounded-lg border border-red-100 text-center">
+                            <span class="font-bold text-red-700"><i class="fa-solid fa-bed"></i> Nghỉ phép</span>
+                            <span class="text-slate-600 text-[11px] italic">Lý do: ${escapeHtml(dayData.reason || 'Không có')}</span>
+                        </div>
+                    `;
+                    needExplanation = true; 
+                }
+            } else {
+                if (targetDate < today) {
+                    contentHtml = `
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 border-dashed text-center text-slate-500">
+                            <i class="fa-solid fa-circle-exclamation text-lg mb-1 block"></i>
+                            <span class="font-bold text-xs">Thiếu chấm công</span>
+                        </div>
+                    `;
+                    needExplanation = true; // Quá khứ mà trống thì cho phép giải trình
+                } else if (targetDate.getTime() === today.getTime()) {
+                    contentHtml = `<div class="p-3 bg-sky-50 rounded-lg text-center text-sky-700 font-bold text-xs"><i class="fa-solid fa-clock-rotate-left fa-spin-pulse mr-1"></i> Hôm nay chưa chốt ca</div>`;
+                } else {
+                    contentHtml = `<div class="p-3 bg-slate-50 rounded-lg text-center text-slate-400 font-bold text-xs">Chưa đến ngày này</div>`;
+                }
+            }
+
+            contentBox.innerHTML = contentHtml;
+            
+            if (needExplanation) {
+                explainSec.classList.remove('hidden');
+                explainSec.classList.add('flex');
+            } else {
+                explainSec.classList.add('hidden');
+                explainSec.classList.remove('flex');
+            }
+
+            detailWrapper.classList.remove('hidden');
+            detailWrapper.classList.add('flex');
+        }
+
+        function hideDayDetail() {
+            document.getElementById('inlineDayDetail').classList.add('hidden');
+            document.getElementById('inlineDayDetail').classList.remove('flex');
+        }
+
+        function submitDayExplanation() {
+            const text = document.getElementById('dayExplanationText').value.trim();
+            if (!text) return alert("Vui lòng nhập nội dung giải trình!");
+            showNotification("✅ Đã gửi giải trình", `Giải trình cho ngày ${currentDetailDate.split('-').reverse().join('/')} đã gửi tới Quản lý.`);
+            hideDayDetail();
+        }
         // Dữ liệu mô phỏng để test giao diện (Tạo random dấu chấm dựa vào ngày tháng)
         function fetchMockAttendanceData(month, year, daysInMonth) {
             let data = {};
