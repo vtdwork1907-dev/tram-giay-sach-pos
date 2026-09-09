@@ -5626,17 +5626,29 @@ function initSwipeToCloseModals() {
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
                     const { eventType, new: newRec } = payload;
                     if (eventType === 'UPDATE' || eventType === 'INSERT') {
-                        // 1. Cập nhật mảng người dùng tổng
                         const idx = state.users.findIndex(u => u.id === newRec.id);
                         if (idx !== -1) state.users[idx] = newRec; else state.users.push(newRec);
                         
-                        // 2. NẾU LÀ TÀI KHOẢN ĐANG ĐĂNG NHẬP -> Tự động nảy Lịch ngay lập tức không cần F5
-                        if (state.currentUser && newRec.username === state.currentUser.username && newRec.attendance) {
-                            localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
+                        // NẾU ĐÚNG TÀI KHOẢN ĐANG ĐĂNG NHẬP -> Tự động nảy Cả Dấu Chấm & Ô Tích 
+                        if (state.currentUser && newRec.username === state.currentUser.username) {
+                            let needsRender = false;
                             
-                            // Tự động load lại dấu chấm trên lịch
-                            if (typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
+                            // 1. Nếu có Lịch chấm công mới
+                            if (newRec.attendance) {
+                                localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
+                                needsRender = true;
+                            }
+                            
+                            // 2. Nếu có Bảng đăng ký ca mới
+                            if (newRec.schedule) {
+                                localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(newRec.schedule));
+                                needsRender = true;
+                            }
+                            
+                            // Render lại toàn bộ nếu đang mở tab Cá Nhân
+                            if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
                                 renderCalendarGrid(calMonth, calYear);
+                                renderWeeklySchedule(); 
                             }
                         }
                     }
