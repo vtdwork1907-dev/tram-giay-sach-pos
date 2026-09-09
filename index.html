@@ -6963,7 +6963,7 @@ function initSwipeToCloseModals() {
             // 3. Nếu rớt mạng hoàn toàn hoặc không tra được dữ liệu, trả về dòng chữ thông báo thay vì tọa độ
             return `Không thể tải dữ liệu tên đường`;
         }
-        // Hàm chính: Xử lý chụp ảnh chấm công
+        // 4. Xử lý chụp ảnh chấm công (CHỈ TÍNH CÔNG KHI ĐỦ 2 ẢNH ĐẾN & VỀ)
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -6971,14 +6971,19 @@ function initSwipeToCloseModals() {
             const loading = document.getElementById('globalLoading');
             if (loading) {
                 loading.style.display = 'flex';
-                loading.querySelector('.text-sm').innerText = 'Đang phân tích địa chỉ số nhà...';
+                loading.querySelector('.text-sm').innerText = 'Đang ghi nhận chấm công...';
             }
 
             try {
                 const localUrl = URL.createObjectURL(file);
                 const now = new Date();
                 const timeString = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
-                const dateString = now.toISOString().split('T')[0];
+                
+                // Lấy ngày chuẩn giờ Việt Nam
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const dateString = `${year}-${month}-${day}`;
                 
                 const prefix = type === 'in' ? 'tkIn' : 'tkOut';
                 const resultBox = document.getElementById(prefix + 'Result');
@@ -6993,29 +6998,69 @@ function initSwipeToCloseModals() {
                 const base64Photo = await compressImage(file, 200, 800); 
                 const storageKeyPrefix = type === 'in' ? 'TRAM_TK_IN' : 'TRAM_TK_OUT';
                 
+                // Lưu ảnh và thời gian của lần chụp này vào bộ nhớ thiết bị
                 localStorage.setItem(storageKeyPrefix + '_PHOTO', base64Photo);
                 localStorage.setItem(storageKeyPrefix + '_DATE', dateString);
                 localStorage.setItem(storageKeyPrefix + '_TIME', timeString);
 
+                // ==============================================================
+                // BƯỚC QUAN TRỌNG: KIỂM TRA ĐỦ 2 CA MỚI GHI NHẬN LỊCH
+                // ==============================================================
+                const inDate = localStorage.getItem('TRAM_TK_IN_DATE');
+                const outDate = localStorage.getItem('TRAM_TK_OUT_DATE');
+
+                // CHỈ KHI: Ngày Chấm Đến VÀ Chấm Về ĐỀU là ngày hôm nay -> Mới chốt công
+                if (inDate === dateString && outDate === dateString) {
+                    let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+                    
+                    // Lấy thời gian lúc "Chấm công đến" để tính đi muộn
+                    const inTimeStr = localStorage.getItem('TRAM_TK_IN_TIME') || timeString;
+                    let isLate = false;
+                    
+                    try {
+                        // Phân tích giờ từ chuỗi inTimeStr (VD: "08:20:00 - 09/09/2026")
+                        const timePart = inTimeStr.split(' - ')[0];
+                        const timeParts = timePart.split(':');
+                        const inHour = parseInt(timeParts[0], 10);
+                        const inMin = parseInt(timeParts[1], 10);
+
+                        // Tính đi muộn: Ca sáng sau 8h15, Ca chiều sau 13h15
+                        if ((inHour === 8 && inMin > 15) || (inHour > 8 && inHour < 12)) {
+                            isLate = true;
+                        } else if ((inHour === 13 && inMin > 15) || inHour > 13) {
+                            isLate = true;
+                        }
+                    } catch(e) {}
+
+                    // Ghi vào Lịch thực tế
+                    ledger[dateString] = { status: isLate ? 'late' : 'worked', checkIn: inTimeStr };
+                    localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+                    
+                    // Render lại khung Lịch để hiện ngay dấu chấm xanh & cập nhật Thống kê
+                    renderCalendarGrid(calMonth, calYear); 
+                }
+
+                // ==============================================================
+                // BƯỚC CHẠY NGẦM: QUÉT ĐỊA CHỈ (GPS)
+                // ==============================================================
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         async (position) => {
                             const lat = position.coords.latitude;
                             const lon = position.coords.longitude;
                             
-                            // Gọi hàm phụ trợ dịch tọa độ đã được bọc an toàn
                             const finalLocationText = await getAddressFromCoords(lat, lon);
 
                             document.getElementById(prefix + 'Location').innerText = finalLocationText;
                             localStorage.setItem(storageKeyPrefix + '_LOC', finalLocationText);
                             
                             showNotification("📸 Đã chụp ảnh", `Hoàn tất chấm công ${type === 'in' ? 'Đến' : 'Về'}.`);
-                            checkDailyTimekeeping(); 
+                            checkDailyTimekeeping(); // Hàm này sẽ bung thông báo "Đã hoàn thành 1 ca" nếu đủ 2 ảnh
                         },
                         (error) => {
-                            document.getElementById(prefix + 'Location').innerText = "Thiết bị chưa bật Vị trí (GPS).";
-                            localStorage.setItem(storageKeyPrefix + '_LOC', "Chưa bật GPS");
-                            showNotification("⚠️ Lưu ý", "Không định vị được do lỗi GPS. Ảnh vẫn được lưu!");
+                            document.getElementById(prefix + 'Location').innerText = "Không lấy được vị trí (Lỗi GPS).";
+                            localStorage.setItem(storageKeyPrefix + '_LOC', "Lỗi/Chưa bật GPS");
+                            showNotification("⚠️ Lưu ý", "Điện thoại không bật Vị trí nên không ra được tên đường.");
                             checkDailyTimekeeping();
                         },
                         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
