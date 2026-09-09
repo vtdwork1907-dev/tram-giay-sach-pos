@@ -5857,7 +5857,9 @@ function initSwipeToCloseModals() {
                             state.users.push(newRec);
                         }
                         
-                        // 2. LOGIC DÀNH CHO NHÂN VIÊN: Nảy lịch cá nhân nếu đó là dữ liệu của chính họ
+                        // ==========================================
+                        // LOGIC DÀNH CHO NHÂN VIÊN
+                        // ==========================================
                         if (state.currentUser && state.currentUser.role === 'staff' && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
                             let needsRender = false;
                             
@@ -5865,7 +5867,6 @@ function initSwipeToCloseModals() {
                                 localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
                                 needsRender = true;
                             }
-                            
                             if (newRec.schedule !== undefined && newRec.schedule !== null) {
                                 localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(newRec.schedule));
                                 needsRender = true;
@@ -5873,15 +5874,36 @@ function initSwipeToCloseModals() {
                             
                             if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
                                 renderCalendarGrid(calMonth, calYear);
-                                renderWeeklySchedule(); 
-                                showNotification("🔄 Tự động đồng bộ", "Dữ liệu lịch vừa được cập nhật!");
+                                showNotification("🔄 Tự động đồng bộ", "Đã cập nhật ảnh chấm công mới!");
+                                
+                                // TỰ ĐỘNG LÀM MỚI BẢNG CHI TIẾT ĐỂ ẢNH HIỆN RA NGAY LẬP TỨC
+                                const detailBox = document.getElementById('inlineDayDetail');
+                                if (detailBox && !detailBox.classList.contains('hidden') && typeof currentDetailDate !== 'undefined') {
+                                    showDayDetail(currentDetailDate);
+                                }
                             }
                         }
                         
-                        // 3. LOGIC DÀNH CHO QUẢN LÝ: Tự động tải lại bảng Mắt Thần
+                        // ==========================================
+                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG
+                        // ==========================================
                         if (state.currentUser && state.currentUser.role !== 'staff') {
                             if (typeof renderStaffManagement === 'function' && !document.getElementById('tab-staff').classList.contains('hidden')) {
                                 renderStaffManagement();
+                                
+                                // TỰ ĐỘNG LÀM MỚI BẢNG CHI TIẾT CỦA QUẢN LÝ NẾU ĐANG MỞ
+                                const mgrBox = document.getElementById('mgrDayDetailBox');
+                                if (mgrBox && !mgrBox.classList.contains('hidden') && typeof mgrCurrentStaffId !== 'undefined') {
+                                    renderMgrCalendar(); // Cập nhật lại tiền lương & giờ làm
+                                    
+                                    // Đọc ngày đang xem và load lại ảnh
+                                    const titleEl = document.querySelector('#mgrDayDetailBox h4');
+                                    if(titleEl) {
+                                        const dateText = titleEl.innerText.replace('Chi tiết: ', '');
+                                        const [d, m, y] = dateText.split('/');
+                                        if (y && m && d) showMgrDayDetail(`${y}-${m}-${d}`);
+                                    }
+                                }
                             }
                         }
                     }
