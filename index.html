@@ -6586,45 +6586,108 @@ function initSwipeToCloseModals() {
             }
         };
         // =========================================================================
-        // JAVASCRIPT: LOGIC TAB CÁ NHÂN (CHẤM CÔNG GPS, ĐĂNG KÝ, BÁO CÁO)
+        // JAVASCRIPT: LOGIC TAB CÁ NHÂN (CHUYỂN SUB-TAB, GPS SỐ NHÀ, ĐĂNG KÝ TUẦN)
         // =========================================================================
 
-        function checkDailyTimekeeping() {
-            const tkDate = localStorage.getItem('TRAM_TK_DATE');
-            const tkPhotoUrl = localStorage.getItem('TRAM_TK_PHOTO');
-            const tkLocation = localStorage.getItem('TRAM_TK_LOC');
-            const tkTime = localStorage.getItem('TRAM_TK_TIME');
+        // 1. Chuyển đổi giữa các Sub-tab trong mục Cá Nhân
+        function switchPersonalSubTab(tabId) {
+            // Đặt lại nút
+            const btns = ['timekeep', 'schedule', 'leave'];
+            btns.forEach(id => {
+                const btn = document.getElementById('btn-sub-' + id);
+                btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
+                document.getElementById('sub-' + id).classList.add('hidden');
+                document.getElementById('sub-' + id).classList.remove('flex');
+            });
             
-            const today = new Date().toISOString().split('T')[0];
-            const tkResultBox = document.getElementById('timekeepingResult');
-            
-            // Xóa sạch lịch sử nếu đã sang ngày mới (Nhân viên không xem được ảnh ngày hôm qua)
-            if (tkDate !== today) {
-                if(tkResultBox) {
-                    tkResultBox.classList.add('hidden');
-                    tkResultBox.classList.remove('flex');
-                }
-            } else if (tkPhotoUrl && tkResultBox) {
-                // Trong ngày hiện tại thì hiển thị lại ảnh cũ
-                document.getElementById('tkPhoto').src = tkPhotoUrl;
-                document.getElementById('tkLocation').innerText = tkLocation || "Không có dữ liệu GPS";
-                document.getElementById('tkTime').innerText = tkTime || "...";
-                tkResultBox.classList.remove('hidden');
-                tkResultBox.classList.add('flex');
+            // Active nút hiện tại
+            const activeBtn = document.getElementById('btn-sub-' + tabId);
+            activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
+            document.getElementById('sub-' + tabId).classList.remove('hidden');
+            document.getElementById('sub-' + tabId).classList.add('flex');
+        }
+
+        // 2. Render bảng lịch làm việc theo tuần
+        function renderWeeklySchedule() {
+            const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+            const tbody = document.getElementById('weeklyScheduleBody');
+            if(tbody) {
+                tbody.innerHTML = days.map((day, idx) => `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-2 border-r border-slate-200 font-bold text-slate-700 bg-slate-50">${day}</td>
+                        <td class="p-2 border-r border-slate-200">
+                            <input type="checkbox" id="shift1_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer">
+                        </td>
+                        <td class="p-2">
+                            <input type="checkbox" id="shift2_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer">
+                        </td>
+                    </tr>
+                `).join('');
             }
         }
 
-        // Tự động kiểm tra khi Tab này được bật lên
-        document.addEventListener('DOMContentLoaded', () => { setTimeout(checkDailyTimekeeping, 1000); });
+        // 3. Kiểm tra ảnh chấm công (Đến & Về) trong ngày
+        function checkDailyTimekeeping() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Xử lý Check-in (Đến)
+            const inDate = localStorage.getItem('TRAM_TK_IN_DATE');
+            let isCompletedIn = false;
+            if (inDate === today && localStorage.getItem('TRAM_TK_IN_PHOTO')) {
+                document.getElementById('tkInPhoto').src = localStorage.getItem('TRAM_TK_IN_PHOTO');
+                document.getElementById('tkInLocation').innerText = localStorage.getItem('TRAM_TK_IN_LOC');
+                document.getElementById('tkInTime').innerText = localStorage.getItem('TRAM_TK_IN_TIME');
+                document.getElementById('tkInResult').classList.remove('hidden');
+                document.getElementById('tkInResult').classList.add('flex');
+                isCompletedIn = true;
+            } else {
+                document.getElementById('tkInResult').classList.add('hidden');
+                document.getElementById('tkInResult').classList.remove('flex');
+            }
 
-        async function handleTimekeepingCam(event) {
+            // Xử lý Check-out (Về)
+            const outDate = localStorage.getItem('TRAM_TK_OUT_DATE');
+            let isCompletedOut = false;
+            if (outDate === today && localStorage.getItem('TRAM_TK_OUT_PHOTO')) {
+                document.getElementById('tkOutPhoto').src = localStorage.getItem('TRAM_TK_OUT_PHOTO');
+                document.getElementById('tkOutLocation').innerText = localStorage.getItem('TRAM_TK_OUT_LOC');
+                document.getElementById('tkOutTime').innerText = localStorage.getItem('TRAM_TK_OUT_TIME');
+                document.getElementById('tkOutResult').classList.remove('hidden');
+                document.getElementById('tkOutResult').classList.add('flex');
+                isCompletedOut = true;
+            } else {
+                document.getElementById('tkOutResult').classList.add('hidden');
+                document.getElementById('tkOutResult').classList.remove('flex');
+            }
+
+            // Kiểm tra đủ cả 2 ảnh
+            const successMsg = document.getElementById('tkSuccessMsg');
+            if (isCompletedIn && isCompletedOut) {
+                successMsg.classList.remove('hidden');
+                successMsg.classList.add('flex');
+            } else {
+                successMsg.classList.add('hidden');
+                successMsg.classList.remove('flex');
+            }
+        }
+
+        // Khởi tạo giao diện
+        document.addEventListener('DOMContentLoaded', () => { 
+            setTimeout(() => {
+                checkDailyTimekeeping();
+                renderWeeklySchedule();
+            }, 1000); 
+        });
+
+        // 4. Xử lý chụp ảnh và lấy Tên đường/Số nhà (Reverse Geocoding)
+        async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
             if (!file) return;
 
             const loading = document.getElementById('globalLoading');
             if (loading) {
                 loading.style.display = 'flex';
-                loading.querySelector('.text-sm').innerText = 'Đang xử lý ảnh & quét tọa độ GPS...';
+                loading.querySelector('.text-sm').innerText = 'Đang trích xuất ảnh và quét Tên Đường...';
             }
 
             try {
@@ -6633,53 +6696,82 @@ function initSwipeToCloseModals() {
                 const timeString = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
                 const dateString = now.toISOString().split('T')[0];
                 
-                const tkResultBox = document.getElementById('timekeepingResult');
-                document.getElementById('tkPhoto').src = localUrl;
-                document.getElementById('tkTime').innerText = timeString;
-                document.getElementById('tkLocation').innerText = "Đang quét vệ tinh lấy vị trí...";
+                // Cập nhật UI tạm thời
+                const prefix = type === 'in' ? 'tkIn' : 'tkOut';
+                const resultBox = document.getElementById(prefix + 'Result');
                 
-                tkResultBox.classList.remove('hidden');
-                tkResultBox.classList.add('flex');
+                document.getElementById(prefix + 'Photo').src = localUrl;
+                document.getElementById(prefix + 'Time').innerText = timeString;
+                document.getElementById(prefix + 'Location').innerText = "Đang kết nối vệ tinh GPS...";
+                
+                resultBox.classList.remove('hidden');
+                resultBox.classList.add('flex');
 
-                // Ép nén ảnh nhẹ đi để lưu trữ vào LocalStorage (Chống quá tải RAM máy nhân viên)
+                // Nén ảnh nhẹ cho LocalStorage
                 const base64Photo = await compressImage(file, 200, 800); 
-                localStorage.setItem('TRAM_TK_PHOTO', base64Photo);
-                localStorage.setItem('TRAM_TK_DATE', dateString);
-                localStorage.setItem('TRAM_TK_TIME', timeString);
+                const storageKeyPrefix = type === 'in' ? 'TRAM_TK_IN' : 'TRAM_TK_OUT';
+                
+                localStorage.setItem(storageKeyPrefix + '_PHOTO', base64Photo);
+                localStorage.setItem(storageKeyPrefix + '_DATE', dateString);
+                localStorage.setItem(storageKeyPrefix + '_TIME', timeString);
 
-                // Lấy GPS bằng Trình duyệt
+                // Lấy GPS & Chuyển thành Tên Số nhà, Phố
                 if (navigator.geolocation) {
+                    // Luôn ưu tiên độ chính xác cao nhất
                     navigator.geolocation.getCurrentPosition(
                         async (position) => {
                             const lat = position.coords.latitude;
                             const lon = position.coords.longitude;
-                            let locString = `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+                            let finalLocationText = `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
                             
                             try {
-                                // Tự động dịch Tọa độ vệ tinh sang Tên Đường, Phường, Thành phố
+                                // Gọi API Nominatim để lấy chi tiết Address
                                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
                                 const data = await res.json();
-                                if(data && data.display_name) {
-                                    locString = data.display_name;
+                                
+                                if(data && data.address) {
+                                    const ad = data.address;
+                                    let addressParts = [];
+                                    
+                                    // Tạo chuỗi số nhà và tên đường
+                                    let streetPart = [];
+                                    if(ad.house_number) streetPart.push(ad.house_number);
+                                    if(ad.road) streetPart.push(ad.road);
+                                    
+                                    if(streetPart.length > 0) addressParts.push(streetPart.join(' '));
+                                    
+                                    // Thêm Phường / Quận / Thành phố
+                                    if(ad.quarter || ad.suburb || ad.neighbourhood) addressParts.push(ad.quarter || ad.suburb || ad.neighbourhood);
+                                    if(ad.city_district || ad.county) addressParts.push(ad.city_district || ad.county);
+                                    if(ad.city || ad.state) addressParts.push(ad.city || ad.state);
+                                    
+                                    if (addressParts.length > 0) {
+                                        finalLocationText = addressParts.join(', ');
+                                    } else if (data.display_name) {
+                                        finalLocationText = data.display_name;
+                                    }
                                 }
                             } catch (e) {
-                                console.warn("Lỗi API OpenStreetMap", e);
+                                console.warn("Lỗi phân tích địa chỉ GPS", e);
                             }
 
-                            document.getElementById('tkLocation').innerText = locString;
-                            localStorage.setItem('TRAM_TK_LOC', locString);
+                            document.getElementById(prefix + 'Location').innerText = finalLocationText;
+                            localStorage.setItem(storageKeyPrefix + '_LOC', finalLocationText);
                             
-                            showNotification("📸 Chấm công thành công", "Hệ thống đã ghi nhận ảnh & Vị trí làm việc.");
+                            showNotification("📸 Đã chụp ảnh", `Hoàn tất chấm công ${type === 'in' ? 'Đến' : 'Về'}.`);
+                            checkDailyTimekeeping(); // Check xem đủ 2 ca chưa
                         },
                         (error) => {
-                            document.getElementById('tkLocation').innerText = "Lỗi: Không được cấp quyền định vị GPS.";
-                            localStorage.setItem('TRAM_TK_LOC', "Không có quyền GPS");
-                            showNotification("⚠️ Cảnh báo", "Bạn chưa bật vị trí, ảnh vẫn được lưu nhưng sẽ không có địa chỉ.");
+                            document.getElementById(prefix + 'Location').innerText = "Trình duyệt chặn GPS hoặc thiết bị chưa bật Vị trí.";
+                            localStorage.setItem(storageKeyPrefix + '_LOC', "Không có GPS");
+                            showNotification("⚠️ Lưu ý", "Không lấy được tên đường do lỗi GPS. Ảnh vẫn được lưu!");
+                            checkDailyTimekeeping();
                         },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                     );
                 } else {
-                    document.getElementById('tkLocation').innerText = "Thiết bị không hỗ trợ định vị.";
+                    document.getElementById(prefix + 'Location').innerText = "Trình duyệt không hỗ trợ định vị.";
+                    checkDailyTimekeeping();
                 }
             } catch (err) {
                 alert("Lỗi quá trình chụp: " + err.message);
@@ -6689,15 +6781,27 @@ function initSwipeToCloseModals() {
             }
         }
 
+        // 5. Xử lý Đăng ký lịch làm theo tuần
         function submitSchedule() {
-            const date = document.getElementById('tkScheduleDate').value;
-            const shift = document.getElementById('tkScheduleShift').value;
-            if(!date) return alert("Vui lòng chọn ngày trước khi đăng ký!");
+            let totalChecked = 0;
+            // Kiểm tra xem có ca nào được chọn không (7 ngày x 2 ca = 14 checkboxes)
+            for(let i = 0; i < 7; i++) {
+                if(document.getElementById(`shift1_${i}`).checked) totalChecked++;
+                if(document.getElementById(`shift2_${i}`).checked) totalChecked++;
+            }
             
-            showNotification("✅ Ghi nhận Lịch làm", `Ca làm: ${shift}\nNgày: ${date.split('-').reverse().join('/')}`);
-            document.getElementById('tkScheduleDate').value = '';
+            if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
+            
+            showNotification("✅ Đăng ký thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm trong tuần tới. Quản lý sẽ xếp lịch và thông báo!`);
+            
+            // Xóa checked đi cho gọn gàng sau khi gửi
+            for(let i = 0; i < 7; i++) {
+                document.getElementById(`shift1_${i}`).checked = false;
+                document.getElementById(`shift2_${i}`).checked = false;
+            }
         }
 
+        // 6. Xử lý Xin nghỉ phép
         function submitLeaveRequest() {
             const start = document.getElementById('leaveStart').value;
             const end = document.getElementById('leaveEnd').value;
@@ -6709,14 +6813,6 @@ function initSwipeToCloseModals() {
             document.getElementById('leaveStart').value = '';
             document.getElementById('leaveEnd').value = '';
             document.getElementById('leaveReason').value = '';
-        }
-
-        function submitWorkReport() {
-            const report = document.getElementById('tkWorkReport').value.trim();
-            if(!report) return alert("Nội dung báo cáo trống!");
-            
-            showNotification("✅ Báo cáo thành công", "Cảm ơn bạn, báo cáo khối lượng ngày đã được ghi vào hệ thống.");
-            document.getElementById('tkWorkReport').value = '';
         }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
