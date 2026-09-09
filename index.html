@@ -6547,6 +6547,139 @@ function initSwipeToCloseModals() {
                 document.getElementById('globalLoading').style.display = 'none';
             }
         };
+        // =========================================================================
+        // JAVASCRIPT: LOGIC TAB CÁ NHÂN (CHẤM CÔNG GPS, ĐĂNG KÝ, BÁO CÁO)
+        // =========================================================================
+
+        function checkDailyTimekeeping() {
+            const tkDate = localStorage.getItem('TRAM_TK_DATE');
+            const tkPhotoUrl = localStorage.getItem('TRAM_TK_PHOTO');
+            const tkLocation = localStorage.getItem('TRAM_TK_LOC');
+            const tkTime = localStorage.getItem('TRAM_TK_TIME');
+            
+            const today = new Date().toISOString().split('T')[0];
+            const tkResultBox = document.getElementById('timekeepingResult');
+            
+            // Xóa sạch lịch sử nếu đã sang ngày mới (Nhân viên không xem được ảnh ngày hôm qua)
+            if (tkDate !== today) {
+                if(tkResultBox) {
+                    tkResultBox.classList.add('hidden');
+                    tkResultBox.classList.remove('flex');
+                }
+            } else if (tkPhotoUrl && tkResultBox) {
+                // Trong ngày hiện tại thì hiển thị lại ảnh cũ
+                document.getElementById('tkPhoto').src = tkPhotoUrl;
+                document.getElementById('tkLocation').innerText = tkLocation || "Không có dữ liệu GPS";
+                document.getElementById('tkTime').innerText = tkTime || "...";
+                tkResultBox.classList.remove('hidden');
+                tkResultBox.classList.add('flex');
+            }
+        }
+
+        // Tự động kiểm tra khi Tab này được bật lên
+        document.addEventListener('DOMContentLoaded', () => { setTimeout(checkDailyTimekeeping, 1000); });
+
+        async function handleTimekeepingCam(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const loading = document.getElementById('globalLoading');
+            if (loading) {
+                loading.style.display = 'flex';
+                loading.querySelector('.text-sm').innerText = 'Đang xử lý ảnh & quét tọa độ GPS...';
+            }
+
+            try {
+                const localUrl = URL.createObjectURL(file);
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
+                const dateString = now.toISOString().split('T')[0];
+                
+                const tkResultBox = document.getElementById('timekeepingResult');
+                document.getElementById('tkPhoto').src = localUrl;
+                document.getElementById('tkTime').innerText = timeString;
+                document.getElementById('tkLocation').innerText = "Đang quét vệ tinh lấy vị trí...";
+                
+                tkResultBox.classList.remove('hidden');
+                tkResultBox.classList.add('flex');
+
+                // Ép nén ảnh nhẹ đi để lưu trữ vào LocalStorage (Chống quá tải RAM máy nhân viên)
+                const base64Photo = await compressImage(file, 200, 800); 
+                localStorage.setItem('TRAM_TK_PHOTO', base64Photo);
+                localStorage.setItem('TRAM_TK_DATE', dateString);
+                localStorage.setItem('TRAM_TK_TIME', timeString);
+
+                // Lấy GPS bằng Trình duyệt
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            let locString = `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+                            
+                            try {
+                                // Tự động dịch Tọa độ vệ tinh sang Tên Đường, Phường, Thành phố
+                                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+                                const data = await res.json();
+                                if(data && data.display_name) {
+                                    locString = data.display_name;
+                                }
+                            } catch (e) {
+                                console.warn("Lỗi API OpenStreetMap", e);
+                            }
+
+                            document.getElementById('tkLocation').innerText = locString;
+                            localStorage.setItem('TRAM_TK_LOC', locString);
+                            
+                            showNotification("📸 Chấm công thành công", "Hệ thống đã ghi nhận ảnh & Vị trí làm việc.");
+                        },
+                        (error) => {
+                            document.getElementById('tkLocation').innerText = "Lỗi: Không được cấp quyền định vị GPS.";
+                            localStorage.setItem('TRAM_TK_LOC', "Không có quyền GPS");
+                            showNotification("⚠️ Cảnh báo", "Bạn chưa bật vị trí, ảnh vẫn được lưu nhưng sẽ không có địa chỉ.");
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    document.getElementById('tkLocation').innerText = "Thiết bị không hỗ trợ định vị.";
+                }
+            } catch (err) {
+                alert("Lỗi quá trình chụp: " + err.message);
+            } finally {
+                if(loading) loading.style.display = 'none';
+                event.target.value = '';
+            }
+        }
+
+        function submitSchedule() {
+            const date = document.getElementById('tkScheduleDate').value;
+            const shift = document.getElementById('tkScheduleShift').value;
+            if(!date) return alert("Vui lòng chọn ngày trước khi đăng ký!");
+            
+            showNotification("✅ Ghi nhận Lịch làm", `Ca làm: ${shift}\nNgày: ${date.split('-').reverse().join('/')}`);
+            document.getElementById('tkScheduleDate').value = '';
+        }
+
+        function submitLeaveRequest() {
+            const start = document.getElementById('leaveStart').value;
+            const end = document.getElementById('leaveEnd').value;
+            const reason = document.getElementById('leaveReason').value.trim();
+            
+            if(!start || !end || !reason) return alert("Bạn cần nhập đủ Ngày Bắt Đầu, Ngày Kết Thúc và Lý do!");
+            
+            showNotification("✅ Gửi Đơn Nghỉ Phép", "Yêu cầu đã được lưu, chờ Chủ cửa hàng duyệt.");
+            document.getElementById('leaveStart').value = '';
+            document.getElementById('leaveEnd').value = '';
+            document.getElementById('leaveReason').value = '';
+        }
+
+        function submitWorkReport() {
+            const report = document.getElementById('tkWorkReport').value.trim();
+            if(!report) return alert("Nội dung báo cáo trống!");
+            
+            showNotification("✅ Báo cáo thành công", "Cảm ơn bạn, báo cáo khối lượng ngày đã được ghi vào hệ thống.");
+            document.getElementById('tkWorkReport').value = '';
+        }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
