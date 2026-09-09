@@ -7643,7 +7643,8 @@ function initSwipeToCloseModals() {
                 const view = document.getElementById('mgr-view-' + id);
                 if (view) view.classList.add('hidden');
             });
-            document.getElementById('mgr-view-detail').classList.add('hidden');
+            const detailView = document.getElementById('mgr-view-detail');
+            if (detailView) detailView.classList.add('hidden');
             
             const activeBtn = document.getElementById('btn-mgr-' + tabId);
             if (activeBtn) activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative";
@@ -7661,6 +7662,43 @@ function initSwipeToCloseModals() {
         function initStaffManagement() {
             switchMgrSubTab('list');
             updatePendingBadge();
+        }
+
+        // 2. Render Danh sách Nhân Viên (Không bị trắng trơn, lọc bỏ chủ cửa hàng)
+        function renderMgrStaffList() {
+            const grid = document.getElementById('mgrStaffListGrid');
+            if (!grid) return;
+
+            const staffMembers = state.users.filter(u => {
+                const r = (u.role || '').toLowerCase();
+                return r !== 'owner'; // Hiện tất cả trừ chủ cửa hàng
+            });
+            
+            if (staffMembers.length === 0) {
+                grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-500 italic bg-white rounded-2xl border border-slate-200 shadow-sm">Chưa có tài khoản nhân viên nào trong hệ thống.</div>';
+                return;
+            }
+
+            grid.innerHTML = staffMembers.map(u => {
+                const reqs = Array.isArray(u.requests) ? u.requests : (typeof u.requests === 'string' ? JSON.parse(u.requests) : []);
+                const pending = reqs.filter(r => r.status === 'pending').length;
+                let badgeHtml = pending > 0 ? `<span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse">${pending}</span>` : '';
+                
+                const displayName = u.name || u.username || 'Nhân viên';
+                const displayUsername = u.username || 'Chưa có username';
+                const initial = displayName.charAt(0).toUpperCase();
+
+                return `
+                <div onclick="openMgrStaffDetail('${u.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-sky-400 hover:shadow-md transition active:scale-95 relative flex items-center gap-3">
+                    ${badgeHtml}
+                    <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center text-xl font-bold uppercase shrink-0">${initial}</div>
+                    <div class="flex flex-col min-w-0 flex-1">
+                        <span class="font-bold text-slate-800 text-sm truncate">${escapeHtml(displayName)}</span>
+                        <span class="text-[10px] text-slate-500 font-mono truncate">${escapeHtml(displayUsername)}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                </div>`;
+            }).join('');
         }
 
         function updatePendingBadge() {
