@@ -7238,23 +7238,23 @@ function initSwipeToCloseModals() {
         }
 
        // (Nhân viên) Gửi giải trình ngày vắng/muộn
-        function submitDayExplanation() {
+        async function submitDayExplanation() {
             const text = document.getElementById('dayExplanationText').value.trim();
             if (!text) return alert("Vui lòng nhập nội dung giải trình!");
             
-            let reqs = state.currentUser.requests || [];
-            reqs.push({ 
-                id: Date.now().toString(), 
-                type: 'explanation', 
-                targetDate: currentDetailDate, 
-                reason: text, 
-                status: 'pending', 
-                created_at: Date.now() 
-            });
+            let reqs = state.currentUser.requests;
+            if (typeof reqs === 'string') reqs = JSON.parse(reqs);
+            if (!Array.isArray(reqs)) reqs = [];
+
+            reqs.push({ id: Date.now().toString(), type: 'explanation', targetDate: currentDetailDate, reason: text, status: 'pending', created_at: Date.now() });
             state.currentUser.requests = reqs;
             
+            const idx = state.users.findIndex(u => u.username === state.currentUser.username);
+            if(idx !== -1) state.users[idx].requests = reqs;
+
             if(navigator.onLine) {
-                supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+                const { error } = await supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+                if (error) return alert("Lỗi khi gửi giải trình: " + error.message);
             }
 
             showNotification("✅ Đã gửi giải trình", "Chờ Quản lý duyệt để được tính công.");
