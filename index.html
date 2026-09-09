@@ -7315,12 +7315,20 @@ function initSwipeToCloseModals() {
             } catch (e) { console.error(e); }
         }
 
-        // HÀM 2: ĐẨY LỊCH TUẦN LÊN CLOUD (CÁC Ô TÍCH)
+        // HÀM 2: ĐẨY LỊCH TUẦN LÊN CLOUD (CÓ BÁO LỖI NẾU BỊ CHẶN)
         async function syncScheduleToCloud(scheduleData) {
             if (!navigator.onLine || !state.currentUser) return;
             try {
-                await supabaseClient.from('users').update({ schedule: scheduleData }).eq('username', state.currentUser.username);
-            } catch (e) { console.error(e); }
+                const { error } = await supabaseClient.from('users').update({ schedule: scheduleData }).eq('username', state.currentUser.username);
+                
+                // NẾU BỊ SUPABASE CHẶN -> HIỆN THÔNG BÁO ĐỎ CẢNH BÁO
+                if (error) {
+                    showNotification("⚠️ Lỗi Máy Chủ", "Không thể lưu Lịch Tuần lên mây: " + error.message);
+                    console.error("Lỗi Supabase Schedule:", error);
+                }
+            } catch (e) { 
+                console.error("Lỗi mạng khi lưu lịch:", e); 
+            }
         }
 
         // HÀM 3: KÉO TOÀN BỘ DỮ LIỆU CÁ NHÂN TỪ CLOUD VỀ
