@@ -6737,11 +6737,11 @@ function initSwipeToCloseModals() {
             }
         }
 
+        // TỰ ĐỘNG LƯU CHẤM VÀNG KHI NHÂN VIÊN GỬI ĐĂNG KÝ
         function submitSchedule() {
             let totalChecked = 0;
             let scheduleData = {};
             
-            // Tính ra các ngày cụ thể của Tuần hiện tại (Thứ 2 đến Chủ nhật)
             const curr = new Date();
             const dayOfWeek = curr.getDay() === 0 ? 6 : curr.getDay() - 1; 
             const monday = new Date(curr);
@@ -6756,19 +6756,16 @@ function initSwipeToCloseModals() {
                 scheduleData[`shift1_${i}`] = shift1;
                 scheduleData[`shift2_${i}`] = shift2;
                 
-                // Quy đổi vị trí i sang ngày tháng năm thật
                 const targetDate = new Date(monday);
                 targetDate.setDate(monday.getDate() + i);
                 const dStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
                 if(shift1 || shift2) {
                     totalChecked++;
-                    // Ghi nhận là "Có lịch làm" (registered) nếu hôm đó chưa chấm công
                     if (!ledger[dStr] || (ledger[dStr].status !== 'worked' && ledger[dStr].status !== 'late')) {
                         ledger[dStr] = { status: 'registered' };
                     }
                 } else {
-                    // Nếu nhân viên bỏ tích, xóa chấm vàng
                     if (ledger[dStr] && ledger[dStr].status === 'registered') {
                         delete ledger[dStr];
                     }
@@ -6780,10 +6777,11 @@ function initSwipeToCloseModals() {
             localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
             localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
             
-            // Thêm dòng này để đẩy lên Cloud:
+            // ĐẨY ĐỒNG THỜI CẢ 2 DỮ LIỆU LÊN MÂY
             syncAttendanceToCloud(ledger);
+            syncScheduleToCloud(scheduleData);
             
-            renderCalendarGrid(calMonth, calYear);
+            renderCalendarGrid(calMonth, calYear); 
             
             const btn = document.getElementById('btnSubmitSchedule');
             const originalText = btn.innerHTML;
@@ -6797,7 +6795,7 @@ function initSwipeToCloseModals() {
                 btn.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-700');
             }, 2000);
 
-            showNotification("✅ Ghi nhận thành công", `Đã gửi lịch cho ${totalChecked} ca làm. Lịch cá nhân đã xuất hiện chấm vàng!`);
+            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm. Lịch đã đồng bộ lên hệ thống!`);
         }
 
 
