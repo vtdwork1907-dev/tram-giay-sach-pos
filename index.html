@@ -5700,7 +5700,7 @@ function initSwipeToCloseModals() {
             
             if (navigator.onLine) { processUploadQueue(); syncPendingData(); }
 
-            supabaseClient.channel('tramgiaysach_realtime')
+           supabaseClient.channel('tramgiaysach_realtime')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
                     const { eventType, new: newRec, old: oldRec } = payload;
                     if (eventType === 'INSERT' || eventType === 'UPDATE') { 
@@ -5747,32 +5747,43 @@ function initSwipeToCloseModals() {
                     const { eventType, new: newRec } = payload;
                     if (eventType === 'UPDATE' || eventType === 'INSERT') {
                         
-                        // 1. So khớp ID hoặc Username (Chống lỗi sai kiểu dữ liệu Text/Number)
-                        if (state.currentUser && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
+                        // 1. Cập nhật dữ liệu tổng vào bộ nhớ
+                        const idx = state.users.findIndex(u => u.id === newRec.id);
+                        if (idx !== -1) {
+                            state.users[idx] = { ...state.users[idx], ...newRec };
+                        } else {
+                            state.users.push(newRec);
+                        }
+                        
+                        // 2. LOGIC DÀNH CHO NHÂN VIÊN: Nảy lịch cá nhân nếu đó là dữ liệu của chính họ
+                        if (state.currentUser && state.currentUser.role === 'staff' && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
                             let needsRender = false;
                             
-                            // 2. Kéo dữ liệu Chấm công
                             if (newRec.attendance !== undefined && newRec.attendance !== null) {
                                 localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
                                 needsRender = true;
                             }
                             
-                            // 3. Kéo dữ liệu Lịch làm
                             if (newRec.schedule !== undefined && newRec.schedule !== null) {
                                 localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(newRec.schedule));
                                 needsRender = true;
                             }
                             
-                            // 4. Nếu đang mở tab Cá nhân -> Tự động nảy Lịch & bung thông báo
                             if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
                                 renderCalendarGrid(calMonth, calYear);
                                 renderWeeklySchedule(); 
-                                showNotification("🔄 Tự động đồng bộ", "Dữ liệu lịch vừa được cập nhật từ thiết bị khác!");
+                                showNotification("🔄 Tự động đồng bộ", "Dữ liệu lịch vừa được cập nhật!");
+                            }
+                        }
+                        
+                        // 3. LOGIC DÀNH CHO QUẢN LÝ: Tự động tải lại bảng Mắt Thần
+                        if (state.currentUser && state.currentUser.role !== 'staff') {
+                            if (typeof renderStaffManagement === 'function' && !document.getElementById('tab-staff').classList.contains('hidden')) {
+                                renderStaffManagement();
                             }
                         }
                     }
-                })
-                .subscribe();
+                }).subscribe();
             });
         
         window.addEventListener('resize', adjustPOSLayout);
