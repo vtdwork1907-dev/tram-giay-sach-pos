@@ -3040,10 +3040,18 @@ function mapOrderDbToJs(db) {
     }
 }
 
-        function changeRole(r) {
+       function changeRole(r) {
             state.role = r; 
+            
+            // role-restricted: Ẩn với nhân viên, Hiện với Quản lý & Chủ
             document.querySelectorAll('.role-restricted').forEach(el => el.style.display = (r === 'staff') ? 'none' : 'flex');
+            
+            // owner-only: Chỉ Chủ mới thấy
             document.querySelectorAll('.owner-only').forEach(el => el.style.display = (r !== 'owner') ? 'none' : 'flex');
+            
+            // staff-only: CHỈ Nhân viên mới thấy (Dùng để giấu tab "Cá Nhân" đối với Chủ)
+            document.querySelectorAll('.staff-only').forEach(el => el.style.display = (r !== 'staff') ? 'none' : 'flex');
+            
             restoreLastTab();
         }
 
