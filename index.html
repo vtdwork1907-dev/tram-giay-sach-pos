@@ -7659,18 +7659,30 @@ function initSwipeToCloseModals() {
             if (tabId === 'approve') renderMgrApprovals();
         }
 
-        // Khởi chạy khi bấm vào tab Nhân Viên (Đã tối ưu chờ dữ liệu từ mây)
-        function initStaffManagement() {
+       // Khởi chạy khi bấm vào tab Nhân Viên (Chủ động gọi dữ liệu từ mây, không bao giờ bị trắng)
+        async function initStaffManagement() {
             switchMgrSubTab('list');
             updatePendingBadge();
             
-            // Kiểm tra nếu dữ liệu user chưa về kịp thì hiển thị chữ đang tải
-            if (!state.users || state.users.length === 0) {
-                const grid = document.getElementById('mgrStaffListGrid');
-                if (grid) {
-                    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 italic bg-white rounded-2xl border border-slate-200 shadow-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu từ đám mây...</div>';
+            const grid = document.getElementById('mgrStaffListGrid');
+            if (grid) {
+                grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 italic bg-white rounded-2xl border border-slate-200 shadow-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu nhân viên...</div>';
+            }
+
+            // CHỦ ĐỘNG KÉO DỮ LIỆU TỪ SUPABASE NGAY KHI BẤM VÀO TAB
+            if (navigator.onLine && typeof supabaseClient !== 'undefined') {
+                try {
+                    const { data, error } = await supabaseClient.from('users').select('*');
+                    if (data && Array.isArray(data)) {
+                        state.users = data; // Cập nhật dữ liệu mới nhất
+                    }
+                } catch (e) {
+                    console.error("Lỗi tải danh sách nhân viên:", e);
                 }
             }
+
+            // Vẽ danh sách ngay lập tức
+            renderMgrStaffList();
         }
 
         // 2. Render Danh sách Nhân Viên (Chỉ lấy tài khoản staff và tự động hiển thị khi data về)
