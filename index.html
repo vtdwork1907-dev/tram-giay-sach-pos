@@ -6679,64 +6679,55 @@ function initSwipeToCloseModals() {
             }, 1000); 
         });
 
-        // Hàm phụ trợ: Dịch tọa độ sang tên đường một cách an toàn (Chống lỗi CORS trên điện thoại)
+        // Hàm phụ trợ: Dịch tọa độ sang Tên Đường, Số Nhà, Phường, Quận, Thành Phố
         async function getAddressFromCoords(lat, lon) {
             try {
-                // ƯU TIÊN 1: OpenStreetMap (Truyền thẳng ngôn ngữ vào URL, KHÔNG dùng Headers để chống lỗi CORS)
-                const url1 = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=vi`;
+                // 1. Dùng OpenStreetMap API: Thêm zoom=18 để ÉP hệ thống quét tới cấp độ chi tiết nhất (Số nhà/Đường/Ngõ)
+                const url1 = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=vi`;
                 const res1 = await fetch(url1);
                 
                 if (res1.ok) {
                     const data = await res1.json();
-                    if (data && data.address) {
-                        const ad = data.address;
-                        let addressParts = [];
-                        
-                        // Ghép Số nhà + Tên đường
-                        let street = ad.road || ad.pedestrian || ad.street;
-                        let houseNum = ad.house_number || ad.street_number;
-                        if (street) addressParts.push(houseNum ? `${houseNum} ${street}` : street);
-                        
-                        // Ghép Phường/Xã
-                        let ward = ad.suburb || ad.neighbourhood || ad.quarter || ad.residential;
-                        if (ward) addressParts.push(ward);
-                        
-                        // Ghép Quận/Huyện
-                        let district = ad.city_district || ad.district || ad.county;
-                        if (district) addressParts.push(district);
-                        
-                        // Ghép Thành phố/Tỉnh
-                        let city = ad.city || ad.state || ad.province;
-                        if (city) addressParts.push(city);
-                        
-                        if (addressParts.length > 0) return addressParts.join(', ');
-                        if (data.display_name) return data.display_name.split(',').slice(0, 4).join(',').trim();
+                    
+                    // Lấy chuỗi địa chỉ chi tiết và đầy đủ nhất do vệ tinh trả về
+                    if (data && data.display_name) {
+                        // Tách chuỗi thành các phần (ngăn cách bằng dấu phẩy)
+                        let parts = data.display_name.split(',').map(p => p.trim());
+
+                        // Lọc bỏ mã bưu điện (các số dài 5-6 chữ số) và chữ "Việt Nam" để địa chỉ tự nhiên như thật
+                        let refinedAddress = parts.filter(p => !/^\d{5,6}$/.test(p) && p.toLowerCase() !== 'việt nam');
+
+                        if (refinedAddress.length > 0) {
+                            return refinedAddress.join(', '); // Trả về VD: "Số 80, Tôn Đức Thắng, Phường Quốc Tử Giám, Quận Đống Đa, Hà Nội"
+                        }
                     }
                 }
             } catch (e) {
-                console.warn("API Bản đồ 1 bị chặn:", e);
+                console.warn("API Bản đồ 1 bị lỗi mạng:", e);
             }
 
             try {
-                // ƯU TIÊN 2 (DỰ PHÒNG): BigDataCloud (Chuyên trị các trình duyệt khó tính)
+                // 2. ƯU TIÊN 2 (DỰ PHÒNG): Dùng BigDataCloud nếu API 1 bị quá tải
                 const url2 = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=vi`;
                 const res2 = await fetch(url2);
                 
                 if (res2.ok) {
                     const data2 = await res2.json();
                     let locParts = [];
-                    if (data2.locality) locParts.push(data2.locality);
-                    if (data2.city || data2.principalSubdivision) locParts.push(data2.city || data2.principalSubdivision);
-                    if (locParts.length > 0) return locParts.join(', ');
+                    if (data2.locality) locParts.push(data2.locality); // Phường / Quận
+                    if (data2.city || data2.principalSubdivision) locParts.push(data2.city || data2.principalSubdivision); // Tỉnh / TP
+                    
+                    if (locParts.length > 0) {
+                        return locParts.join(', ') + ` (Tọa độ: ${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+                    }
                 }
             } catch (e) {
-                console.warn("API Bản đồ 2 bị chặn:", e);
+                console.warn("API Bản đồ 2 bị lỗi mạng:", e);
             }
 
-            // Nếu rớt mạng hoặc bị chặn toàn bộ API, trả về tọa độ nhưng báo rõ "Khu vực không xác định"
-            return `Khu vực không có tên trên bản đồ (Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)})`;
+            // 3. Nếu rớt mạng hoàn toàn, trả về tọa độ 
+            return `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
         }
-
         // Hàm chính: Xử lý chụp ảnh chấm công
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
