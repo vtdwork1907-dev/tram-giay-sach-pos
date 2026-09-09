@@ -6961,87 +6961,70 @@ function initSwipeToCloseModals() {
         }
 
         // (Staff) Nộp lịch tuần, lưu chấm vàng và gửi thông báo báo Quản lý duyệt
-        function submitSchedule() {
+        async function submitSchedule() {
             let totalChecked = 0;
             let scheduleData = {};
-            
-            // Tính ra các ngày cụ thể của Tuần hiện tại (Thứ 2 đến Chủ nhật)
             const curr = new Date();
             const dayOfWeek = curr.getDay() === 0 ? 6 : curr.getDay() - 1; 
             const monday = new Date(curr);
             monday.setDate(curr.getDate() - dayOfWeek);
 
-            // Lấy sổ dữ liệu chấm công từ bộ nhớ máy
             let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
 
-            // Lặp qua 7 ngày trong bảng Đăng ký
             for(let i = 0; i < 7; i++) {
                 const shift1 = document.getElementById(`shift1_${i}`).checked;
                 const shift2 = document.getElementById(`shift2_${i}`).checked;
-                
-                // Ghi nhận trạng thái Tích của 2 ca
                 scheduleData[`shift1_${i}`] = shift1;
                 scheduleData[`shift2_${i}`] = shift2;
                 
-                // Quy đổi vị trí hàng (i) sang ngày/tháng/năm thật
                 const targetDate = new Date(monday);
                 targetDate.setDate(monday.getDate() + i);
                 const dStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
                 if(shift1 || shift2) {
                     totalChecked++;
-                    // Nếu nhân viên có tích lịch, và ngày đó chưa đi làm/chưa đi muộn -> Ghi nhận là "Có lịch đăng ký" (registered -> chấm vàng)
                     if (!ledger[dStr] || (ledger[dStr].status !== 'worked' && ledger[dStr].status !== 'late')) {
                         ledger[dStr] = { status: 'registered' };
                     }
                 } else {
-                    // Nếu nhân viên bỏ tích, xóa trạng thái "Có lịch đăng ký"
-                    if (ledger[dStr] && ledger[dStr].status === 'registered') {
-                        delete ledger[dStr];
-                    }
+                    if (ledger[dStr] && ledger[dStr].status === 'registered') delete ledger[dStr];
                 }
             }
             
             if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
             
-            // 1. LƯU DỮ LIỆU LÊN BỘ NHỚ ĐIỆN THOẠI / MÁY TÍNH
             localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
             localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
-            
-            // 2. TẠO THÔNG BÁO CHO QUẢN LÝ (Gửi vào tab Phê Duyệt)
-            let reqs = state.currentUser.requests || [];
-            reqs.push({ 
-                id: Date.now().toString(), 
-                type: 'schedule', 
-                status: 'pending', 
-                created_at: Date.now() 
-            });
+
+            let reqs = state.currentUser.requests;
+            if (typeof reqs === 'string') reqs = JSON.parse(reqs);
+            if (!Array.isArray(reqs)) reqs = [];
+
+            reqs.push({ id: Date.now().toString(), type: 'schedule', status: 'pending', created_at: Date.now() });
             state.currentUser.requests = reqs;
 
-            // 3. ĐẨY TOÀN BỘ DỮ LIỆU LÊN ĐÁM MÂY (SUPABASE)
+            const idx = state.users.findIndex(u => u.username === state.currentUser.username);
+            if(idx !== -1) state.users[idx].requests = reqs;
+
             syncAttendanceToCloud(ledger);
             syncScheduleToCloud(scheduleData);
             if(navigator.onLine) {
-                supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+                await supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
             }
             
-            // 4. VẼ LẠI LỊCH (ĐỂ HIỆN CHẤM VÀNG)
             renderCalendarGrid(calMonth, calYear); 
-            
-            // 5. HIỆU ỨNG NÚT BẤM BÁO THÀNH CÔNG
             const btn = document.getElementById('btnSubmitSchedule');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Gửi Đăng Ký';
             btn.classList.replace('bg-blue-600', 'bg-emerald-500');
             btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-600');
-            
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.classList.replace('bg-emerald-500', 'bg-blue-600');
                 btn.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-700');
             }, 2000);
 
-            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm. Quản lý đã nhận được thông báo!`);
+            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký. Quản lý đã nhận được thông báo!`);
         }
 
 
