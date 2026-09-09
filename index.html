@@ -7406,6 +7406,38 @@ function initSwipeToCloseModals() {
             // 3. Nếu rớt mạng hoàn toàn hoặc không tra được dữ liệu, trả về dòng chữ thông báo thay vì tọa độ
             return `Không thể tải dữ liệu tên đường`;
         }
+        // HÀM HIỂN THỊ ẢNH CHẤM CÔNG RA NGAY MÀN HÌNH CHÍNH (NÚT XANH/CAM)
+        function renderTodayTimekeepingInfo() {
+            const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+            const now = new Date();
+            const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const todayData = ledger[dateString];
+
+            if (todayData) {
+                // Nảy ảnh giờ Đến
+                if (todayData.checkIn) {
+                    const inResult = document.getElementById('tkInResult');
+                    if (inResult) {
+                        inResult.classList.remove('hidden');
+                        inResult.classList.add('flex');
+                        document.getElementById('tkInPhoto').src = todayData.photoIn || '';
+                        document.getElementById('tkInTime').innerText = todayData.checkIn;
+                        document.getElementById('tkInLocation').innerText = todayData.locIn || 'Đã đồng bộ từ điện thoại';
+                    }
+                }
+                // Nảy ảnh giờ Về
+                if (todayData.checkOut) {
+                    const outResult = document.getElementById('tkOutResult');
+                    if (outResult) {
+                        outResult.classList.remove('hidden');
+                        outResult.classList.add('flex');
+                        document.getElementById('tkOutPhoto').src = todayData.photoOut || '';
+                        document.getElementById('tkOutTime').innerText = todayData.checkOut;
+                        document.getElementById('tkOutLocation').innerText = todayData.locOut || 'Đã đồng bộ từ điện thoại';
+                    }
+                }
+            }
+        }
         // 4. Xử lý chụp ảnh chấm công (Đã sửa lỗi khai báo biến Ledger & Đồng bộ ảnh ngay lập tức)
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
