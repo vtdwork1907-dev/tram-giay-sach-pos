@@ -6655,25 +6655,181 @@ function initSwipeToCloseModals() {
             document.getElementById('sub-' + tabId).classList.remove('hidden');
             document.getElementById('sub-' + tabId).classList.add('flex');
         }
+        // =========================================================================
+        // JAVASCRIPT: BẢNG ĐĂNG KÝ TUẦN & LỊCH CÁ NHÂN (GIỐNG IPHONE)
+        // =========================================================================
 
-        // 2. Render bảng lịch làm việc theo tuần
+        // 1. Xử lý Bảng đăng ký lịch tuần (Giữ nguyên dấu tích)
         function renderWeeklySchedule() {
             const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
             const tbody = document.getElementById('weeklyScheduleBody');
+            
+            // Lấy lại dữ liệu đã lưu (nếu có) để giữ nguyên dấu tích
+            const savedSchedule = JSON.parse(localStorage.getItem('TRAM_WEEKLY_SCHEDULE')) || {};
+
             if(tbody) {
-                tbody.innerHTML = days.map((day, idx) => `
+                tbody.innerHTML = days.map((day, idx) => {
+                    const isShift1Checked = savedSchedule[`shift1_${idx}`] ? 'checked' : '';
+                    const isShift2Checked = savedSchedule[`shift2_${idx}`] ? 'checked' : '';
+                    
+                    return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-2 border-r border-slate-200 font-bold text-slate-700 bg-slate-50">${day}</td>
                         <td class="p-2 border-r border-slate-200">
-                            <input type="checkbox" id="shift1_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer">
+                            <input type="checkbox" id="shift1_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer" ${isShift1Checked}>
                         </td>
                         <td class="p-2">
-                            <input type="checkbox" id="shift2_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer">
+                            <input type="checkbox" id="shift2_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer" ${isShift2Checked}>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             }
         }
+
+        function submitSchedule() {
+            let totalChecked = 0;
+            let scheduleData = {};
+            
+            // Lưu trạng thái của tất cả các checkbox
+            for(let i = 0; i < 7; i++) {
+                const shift1 = document.getElementById(`shift1_${i}`).checked;
+                const shift2 = document.getElementById(`shift2_${i}`).checked;
+                
+                scheduleData[`shift1_${i}`] = shift1;
+                scheduleData[`shift2_${i}`] = shift2;
+                
+                if(shift1) totalChecked++;
+                if(shift2) totalChecked++;
+            }
+            
+            if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
+            
+            // Lưu vào LocalStorage để không bị mất dấu tích
+            localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
+            
+            // Đổi giao diện nút bấm báo thành công
+            const btn = document.getElementById('btnSubmitSchedule');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Gửi Đăng Ký';
+            btn.classList.replace('bg-blue-600', 'bg-emerald-500');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-600');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('bg-emerald-500', 'bg-blue-600');
+                btn.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-700');
+            }, 2000);
+
+            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm trong tuần tới. (Dấu tích đã được lưu)`);
+        }
+
+
+        // 2. Xử lý Bộ lịch cá nhân & Thống kê theo tháng
+        let calCurrentDate = new Date();
+        let calMonth = calCurrentDate.getMonth(); // 0-11
+        let calYear = calCurrentDate.getFullYear();
+
+        function changeCalendarMonth(delta) {
+            calMonth += delta;
+            if (calMonth < 0) { calMonth = 11; calYear--; }
+            else if (calMonth > 11) { calMonth = 0; calYear++; }
+            renderCalendarGrid(calMonth, calYear);
+        }
+
+        function renderCalendarGrid(month, year) {
+            document.getElementById('calendarMonthYear').innerText = `Tháng ${month + 1}, ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay(); 
+            // Điều chỉnh để Thứ 2 là cột đầu tiên (0=T2, 6=CN)
+            let startDay = firstDay === 0 ? 6 : firstDay - 1;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Lấy dữ liệu mô phỏng chấm công (Sau này bạn có thể thay bằng API thật)
+            const attendanceData = fetchMockAttendanceData(month, year, daysInMonth);
+
+            let html = '';
+            // Render các ô trống đầu tháng
+            for (let i = 0; i < startDay; i++) {
+                html += `<div class="aspect-square"></div>`;
+            }
+            
+            let workedCount = 0;
+            let leaveCount = 0;
+            let lateCount = 0;
+
+            // Render các ngày trong tháng
+            for (let i = 1; i <= daysInMonth; i++) {
+                // Kiểm tra xem có phải ngày hôm nay không để bôi xanh nền
+                const isToday = (i === calCurrentDate.getDate() && month === calCurrentDate.getMonth() && year === calCurrentDate.getFullYear());
+                const bgClass = isToday ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700';
+                
+                let dotHtml = '';
+                const status = attendanceData[i]; // 'worked', 'leave', 'late'
+
+                if (status === 'worked') {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
+                    workedCount++;
+                } else if (status === 'leave') {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`;
+                    leaveCount++;
+                } else if (status === 'late') {
+                    // Đi muộn vẫn tính là 1 công (chấm xanh), nhưng cộng vào thống kê đi muộn
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
+                    workedCount++;
+                    lateCount++;
+                }
+
+                html += `
+                    <div class="aspect-square flex flex-col items-center justify-start pt-1 cursor-default">
+                        <div class="w-7 h-7 flex items-center justify-center rounded-full transition-all ${bgClass}">
+                            ${i}
+                        </div>
+                        <div class="h-2 mt-0.5 flex items-center justify-center">
+                            ${dotHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('calendarGrid').innerHTML = html;
+            
+            // Cập nhật thẻ thống kê
+            document.getElementById('statWorked').innerText = workedCount;
+            document.getElementById('statLeave').innerText = leaveCount;
+            document.getElementById('statLate').innerText = lateCount;
+        }
+
+        // Dữ liệu mô phỏng để test giao diện (Tạo random dấu chấm dựa vào ngày tháng)
+        function fetchMockAttendanceData(month, year, daysInMonth) {
+            let data = {};
+            // Chỉ sinh dữ liệu cho các ngày trong quá khứ hoặc đến hiện tại
+            let limit = (month === calCurrentDate.getMonth() && year === calCurrentDate.getFullYear()) 
+                        ? calCurrentDate.getDate() 
+                        : daysInMonth;
+            
+            // Nếu là tháng tương lai thì không có dữ liệu
+            if (year > calCurrentDate.getFullYear() || (year === calCurrentDate.getFullYear() && month > calCurrentDate.getMonth())) {
+                limit = 0;
+            }
+
+            for (let i = 1; i <= limit; i++) {
+                // Random để tạo dữ liệu test: 75% đi làm, 10% đi muộn, 10% nghỉ phép, 5% không có ca
+                let rand = Math.random();
+                if (rand < 0.75) data[i] = 'worked';
+                else if (rand < 0.85) data[i] = 'late';
+                else if (rand < 0.95) data[i] = 'leave';
+            }
+            return data;
+        }
+
+        // Sửa lại DOMContentLoaded ở bước cũ để gọi hàm Lịch
+        document.addEventListener('DOMContentLoaded', () => { 
+            setTimeout(() => {
+                checkDailyTimekeeping();
+                renderWeeklySchedule();
+                renderCalendarGrid(calMonth, calYear); // Khởi tạo lịch
+            }, 1000); 
+        });
 
         // 3. Kiểm tra ảnh chấm công (Đến & Về) trong ngày
         function checkDailyTimekeeping() {
@@ -6871,27 +7027,6 @@ function initSwipeToCloseModals() {
                 event.target.value = '';
             }
         }
-
-        // 5. Xử lý Đăng ký lịch làm theo tuần
-        function submitSchedule() {
-            let totalChecked = 0;
-            // Kiểm tra xem có ca nào được chọn không (7 ngày x 2 ca = 14 checkboxes)
-            for(let i = 0; i < 7; i++) {
-                if(document.getElementById(`shift1_${i}`).checked) totalChecked++;
-                if(document.getElementById(`shift2_${i}`).checked) totalChecked++;
-            }
-            
-            if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
-            
-            showNotification("✅ Đăng ký thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm trong tuần tới. Quản lý sẽ xếp lịch và thông báo!`);
-            
-            // Xóa checked đi cho gọn gàng sau khi gửi
-            for(let i = 0; i < 7; i++) {
-                document.getElementById(`shift1_${i}`).checked = false;
-                document.getElementById(`shift2_${i}`).checked = false;
-            }
-        }
-
         // 6. Xử lý Xin nghỉ phép
         function submitLeaveRequest() {
             const start = document.getElementById('leaveStart').value;
