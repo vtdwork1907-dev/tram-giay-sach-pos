@@ -834,7 +834,7 @@
                         </div>
                     </div>
             </section>
-            <!-- TAB: QUẢN LÝ NHÂN VIÊN (DÀNH CHO CHỦ & QUẢN LÝ) -->
+            <!-- TAB: QUẢN LÝ NHÂN SỰ (DÀNH CHO CHỦ & QUẢN LÝ) -->
             <section id="tab-staff" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
                 <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 w-full max-w-full flex justify-between items-center">
                     <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
@@ -843,60 +843,128 @@
                     <span class="text-[9px] md:text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-lg border border-amber-200 shadow-sm"><i class="fa-solid fa-crown mr-1"></i> Quản Trị</span>
                 </div>
 
-                <!-- BẢNG 1: GIÁM SÁT CHẤM CÔNG HÀNG NGÀY -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 w-full">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-solid fa-clipboard-user text-emerald-500"></i> Trạng Thái Chấm Công</h3>
-                        <input type="date" id="managerAttDate" onchange="renderStaffManagement()" class="text-[10px] md:text-xs font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:border-sky-500 shadow-sm">
-                    </div>
-                    
-                    <div class="overflow-x-auto w-full border border-slate-200 rounded-xl hide-scroll">
-                        <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap min-w-[500px]">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
-                                    <th class="p-2.5 border-r border-slate-200 w-32 sticky left-0 bg-slate-100 z-10">Nhân Viên</th>
-                                    <th class="p-2.5 text-center w-24">Trạng Thái</th>
-                                    <th class="p-2.5 text-center">Giờ Đến</th>
-                                    <th class="p-2.5 text-center">Giờ Về</th>
-                                    <th class="p-2.5">Lý do / Giải trình</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100" id="managerAttBody">
-                                <!-- Dữ liệu chấm công đổ vào đây -->
-                            </tbody>
-                        </table>
+                <!-- MENU SUB-TAB QUẢN LÝ -->
+                <div class="flex gap-2 overflow-x-auto hide-scroll w-full pb-1">
+                    <button onclick="switchMgrSubTab('list')" id="btn-mgr-list" class="bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-users"></i> Danh Sách
+                    </button>
+                    <button onclick="switchMgrSubTab('approve')" id="btn-mgr-approve" class="bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative">
+                        <i class="fa-solid fa-clipboard-check"></i> Phê Duyệt
+                        <span id="mgrPendingCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+                    </button>
+                </div>
+
+                <!-- VIEW 1: DANH SÁCH NHÂN VIÊN -->
+                <div id="mgr-view-list" class="flex flex-col gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="mgrStaffListGrid">
+                        <!-- Render danh sách nhân viên -->
                     </div>
                 </div>
 
-                <!-- BẢNG 2: GIÁM SÁT ĐĂNG KÝ LỊCH TUẦN -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 w-full mt-2">
-                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2 border-b border-slate-100 pb-2"><i class="fa-solid fa-calendar-week text-blue-500"></i> Lịch Đăng Ký Trong Tuần</h3>
-                    
-                    <div class="overflow-x-auto w-full border border-slate-200 rounded-xl hide-scroll">
-                        <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap min-w-[600px]">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold text-center">
-                                    <th class="p-2.5 border-r border-slate-200 w-28 sticky left-0 bg-slate-100 z-10 text-left">Nhân Viên</th>
-                                    <th class="p-2.5 border-r border-slate-100">T2</th>
-                                    <th class="p-2.5 border-r border-slate-100">T3</th>
-                                    <th class="p-2.5 border-r border-slate-100">T4</th>
-                                    <th class="p-2.5 border-r border-slate-100">T5</th>
-                                    <th class="p-2.5 border-r border-slate-100">T6</th>
-                                    <th class="p-2.5 border-r border-slate-100">T7</th>
-                                    <th class="p-2.5">CN</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-center" id="managerScheduleBody">
-                                <!-- Dữ liệu lịch làm đổ vào đây -->
-                            </tbody>
-                        </table>
+                <!-- VIEW 2: CHI TIẾT 1 NHÂN VIÊN (Lịch, Lương, Cấu hình) -->
+                <div id="mgr-view-detail" class="hidden flex-col gap-4 w-full">
+                    <div class="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <button onclick="closeMgrStaffDetail()" class="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition"><i class="fa-solid fa-arrow-left"></i></button>
+                            <div>
+                                <h3 id="mgrDetailName" class="font-bold text-slate-800 text-sm md:text-base">Tên nhân viên</h3>
+                                <p id="mgrDetailUsername" class="text-[10px] text-slate-500 font-mono">email@...</p>
+                            </div>
+                        </div>
+                        <button onclick="openMgrSettings()" class="bg-sky-50 text-sky-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-sky-200 hover:bg-sky-100 transition"><i class="fa-solid fa-gear"></i> Cấu hình</button>
                     </div>
-                    <div class="flex items-center gap-3 text-[9px] font-bold text-slate-500 mt-1">
-                        <span class="flex items-center gap-1"><span class="w-3 h-3 bg-blue-100 text-blue-700 rounded flex items-center justify-center border border-blue-200">1</span> Ca 1 (Sáng)</span>
-                        <span class="flex items-center gap-1"><span class="w-3 h-3 bg-indigo-100 text-indigo-700 rounded flex items-center justify-center border border-indigo-200">2</span> Ca 2 (Chiều)</span>
+
+                    <div class="flex flex-col lg:flex-row gap-4 items-start w-full">
+                        <!-- Bộ Lịch -->
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full lg:w-[350px] shrink-0">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
+                                <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-regular fa-calendar text-indigo-500"></i> Lịch Làm Việc</h3>
+                                <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                                    <button onclick="changeMgrCalendarMonth(-1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                                    <span id="mgrCalendarMonthYear" class="font-bold text-slate-800 text-[11px] md:text-xs w-[68px] text-center">...</span>
+                                    <button onclick="changeMgrCalendarMonth(1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center text-[10px] md:text-xs font-bold text-slate-400 mb-1">
+                                <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+                            </div>
+                            <div id="mgrCalendarGrid" class="grid grid-cols-7 gap-y-1 gap-x-1 text-center text-xs font-semibold"></div>
+                            <div class="flex items-center justify-center gap-4 mt-2 text-[9px] md:text-[10px] text-slate-500 font-medium border-t border-slate-100 pt-2">
+                                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đi làm</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Lịch</span>
+                            </div>
+                        </div>
+
+                        <!-- Chi tiết Ngày & Thống Kê Lương -->
+                        <div class="flex flex-col gap-4 w-full flex-1">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 w-full">
+                                <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] font-bold text-emerald-700 uppercase mb-0.5">Giờ làm</span>
+                                    <span id="mgrStatHours" class="font-extrabold text-emerald-600 text-lg">0h</span>
+                                </div>
+                                <div class="bg-sky-50 border border-sky-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] font-bold text-sky-700 uppercase mb-0.5">Lương Tạm Tính</span>
+                                    <span id="mgrStatSalary" class="font-extrabold text-sky-600 text-lg">0đ</span>
+                                </div>
+                                <div class="bg-red-50 border border-red-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] font-bold text-red-700 uppercase mb-0.5">Nghỉ Phép</span>
+                                    <span id="mgrStatLeave" class="font-extrabold text-red-600 text-lg">0</span>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] font-bold text-amber-700 uppercase mb-0.5">Đi Muộn</span>
+                                    <span id="mgrStatLate" class="font-extrabold text-amber-600 text-lg">0</span>
+                                </div>
+                            </div>
+
+                            <div id="mgrDayDetailBox" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-col gap-3">
+                                <!-- Đổ dữ liệu chi tiết ngày (Ảnh, giờ, toạ độ) vào đây -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: PHÊ DUYỆT YÊU CẦU -->
+                <div id="mgr-view-approve" class="hidden flex-col gap-3">
+                    <div id="mgrApprovalList" class="flex flex-col gap-3">
+                        <!-- Render các đơn xin nghỉ, giải trình -->
                     </div>
                 </div>
             </section>
+
+            <!-- MODAL CẤU HÌNH NHÂN VIÊN -->
+            <div id="mgrSettingsModal" class="fixed inset-0 bg-slate-900/60 z-[99999] hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity">
+                <div id="mgrSettingsBox" class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col transform scale-95 transition-transform">
+                    <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center">
+                        <h3 class="font-bold text-sm">Cấu hình: <span id="mgrSettingName"></span></h3>
+                        <button onclick="closeMgrSettings()" class="text-2xl leading-none">&times;</button>
+                    </div>
+                    <div class="p-4 space-y-4 text-xs md:text-sm bg-slate-50 flex-1 overflow-y-auto max-h-[70vh]">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-sky-700 border-b pb-1 mb-2">Ca Làm Việc</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 1 (Từ - Đến)</label><input type="text" id="cfgShift1" placeholder="VD: 08:00-13:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 2 (Từ - Đến)</label><input type="text" id="cfgShift2" placeholder="VD: 13:00-18:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2">Cập nhật Lương (VNĐ/Giờ)</h4>
+                            <div class="flex gap-2">
+                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Mức lương mới</label><input type="number" id="cfgNewSalary" placeholder="VD: 25000" class="w-full p-2 border rounded outline-none font-bold text-xs"></div>
+                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Áp dụng từ ngày</label><input type="date" id="cfgSalaryDate" class="w-full p-2 border rounded outline-none font-bold text-xs text-slate-700"></div>
+                            </div>
+                            <button onclick="saveNewSalaryRate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded mt-2 text-xs transition shadow">Thêm Mốc Lương Mới</button>
+                            
+                            <h4 class="font-bold text-slate-600 mt-4 mb-1 text-[10px] uppercase">Lịch sử Lương</h4>
+                            <div id="mgrSalaryHistory" class="space-y-1 max-h-32 overflow-y-auto hide-scroll text-[10px]"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white border-t border-slate-200 flex justify-end gap-2">
+                        <button onclick="closeMgrSettings()" class="px-4 py-2 bg-slate-200 font-bold rounded-lg text-xs">Hủy</button>
+                        <button onclick="saveMgrSettings()" class="px-4 py-2 bg-navy-800 text-white font-bold rounded-lg text-xs">Lưu Cấu Hình</button>
+                    </div>
+                </div>
+            </div>            
+        </section>
 
             <!-- TAB CÀI ĐẶT -->
             <section id="tab-settings" class="tab-content hidden space-y-4 pb-16 w-full max-w-full">
