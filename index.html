@@ -7659,19 +7659,32 @@ function initSwipeToCloseModals() {
             if (tabId === 'approve') renderMgrApprovals();
         }
 
-        // Khởi chạy khi bấm vào tab Nhân Viên
+        // Khởi chạy khi bấm vào tab Nhân Viên (Đã tối ưu chờ dữ liệu từ mây)
         function initStaffManagement() {
             switchMgrSubTab('list');
             updatePendingBadge();
+            
+            // Kiểm tra nếu dữ liệu user chưa về kịp thì hiển thị chữ đang tải
+            if (!state.users || state.users.length === 0) {
+                const grid = document.getElementById('mgrStaffListGrid');
+                if (grid) {
+                    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 italic bg-white rounded-2xl border border-slate-200 shadow-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu từ đám mây...</div>';
+                }
+            }
         }
 
-        // 2. Render Danh sách Nhân Viên (Không bị trắng trơn, lọc bỏ chủ cửa hàng)
-        // 1. Render Danh sách (CHỈ HIỆN TÀI KHOẢN NHÂN VIÊN, LOẠI BỎ QUẢN LÝ/CHỦ)
+        // 2. Render Danh sách Nhân Viên (Chỉ lấy tài khoản staff và tự động hiển thị khi data về)
         function renderMgrStaffList() {
             const grid = document.getElementById('mgrStaffListGrid');
             if (!grid) return;
 
-            // BỘ LỌC CHUẨN: Chỉ lấy những tài khoản có role là 'staff'
+            // Nếu dữ liệu chưa tải xong, hiển thị trạng thái loading thay vì để trắng trơn
+            if (!state.users || state.users.length === 0) {
+                grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 italic bg-white rounded-2xl border border-slate-200 shadow-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu nhân viên...</div>';
+                return;
+            }
+
+            // Lọc chính xác chỉ lấy tài khoản nhân viên (role === 'staff')
             const staffMembers = state.users.filter(u => {
                 const role = (u.role || '').toLowerCase();
                 return role === 'staff'; 
