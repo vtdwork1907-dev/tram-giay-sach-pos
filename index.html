@@ -6794,11 +6794,25 @@ function initSwipeToCloseModals() {
                 let dotHtml = '';
                 const status = attendanceData[i]; 
 
-                if (status === 'worked') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; workedCount++; } 
-                else if (status === 'leave') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`; leaveCount++; } 
-                else if (status === 'late') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; workedCount++; lateCount++; }
+                // CHỈNH SỬA MÀU CHẤM THEO YÊU CẦU:
+                if (status === 'worked') { 
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; 
+                    workedCount++; 
+                } 
+                else if (status === 'registered') { 
+                    // Chấm vàng cho ngày đã đăng ký lịch làm
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>`; 
+                }
+                else if (status === 'leave') { 
+                    // Xin nghỉ phép -> KHÔNG CÓ MÀU GÌ, nhưng vẫn đếm vào Thống kê
+                    dotHtml = ``; 
+                    leaveCount++; 
+                } 
+                else if (status === 'late') { 
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; 
+                    workedCount++; lateCount++; 
+                }
 
-                // Đã thêm sự kiện onclick để hiển thị chi tiết ngay bên dưới
                 html += `
                     <div onclick="showDayDetail('${dateString}')" class="aspect-square flex flex-col items-center justify-start pt-1 cursor-pointer hover:bg-slate-100 rounded-xl transition active:scale-95">
                         <div class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full transition-all ${bgClass}">
@@ -6816,9 +6830,8 @@ function initSwipeToCloseModals() {
             document.getElementById('statLeave').innerText = leaveCount;
             document.getElementById('statLate').innerText = lateCount;
             
-            // Ẩn bảng chi tiết khi đổi tháng
             hideDayDetail();
-        }
+        }        
         let currentDetailDate = '';
 
         function showDayDetail(dateStr) {
