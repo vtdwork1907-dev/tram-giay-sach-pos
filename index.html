@@ -6725,9 +6725,10 @@ function initSwipeToCloseModals() {
 
         // 2. Xử lý Bộ lịch cá nhân & Thống kê theo tháng
         let calCurrentDate = new Date();
-        let calMonth = calCurrentDate.getMonth(); // 0-11
+        let calMonth = calCurrentDate.getMonth(); 
         let calYear = calCurrentDate.getFullYear();
 
+        // Chuyển tháng
         function changeCalendarMonth(delta) {
             calMonth += delta;
             if (calMonth < 0) { calMonth = 11; calYear--; }
@@ -6735,19 +6736,26 @@ function initSwipeToCloseModals() {
             renderCalendarGrid(calMonth, calYear);
         }
 
+       // Đổ dữ liệu thật vào Lịch
         function renderCalendarGrid(month, year) {
-            document.getElementById('calendarMonthYear').innerText = `Tháng ${month + 1}, ${year}`;
+            document.getElementById('calendarMonthYear').innerText = `Tháng ${month + 1}/${year}`;
             
             const firstDay = new Date(year, month, 1).getDay(); 
-            // Điều chỉnh để Thứ 2 là cột đầu tiên (0=T2, 6=CN)
             let startDay = firstDay === 0 ? 6 : firstDay - 1;
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Lấy dữ liệu mô phỏng chấm công (Sau này bạn có thể thay bằng API thật)
-            const attendanceData = fetchMockAttendanceData(month, year, daysInMonth);
+            // Lấy dữ liệu THẬT từ lịch sử chấm công & xin nghỉ
+            const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+            let attendanceData = {};
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                if (ledger[dateKey]) {
+                    attendanceData[i] = ledger[dateKey].status; 
+                }
+            }
 
             let html = '';
-            // Render các ô trống đầu tháng
             for (let i = 0; i < startDay; i++) {
                 html += `<div class="aspect-square"></div>`;
             }
@@ -6756,14 +6764,12 @@ function initSwipeToCloseModals() {
             let leaveCount = 0;
             let lateCount = 0;
 
-            // Render các ngày trong tháng
             for (let i = 1; i <= daysInMonth; i++) {
-                // Kiểm tra xem có phải ngày hôm nay không để bôi xanh nền
                 const isToday = (i === calCurrentDate.getDate() && month === calCurrentDate.getMonth() && year === calCurrentDate.getFullYear());
                 const bgClass = isToday ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700';
                 
                 let dotHtml = '';
-                const status = attendanceData[i]; // 'worked', 'leave', 'late'
+                const status = attendanceData[i]; 
 
                 if (status === 'worked') {
                     dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
@@ -6772,7 +6778,6 @@ function initSwipeToCloseModals() {
                     dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`;
                     leaveCount++;
                 } else if (status === 'late') {
-                    // Đi muộn vẫn tính là 1 công (chấm xanh), nhưng cộng vào thống kê đi muộn
                     dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
                     workedCount++;
                     lateCount++;
@@ -6780,7 +6785,7 @@ function initSwipeToCloseModals() {
 
                 html += `
                     <div class="aspect-square flex flex-col items-center justify-start pt-1 cursor-default">
-                        <div class="w-7 h-7 flex items-center justify-center rounded-full transition-all ${bgClass}">
+                        <div class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full transition-all ${bgClass}">
                             ${i}
                         </div>
                         <div class="h-2 mt-0.5 flex items-center justify-center">
@@ -6792,7 +6797,7 @@ function initSwipeToCloseModals() {
             
             document.getElementById('calendarGrid').innerHTML = html;
             
-            // Cập nhật thẻ thống kê
+            // Cập nhật thống kê
             document.getElementById('statWorked').innerText = workedCount;
             document.getElementById('statLeave').innerText = leaveCount;
             document.getElementById('statLate').innerText = lateCount;
