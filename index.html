@@ -7665,13 +7665,15 @@ function initSwipeToCloseModals() {
         }
 
         // 2. Render Danh sách Nhân Viên (Không bị trắng trơn, lọc bỏ chủ cửa hàng)
+        // 1. Render Danh sách (CHỈ HIỆN TÀI KHOẢN NHÂN VIÊN, LOẠI BỎ QUẢN LÝ/CHỦ)
         function renderMgrStaffList() {
             const grid = document.getElementById('mgrStaffListGrid');
             if (!grid) return;
 
+            // BỘ LỌC CHUẨN: Chỉ lấy những tài khoản có role là 'staff'
             const staffMembers = state.users.filter(u => {
-                const r = (u.role || '').toLowerCase();
-                return r !== 'owner'; // Hiện tất cả trừ chủ cửa hàng
+                const role = (u.role || '').toLowerCase();
+                return role === 'staff'; 
             });
             
             if (staffMembers.length === 0) {
