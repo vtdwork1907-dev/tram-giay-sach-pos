@@ -6869,7 +6869,7 @@ function initSwipeToCloseModals() {
             const explainSec = document.getElementById('dayExplanationSection');
             const detailWrapper = document.getElementById('inlineDayDetail');
             
-            document.getElementById('dayExplanationText').value = ''; // Reset ô chữ
+            document.getElementById('dayExplanationText').value = ''; 
 
             let contentHtml = '';
             let needExplanation = false;
@@ -6897,14 +6897,22 @@ function initSwipeToCloseModals() {
                             <span class="font-mono font-bold text-slate-800 text-xs">${dayData.checkOut ? dayData.checkOut.split(' - ')[0] : '--:--:--'}</span>
                         </div>
                     `;
-                } else if (dayData.status === 'leave') {
+                } else if (dayData.status === 'registered') {
                     contentHtml = `
-                        <div class="flex flex-col gap-1 p-3 bg-red-50 rounded-lg border border-red-100 text-center">
-                            <span class="font-bold text-red-700"><i class="fa-solid fa-bed"></i> Nghỉ phép</span>
-                            <span class="text-slate-600 text-[11px] italic">Lý do: ${escapeHtml(dayData.reason || 'Không có')}</span>
+                        <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
+                            <i class="fa-regular fa-calendar-check text-amber-500 text-xl mb-1 block"></i>
+                            <div class="font-bold text-amber-700 text-xs">Có đăng ký lịch làm</div>
                         </div>
                     `;
-                    needExplanation = true; 
+                    if (targetDate < today) needExplanation = true; // Trót đăng ký mà không đi làm/không báo nghỉ -> Phải giải trình
+                } else if (dayData.status === 'leave') {
+                    // ĐÃ XÓA MÀU ĐỎ: Chỉ hiển thị màu xám trung tính cho việc Nghỉ phép
+                    contentHtml = `
+                        <div class="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                            <span class="font-bold text-slate-600"><i class="fa-solid fa-bed"></i> Nghỉ phép</span>
+                            <span class="text-slate-500 text-[11px] italic">Lý do: ${escapeHtml(dayData.reason || 'Không có')}</span>
+                        </div>
+                    `;
                 }
             } else {
                 if (targetDate < today) {
@@ -6914,7 +6922,7 @@ function initSwipeToCloseModals() {
                             <span class="font-bold text-xs">Thiếu chấm công</span>
                         </div>
                     `;
-                    needExplanation = true; // Quá khứ mà trống thì cho phép giải trình
+                    needExplanation = true; 
                 } else if (targetDate.getTime() === today.getTime()) {
                     contentHtml = `<div class="p-3 bg-sky-50 rounded-lg text-center text-sky-700 font-bold text-xs"><i class="fa-solid fa-clock-rotate-left fa-spin-pulse mr-1"></i> Hôm nay chưa chốt ca</div>`;
                 } else {
