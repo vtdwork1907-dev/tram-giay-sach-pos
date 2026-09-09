@@ -7265,6 +7265,9 @@ function initSwipeToCloseModals() {
             }
             
             localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+            // Thêm dòng này để đẩy lên Cloud:
+            syncAttendanceToCloud(ledger);
+            
             renderCalendarGrid(calMonth, calYear); // Tự động load lại lịch hiện tại
             
             showNotification("✅ Gửi Đơn Nghỉ Phép", "Yêu cầu đã được lưu và cập nhật hiển thị chấm đỏ trên Lịch Cá Nhân.");
