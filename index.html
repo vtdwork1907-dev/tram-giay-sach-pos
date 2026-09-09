@@ -7266,6 +7266,28 @@ function initSwipeToCloseModals() {
             document.getElementById('leaveEnd').value = '';
             document.getElementById('leaveReason').value = '';
         }
+        // HÀM 1: ĐẨY LỊCH LÊN CLOUD NGAY KHI CÓ THAY ĐỔI
+        async function syncAttendanceToCloud(ledger) {
+            if (!navigator.onLine || !state.currentUser) return;
+            try {
+                // Đẩy chuỗi dữ liệu lịch vào đúng tài khoản nhân viên đang đăng nhập
+                await supabaseClient.from('users').update({ attendance: ledger }).eq('username', state.currentUser.username);
+            } catch (e) { console.error("Lỗi đồng bộ lịch lên Cloud:", e); }
+        }
+
+        // HÀM 2: KÉO LỊCH TỪ CLOUD VỀ MÁY TÍNH/ĐIỆN THOẠI KHÁC
+        async function fetchAttendanceFromCloud() {
+            if (!navigator.onLine || !state.currentUser) return;
+            try {
+                const { data } = await supabaseClient.from('users').select('attendance').eq('username', state.currentUser.username).single();
+                if (data && data.attendance) {
+                    // Ghi đè vào bộ nhớ máy hiện tại
+                    localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(data.attendance));
+                    // Cập nhật lại giao diện lịch ngay lập tức
+                    if (typeof renderCalendarGrid === 'function') renderCalendarGrid(calMonth, calYear);
+                }
+            } catch (e) { console.error("Lỗi kéo lịch từ Cloud:", e); }
+        }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
