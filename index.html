@@ -6679,7 +6679,7 @@ function initSwipeToCloseModals() {
             }, 1000); 
         });
 
-        // 4. Xử lý chụp ảnh và lấy Tên đường/Số nhà (Reverse Geocoding)
+        // 4. Xử lý chụp ảnh và lấy Tên đường/Số nhà (Reverse Geocoding cực mạnh)
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -6687,7 +6687,7 @@ function initSwipeToCloseModals() {
             const loading = document.getElementById('globalLoading');
             if (loading) {
                 loading.style.display = 'flex';
-                loading.querySelector('.text-sm').innerText = 'Đang trích xuất ảnh và quét Tên Đường...';
+                loading.querySelector('.text-sm').innerText = 'Đang phân tích địa chỉ chi tiết...';
             }
 
             try {
@@ -6696,7 +6696,7 @@ function initSwipeToCloseModals() {
                 const timeString = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
                 const dateString = now.toISOString().split('T')[0];
                 
-                // Cập nhật UI tạm thời
+                // Xác định đang là tab Chấm công Đến hay Về
                 const prefix = type === 'in' ? 'tkIn' : 'tkOut';
                 const resultBox = document.getElementById(prefix + 'Result');
                 
@@ -6717,44 +6717,71 @@ function initSwipeToCloseModals() {
 
                 // Lấy GPS & Chuyển thành Tên Số nhà, Phố
                 if (navigator.geolocation) {
-                    // Luôn ưu tiên độ chính xác cao nhất
                     navigator.geolocation.getCurrentPosition(
                         async (position) => {
                             const lat = position.coords.latitude;
                             const lon = position.coords.longitude;
+                            
+                            // Mặc định ban đầu (nếu cả 2 API đều chết mạng)
                             let finalLocationText = `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
                             
                             try {
-                                // Gọi API Nominatim để lấy chi tiết Address
-                                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
-                                const data = await res.json();
+                                // CÁCH 1: Dùng OpenStreetMap API (Ưu tiên lấy chi tiết số nhà, tên đường)
+                                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`, {
+                                    headers: { 'Accept-Language': 'vi-VN,vi;q=0.9' } // Ép lấy Tiếng Việt
+                                });
                                 
-                                if(data && data.address) {
-                                    const ad = data.address;
-                                    let addressParts = [];
-                                    
-                                    // Tạo chuỗi số nhà và tên đường
-                                    let streetPart = [];
-                                    if(ad.house_number) streetPart.push(ad.house_number);
-                                    if(ad.road) streetPart.push(ad.road);
-                                    
-                                    if(streetPart.length > 0) addressParts.push(streetPart.join(' '));
-                                    
-                                    // Thêm Phường / Quận / Thành phố
-                                    if(ad.quarter || ad.suburb || ad.neighbourhood) addressParts.push(ad.quarter || ad.suburb || ad.neighbourhood);
-                                    if(ad.city_district || ad.county) addressParts.push(ad.city_district || ad.county);
-                                    if(ad.city || ad.state) addressParts.push(ad.city || ad.state);
-                                    
-                                    if (addressParts.length > 0) {
-                                        finalLocationText = addressParts.join(', ');
-                                    } else if (data.display_name) {
-                                        finalLocationText = data.display_name;
+                                if (res.ok) {
+                                    const data = await res.json();
+                                    if (data && data.address) {
+                                        const ad = data.address;
+                                        let addressParts = [];
+                                        
+                                        // 1. Số nhà + Tên đường
+                                        let street = ad.road || ad.pedestrian || ad.street;
+                                        let houseNum = ad.house_number || ad.street_number;
+                                        if (street) {
+                                            addressParts.push(houseNum ? `${houseNum} ${street}` : street);
+                                        }
+                                        
+                                        // 2. Phường / Xã
+                                        let ward = ad.suburb || ad.neighbourhood || ad.residential || ad.quarter || ad.village;
+                                        if (ward) addressParts.push(ward);
+                                        
+                                        // 3. Quận / Huyện
+                                        let district = ad.city_district || ad.county || ad.district;
+                                        if (district) addressParts.push(district);
+                                        
+                                        // 4. Thành phố / Tỉnh
+                                        let city = ad.city || ad.state || ad.province;
+                                        if (city) addressParts.push(city);
+                                        
+                                        if (addressParts.length > 0) {
+                                            finalLocationText = addressParts.join(', ');
+                                        } else if (data.display_name) {
+                                            // Fallback chuỗi có sẵn của OSM
+                                            const parts = data.display_name.split(',');
+                                            finalLocationText = parts.slice(0, 4).join(',').trim();
+                                        }
                                     }
+                                } else {
+                                    throw new Error("OSM API failed");
                                 }
                             } catch (e) {
-                                console.warn("Lỗi phân tích địa chỉ GPS", e);
+                                console.warn("API 1 lỗi, chuyển sang API dự phòng...", e);
+                                // CÁCH 2 (DỰ PHÒNG CỰC MẠNH): Dùng BigDataCloud API nếu API 1 bị chặn
+                                try {
+                                    const res2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=vi`);
+                                    const data2 = await res2.json();
+                                    if (data2 && data2.locality) {
+                                        finalLocationText = `${data2.locality}, ${data2.city || data2.principalSubdivision}, ${data2.countryName}`;
+                                    }
+                                } catch(err2) {
+                                    console.error("Cả 2 API đều lỗi mạng.");
+                                }
                             }
 
+                            // In kết quả ra màn hình
                             document.getElementById(prefix + 'Location').innerText = finalLocationText;
                             localStorage.setItem(storageKeyPrefix + '_LOC', finalLocationText);
                             
