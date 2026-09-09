@@ -5623,41 +5623,6 @@ function initSwipeToCloseModals() {
             if (navigator.onLine) { processUploadQueue(); syncPendingData(); }
 
             supabaseClient.channel('tramgiaysach_realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
-                    const { eventType, new: newRec } = payload;
-                    if (eventType === 'UPDATE' || eventType === 'INSERT') {
-                        // 1. Cập nhật mảng dữ liệu tổng (Giữ lại các trường cũ không bị ghi đè)
-                        const idx = state.users.findIndex(u => u.id === newRec.id);
-                        if (idx !== -1) {
-                            state.users[idx] = { ...state.users[idx], ...newRec };
-                        } else {
-                            state.users.push(newRec);
-                        }
-                        
-                        // 2. SO SÁNH BẰNG ID ĐỂ CHẮC CHẮN 100% BẮT ĐƯỢC TÍN HIỆU
-                        if (state.currentUser && newRec.id === state.currentUser.id) {
-                            let needsRender = false;
-                            
-                            // Nếu có dữ liệu chấm công mới
-                            if (newRec.attendance !== undefined && newRec.attendance !== null) {
-                                localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
-                                needsRender = true;
-                            }
-                            
-                            // Nếu có dữ liệu đăng ký ca mới
-                            if (newRec.schedule !== undefined && newRec.schedule !== null) {
-                                localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(newRec.schedule));
-                                needsRender = true;
-                            }
-                            
-                            // Tự động vẽ lại dấu tích và dấu chấm ngay lập tức
-                            if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
-                                renderCalendarGrid(calMonth, calYear);
-                                renderWeeklySchedule(); 
-                            }
-                        }
-                    }
-                })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
                     const { eventType, new: newRec, old: oldRec } = payload;
                     if (eventType === 'INSERT' || eventType === 'UPDATE') { 
@@ -5665,13 +5630,7 @@ function initSwipeToCloseModals() {
                         if (idx !== -1) { state.orders[idx] = newO; } else { state.orders.unshift(newO); } 
                     } else if (eventType === 'DELETE') { state.orders = state.orders.filter(o => o.id !== oldRec.id); }
                     
-                    saveLocalState(); 
-                    renderOrdersTable(); 
-                    renderDashboard(); 
-                    updateReportMetrics(); 
-                    renderCustomersTable();
-                    
-                    // FIX: Bổ sung lệnh re-render Thư viện B/A để ảnh ghép hiện lên ngay lập tức qua Realtime
+                    saveLocalState(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable();
                     if (currentGalleryTab === 'library') renderGalleryLibrary();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, payload => {
@@ -5700,13 +5659,41 @@ function initSwipeToCloseModals() {
                         state.qrConfig = payload.new.qr_config || state.qrConfig; 
                         state.logo = payload.new.logo || null; 
                         state.brands = payload.new.brands || state.brands;
-                        state.soleImages = payload.new.sole_images || state.soleImages; // Bật realtime cho Kho ảnh
+                        state.soleImages = payload.new.sole_images || state.soleImages; 
                         
                         saveLocalState(); renderLogo(); updateQRView(); renderSettingsBrandsTable();
                         if(currentGalleryTab === 'sole') renderGallerySole(); else if(currentGalleryTab === 'library') renderGalleryLibrary();
                     }
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+                    const { eventType, new: newRec } = payload;
+                    if (eventType === 'UPDATE' || eventType === 'INSERT') {
+                        
+                        // 1. So khớp ID hoặc Username (Chống lỗi sai kiểu dữ liệu Text/Number)
+                        if (state.currentUser && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
+                            let needsRender = false;
+                            
+                            // 2. Kéo dữ liệu Chấm công
+                            if (newRec.attendance !== undefined && newRec.attendance !== null) {
+                                localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
+                                needsRender = true;
+                            }
+                            
+                            // 3. Kéo dữ liệu Lịch làm
+                            if (newRec.schedule !== undefined && newRec.schedule !== null) {
+                                localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(newRec.schedule));
+                                needsRender = true;
+                            }
+                            
+                            // 4. Nếu đang mở tab Cá nhân -> Tự động nảy Lịch & bung thông báo
+                            if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
+                                renderCalendarGrid(calMonth, calYear);
+                                renderWeeklySchedule(); 
+                                showNotification("🔄 Tự động đồng bộ", "Dữ liệu lịch vừa được cập nhật từ thiết bị khác!");
+                            }
+                        }
+                    }
                 }).subscribe();
-        });
         
         window.addEventListener('resize', adjustPOSLayout);
         function updateStoreFundUI() {
