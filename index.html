@@ -6761,14 +6761,13 @@ function initSwipeToCloseModals() {
         }
 
        // Đổ dữ liệu thật vào Lịch
-        function renderCalendarGrid(month, year) {
+       function renderCalendarGrid(month, year) {
             document.getElementById('calendarMonthYear').innerText = `Tháng ${month + 1}/${year}`;
             
             const firstDay = new Date(year, month, 1).getDay(); 
             let startDay = firstDay === 0 ? 6 : firstDay - 1;
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Lấy dữ liệu THẬT từ lịch sử chấm công & xin nghỉ
             const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
             let attendanceData = {};
             
@@ -6784,31 +6783,23 @@ function initSwipeToCloseModals() {
                 html += `<div class="aspect-square"></div>`;
             }
             
-            let workedCount = 0;
-            let leaveCount = 0;
-            let lateCount = 0;
+            let workedCount = 0; let leaveCount = 0; let lateCount = 0;
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const isToday = (i === calCurrentDate.getDate() && month === calCurrentDate.getMonth() && year === calCurrentDate.getFullYear());
                 const bgClass = isToday ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700';
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 
                 let dotHtml = '';
                 const status = attendanceData[i]; 
 
-                if (status === 'worked') {
-                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
-                    workedCount++;
-                } else if (status === 'leave') {
-                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`;
-                    leaveCount++;
-                } else if (status === 'late') {
-                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
-                    workedCount++;
-                    lateCount++;
-                }
+                if (status === 'worked') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; workedCount++; } 
+                else if (status === 'leave') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`; leaveCount++; } 
+                else if (status === 'late') { dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`; workedCount++; lateCount++; }
 
+                // Đã thêm sự kiện onclick để hiển thị chi tiết ngay bên dưới
                 html += `
-                    <div class="aspect-square flex flex-col items-center justify-start pt-1 cursor-default">
+                    <div onclick="showDayDetail('${dateString}')" class="aspect-square flex flex-col items-center justify-start pt-1 cursor-pointer hover:bg-slate-100 rounded-xl transition active:scale-95">
                         <div class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full transition-all ${bgClass}">
                             ${i}
                         </div>
@@ -6820,13 +6811,13 @@ function initSwipeToCloseModals() {
             }
             
             document.getElementById('calendarGrid').innerHTML = html;
-            
-            // Cập nhật thống kê
             document.getElementById('statWorked').innerText = workedCount;
             document.getElementById('statLeave').innerText = leaveCount;
             document.getElementById('statLate').innerText = lateCount;
+            
+            // Ẩn bảng chi tiết khi đổi tháng
+            hideDayDetail();
         }
-
         // Dữ liệu mô phỏng để test giao diện (Tạo random dấu chấm dựa vào ngày tháng)
         function fetchMockAttendanceData(month, year, daysInMonth) {
             let data = {};
