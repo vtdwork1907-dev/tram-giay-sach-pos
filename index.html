@@ -2068,10 +2068,21 @@ function mapOrderDbToJs(db) {
             }
         }
         
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); 
-            document.getElementById('tab-' + id).classList.remove('hidden');
+       function switchTab(id) {
+            // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            });
             
+            // 2. Hiển thị tab được chọn (Dùng cả flex để hiển thị chuẩn khung giao diện)
+            const targetTab = document.getElementById('tab-' + id);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('flex');
+            }
+            
+            // 3. Xử lý đổi màu active cho các nút ở menu điều hướng
             document.querySelectorAll('.nav-btn').forEach(b => {
                 b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
                 if(b.id === 'nav-payment') {
@@ -2087,10 +2098,12 @@ function mapOrderDbToJs(db) {
                 activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
             }
 
+            // 4. Đồng bộ dữ liệu mây nếu cần
             if (id === 'reports' || id === 'orders' || id === 'dashboard') {
                 if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
             }
 
+            // 5. Kích hoạt vẽ giao diện cho từng tab riêng biệt
             if(id === 'reports') { 
                 updateReportMetrics(true); 
                 setTimeout(() => { 
@@ -2104,8 +2117,15 @@ function mapOrderDbToJs(db) {
             if(id === 'payment') updateQRView(); 
             if(id === 'dashboard') renderDashboard();
             if(id === 'gallery') { renderGalleryCategoryTabs(); switchGalleryCategory(currentGalleryCategory); }
-            if(id === 'staff') renderStaffManagement();
-            if(id === 'staff') initStaffManagement();
+            
+            // 👉 ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN (ĐÃ GỘP VÀ TỐI ƯU)
+            if(id === 'staff') {
+                if (typeof initStaffManagement === 'function') {
+                    initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
+                } else if (typeof renderMgrStaffList === 'function') {
+                    renderMgrStaffList();
+                }
+            }
             
             localStorage.setItem('TRAM_LAST_TAB', id);
         }
