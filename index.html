@@ -7485,34 +7485,16 @@ function initSwipeToCloseModals() {
             const start = document.getElementById('leaveStart').value;
             const end = document.getElementById('leaveEnd').value;
             const reason = document.getElementById('leaveReason').value.trim();
-            
             if(!start || !end || !reason) return alert("Bạn cần nhập đủ Ngày Bắt Đầu, Ngày Kết Thúc và Lý do!");
-            if(start > end) return alert("Ngày kết thúc không được nhỏ hơn ngày bắt đầu!");
             
-            // Xử lý ghi đè vào dữ liệu lịch sử
-            let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
-            let currDate = new Date(start);
-            let endDateObj = new Date(end);
+            let reqs = state.currentUser.requests || [];
+            reqs.push({ id: Date.now().toString(), type: 'leave', startDate: start, endDate: end, reason: reason, status: 'pending', created_at: Date.now() });
+            state.currentUser.requests = reqs;
             
-            while(currDate <= endDateObj) {
-                const dStr = currDate.toISOString().split('T')[0];
-                // Chỉ đánh dấu nghỉ phép nếu ngày đó chưa đi làm
-                if(!ledger[dStr] || ledger[dStr].status !== 'worked') {
-                    ledger[dStr] = { status: 'leave', reason: reason };
-                }
-                currDate.setDate(currDate.getDate() + 1);
-            }
+            if(navigator.onLine) supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
             
-            localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
-            // Thêm dòng này để đẩy lên Cloud:
-            syncAttendanceToCloud(ledger);
-            
-            renderCalendarGrid(calMonth, calYear); // Tự động load lại lịch hiện tại
-            
-            showNotification("✅ Gửi Đơn Nghỉ Phép", "Yêu cầu đã được lưu và cập nhật hiển thị chấm đỏ trên Lịch Cá Nhân.");
-            document.getElementById('leaveStart').value = '';
-            document.getElementById('leaveEnd').value = '';
-            document.getElementById('leaveReason').value = '';
+            showNotification("✅ Gửi Đơn Thành Công", "Đơn của bạn đang chờ Quản lý duyệt.");
+            document.getElementById('leaveStart').value = ''; document.getElementById('leaveEnd').value = ''; document.getElementById('leaveReason').value = '';
         }
         // HÀM 1: ĐẨY LỊCH THỰC TẾ LÊN CLOUD (CHẤM CÔNG)
         async function syncAttendanceToCloud(ledger) {
