@@ -834,6 +834,69 @@
                         </div>
                     </div>
             </section>
+            <!-- TAB: QUẢN LÝ NHÂN VIÊN (DÀNH CHO CHỦ & QUẢN LÝ) -->
+            <section id="tab-staff" class="tab-content hidden flex-col space-y-4 pb-8 w-full max-w-full">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 w-full max-w-full flex justify-between items-center">
+                    <h2 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-users-gear text-sky-600"></i> Quản Lý Nhân Viên
+                    </h2>
+                    <span class="text-[9px] md:text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-lg border border-amber-200 shadow-sm"><i class="fa-solid fa-crown mr-1"></i> Quản Trị</span>
+                </div>
+
+                <!-- BẢNG 1: GIÁM SÁT CHẤM CÔNG HÀNG NGÀY -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 w-full">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-solid fa-clipboard-user text-emerald-500"></i> Trạng Thái Chấm Công</h3>
+                        <input type="date" id="managerAttDate" onchange="renderStaffManagement()" class="text-[10px] md:text-xs font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:border-sky-500 shadow-sm">
+                    </div>
+                    
+                    <div class="overflow-x-auto w-full border border-slate-200 rounded-xl hide-scroll">
+                        <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
+                                    <th class="p-2.5 border-r border-slate-200 w-32 sticky left-0 bg-slate-100 z-10">Nhân Viên</th>
+                                    <th class="p-2.5 text-center w-24">Trạng Thái</th>
+                                    <th class="p-2.5 text-center">Giờ Đến</th>
+                                    <th class="p-2.5 text-center">Giờ Về</th>
+                                    <th class="p-2.5">Lý do / Giải trình</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="managerAttBody">
+                                <!-- Dữ liệu chấm công đổ vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BẢNG 2: GIÁM SÁT ĐĂNG KÝ LỊCH TUẦN -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 w-full mt-2">
+                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2 border-b border-slate-100 pb-2"><i class="fa-solid fa-calendar-week text-blue-500"></i> Lịch Đăng Ký Trong Tuần</h3>
+                    
+                    <div class="overflow-x-auto w-full border border-slate-200 rounded-xl hide-scroll">
+                        <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap min-w-[600px]">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold text-center">
+                                    <th class="p-2.5 border-r border-slate-200 w-28 sticky left-0 bg-slate-100 z-10 text-left">Nhân Viên</th>
+                                    <th class="p-2.5 border-r border-slate-100">T2</th>
+                                    <th class="p-2.5 border-r border-slate-100">T3</th>
+                                    <th class="p-2.5 border-r border-slate-100">T4</th>
+                                    <th class="p-2.5 border-r border-slate-100">T5</th>
+                                    <th class="p-2.5 border-r border-slate-100">T6</th>
+                                    <th class="p-2.5 border-r border-slate-100">T7</th>
+                                    <th class="p-2.5">CN</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-center" id="managerScheduleBody">
+                                <!-- Dữ liệu lịch làm đổ vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex items-center gap-3 text-[9px] font-bold text-slate-500 mt-1">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 bg-blue-100 text-blue-700 rounded flex items-center justify-center border border-blue-200">1</span> Ca 1 (Sáng)</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 bg-indigo-100 text-indigo-700 rounded flex items-center justify-center border border-indigo-200">2</span> Ca 2 (Chiều)</span>
+                    </div>
+                </div>
+            </section>
 
             <!-- TAB CÀI ĐẶT -->
             <section id="tab-settings" class="tab-content hidden space-y-4 pb-16 w-full max-w-full">
