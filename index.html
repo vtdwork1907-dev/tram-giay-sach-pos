@@ -5845,21 +5845,16 @@ function initSwipeToCloseModals() {
                         if(currentGalleryTab === 'sole') renderGallerySole(); else if(currentGalleryTab === 'library') renderGalleryLibrary();
                     }
                 })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+               .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
                     const { eventType, new: newRec } = payload;
                     if (eventType === 'UPDATE' || eventType === 'INSERT') {
                         
-                        // 1. Cập nhật dữ liệu tổng vào bộ nhớ (Giữ nguyên cấu trúc)
                         const idx = state.users.findIndex(u => u.id === newRec.id);
-                        if (idx !== -1) {
-                            state.users[idx] = { ...state.users[idx], ...newRec };
-                        } else {
-                            state.users.push(newRec);
-                        }
+                        if (idx !== -1) { state.users[idx] = { ...state.users[idx], ...newRec }; } 
+                        else { state.users.push(newRec); }
                         
                         // ==========================================
-                        // LOGIC DÀNH CHO CÙNG 1 TÀI KHOẢN (Đồng bộ giữa ĐT và Máy tính của Nhân viên)
-                        // Đã xóa bỏ rào cản check role === 'staff'
+                        // LOGIC ĐỒNG BỘ ĐIỆN THOẠI -> MÁY TÍNH CỦA NHÂN VIÊN
                         // ==========================================
                         if (state.currentUser && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
                             let needsRender = false;
@@ -5873,29 +5868,32 @@ function initSwipeToCloseModals() {
                                 needsRender = true;
                             }
                             
-                            // Nếu đang mở tab Cá nhân trên máy tính -> Cho nảy ảnh và lịch ngay lập tức
                             const personalTab = document.getElementById('tab-personal');
                             if (needsRender && personalTab && !personalTab.classList.contains('hidden')) {
+                                
+                                // 1. Tự động vẽ ảnh ra ngoài màn hình nút Xanh/Cam
+                                if (typeof renderTodayTimekeepingInfo === 'function') renderTodayTimekeepingInfo();
+                                
+                                // 2. Tự động chấm xanh lên lịch
                                 if (typeof renderCalendarGrid === 'function') renderCalendarGrid(calMonth, calYear);
                                 
-                                // TỰ ĐỘNG LÀM MỚI BẢNG CHI TIẾT ĐỂ ẢNH HIỆN RA NGAY LẬP TỨC
+                                // 3. Tự động load lại bảng chi tiết lịch (nếu đang mở)
                                 const detailBox = document.getElementById('inlineDayDetail');
                                 if (detailBox && !detailBox.classList.contains('hidden') && typeof currentDetailDate !== 'undefined') {
                                     showDayDetail(currentDetailDate);
                                 }
                                 
-                                showNotification("🔄 Tự động đồng bộ", "Ảnh chấm công vừa được đồng bộ từ thiết bị khác!");
+                                showNotification("🔄 Tự động đồng bộ", "Ảnh chấm công vừa nảy lên màn hình!");
                             }
                         }
                         
                         // ==========================================
-                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG (Mắt Thần)
+                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG
                         // ==========================================
                         if (state.currentUser && state.currentUser.role !== 'staff') {
                             const staffTab = document.getElementById('tab-staff');
                             if (typeof renderStaffManagement === 'function' && staffTab && !staffTab.classList.contains('hidden')) {
                                 renderStaffManagement();
-                                
                                 const mgrBox = document.getElementById('mgrDayDetailBox');
                                 if (mgrBox && !mgrBox.classList.contains('hidden') && typeof mgrCurrentStaffId !== 'undefined') {
                                     renderMgrCalendar(); 
