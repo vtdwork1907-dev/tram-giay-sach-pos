@@ -5623,6 +5623,24 @@ function initSwipeToCloseModals() {
             if (navigator.onLine) { processUploadQueue(); syncPendingData(); }
 
             supabaseClient.channel('tramgiaysach_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+                    const { eventType, new: newRec } = payload;
+                    if (eventType === 'UPDATE' || eventType === 'INSERT') {
+                        // 1. Cập nhật mảng người dùng tổng
+                        const idx = state.users.findIndex(u => u.id === newRec.id);
+                        if (idx !== -1) state.users[idx] = newRec; else state.users.push(newRec);
+                        
+                        // 2. NẾU LÀ TÀI KHOẢN ĐANG ĐĂNG NHẬP -> Tự động nảy Lịch ngay lập tức không cần F5
+                        if (state.currentUser && newRec.username === state.currentUser.username && newRec.attendance) {
+                            localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(newRec.attendance));
+                            
+                            // Tự động load lại dấu chấm trên lịch
+                            if (typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
+                                renderCalendarGrid(calMonth, calYear);
+                            }
+                        }
+                    }
+                })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
                     const { eventType, new: newRec, old: oldRec } = payload;
                     if (eventType === 'INSERT' || eventType === 'UPDATE') { 
