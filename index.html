@@ -5854,7 +5854,7 @@ function initSwipeToCloseModals() {
                         else { state.users.push(newRec); }
                         
                         // ==========================================
-                        // LOGIC ĐỒNG BỘ ĐIỆN THOẠI -> MÁY TÍNH CỦA NHÂN VIÊN
+                        // LOGIC DÀNH CHO NHÂN VIÊN
                         // ==========================================
                         if (state.currentUser && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
                             let needsRender = false;
@@ -5870,38 +5870,42 @@ function initSwipeToCloseModals() {
                             
                             const personalTab = document.getElementById('tab-personal');
                             if (needsRender && personalTab && !personalTab.classList.contains('hidden')) {
-                                
-                                // 1. Tự động vẽ ảnh ra ngoài màn hình nút Xanh/Cam
                                 if (typeof renderTodayTimekeepingInfo === 'function') renderTodayTimekeepingInfo();
-                                
-                                // 2. Tự động chấm xanh lên lịch
                                 if (typeof renderCalendarGrid === 'function') renderCalendarGrid(calMonth, calYear);
                                 
-                                // 3. Tự động load lại bảng chi tiết lịch (nếu đang mở)
                                 const detailBox = document.getElementById('inlineDayDetail');
                                 if (detailBox && !detailBox.classList.contains('hidden') && typeof currentDetailDate !== 'undefined') {
                                     showDayDetail(currentDetailDate);
                                 }
-                                
-                                showNotification("🔄 Tự động đồng bộ", "Ảnh chấm công vừa nảy lên màn hình!");
                             }
                         }
                         
                         // ==========================================
-                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG
+                        // LOGIC DÀNH CHO QUẢN LÝ (CẬP NHẬT PHÊ DUYỆT REALTIME)
                         // ==========================================
                         if (state.currentUser && state.currentUser.role !== 'staff') {
+                            
+                            // 1. Luôn cập nhật số lượng chấm đỏ Thông báo
+                            if (typeof updatePendingBadge === 'function') updatePendingBadge();
+
                             const staffTab = document.getElementById('tab-staff');
-                            if (typeof renderStaffManagement === 'function' && staffTab && !staffTab.classList.contains('hidden')) {
-                                renderStaffManagement();
+                            if (staffTab && !staffTab.classList.contains('hidden')) {
+                                
+                                // 2. Nếu đang mở tab Danh sách
+                                if (typeof renderStaffManagement === 'function') renderStaffManagement();
+                                
+                                // 3. Nếu đang mở tab Phê Duyệt -> Tự động vẽ lại danh sách đơn
+                                if (typeof renderMgrApprovals === 'function') renderMgrApprovals();
+                                
+                                // 4. Nếu đang mở tab Lịch của 1 nhân viên
                                 const mgrBox = document.getElementById('mgrDayDetailBox');
                                 if (mgrBox && !mgrBox.classList.contains('hidden') && typeof mgrCurrentStaffId !== 'undefined') {
-                                    renderMgrCalendar(); 
+                                    if (typeof renderMgrCalendar === 'function') renderMgrCalendar(); 
                                     const titleEl = document.querySelector('#mgrDayDetailBox h4');
                                     if(titleEl) {
                                         const dateText = titleEl.innerText.replace('Chi tiết: ', '');
                                         const [d, m, y] = dateText.split('/');
-                                        if (y && m && d) showMgrDayDetail(`${y}-${m}-${d}`);
+                                        if (y && m && d && typeof showMgrDayDetail === 'function') showMgrDayDetail(`${y}-${m}-${d}`);
                                     }
                                 }
                             }
