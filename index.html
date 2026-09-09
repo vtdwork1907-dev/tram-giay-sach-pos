@@ -6762,7 +6762,10 @@ function initSwipeToCloseModals() {
             localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
             localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
             
-            renderCalendarGrid(calMonth, calYear); // Load lại lịch để chấm vàng hiện lên
+            // Thêm dòng này để đẩy lên Cloud:
+            syncAttendanceToCloud(ledger);
+            
+            renderCalendarGrid(calMonth, calYear);
             
             const btn = document.getElementById('btnSubmitSchedule');
             const originalText = btn.innerHTML;
