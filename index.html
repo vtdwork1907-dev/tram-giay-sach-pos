@@ -7402,7 +7402,19 @@ function initSwipeToCloseModals() {
                 resultBox.classList.remove('hidden');
                 resultBox.classList.add('flex');
 
-                const base64Photo = await compressImage(file, 200, 800); 
+                const base64Photo = await compressImage(file, 200, 800);
+                // Upload ảnh chấm công lên mây
+const r2PhotoUrl = await uploadFileToR2(base64Photo, 'timekeep');
+// Lưu vào ledger
+ledger[dateString] = { 
+    status: isLate ? 'late' : 'worked', 
+    checkIn: inTimeStr, 
+    checkOut: timeString, 
+    photoIn: type === 'in' ? r2PhotoUrl : (ledger[dateString]?.photoIn || ''),
+    photoOut: type === 'out' ? r2PhotoUrl : (ledger[dateString]?.photoOut || ''),
+    locIn: type === 'in' ? finalLocationText : (ledger[dateString]?.locIn || ''),
+    locOut: type === 'out' ? finalLocationText : (ledger[dateString]?.locOut || '')
+};
                 const storageKeyPrefix = type === 'in' ? 'TRAM_TK_IN' : 'TRAM_TK_OUT';
                 
                 // Lưu ảnh và thời gian của lần chụp này vào bộ nhớ thiết bị
