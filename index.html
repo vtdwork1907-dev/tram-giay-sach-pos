@@ -7196,6 +7196,10 @@ function initSwipeToCloseModals() {
                     // Ghi vào Lịch thực tế
                     ledger[dateString] = { status: isLate ? 'late' : 'worked', checkIn: inTimeStr, checkOut: timeString };
                     localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+                    // Thêm dòng này để đẩy lên Cloud:
+                    syncAttendanceToCloud(ledger);
+                    
+                    renderCalendarGrid(calMonth, calYear);
                     
                     // Render lại khung Lịch để hiện ngay dấu chấm xanh & cập nhật Thống kê
                     renderCalendarGrid(calMonth, calYear); 
