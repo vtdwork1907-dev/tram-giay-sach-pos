@@ -5849,7 +5849,7 @@ function initSwipeToCloseModals() {
                     const { eventType, new: newRec } = payload;
                     if (eventType === 'UPDATE' || eventType === 'INSERT') {
                         
-                        // 1. Cập nhật dữ liệu tổng vào bộ nhớ
+                        // 1. Cập nhật dữ liệu tổng vào bộ nhớ (Giữ nguyên cấu trúc)
                         const idx = state.users.findIndex(u => u.id === newRec.id);
                         if (idx !== -1) {
                             state.users[idx] = { ...state.users[idx], ...newRec };
@@ -5858,9 +5858,10 @@ function initSwipeToCloseModals() {
                         }
                         
                         // ==========================================
-                        // LOGIC DÀNH CHO NHÂN VIÊN
+                        // LOGIC DÀNH CHO CÙNG 1 TÀI KHOẢN (Đồng bộ giữa ĐT và Máy tính của Nhân viên)
+                        // Đã xóa bỏ rào cản check role === 'staff'
                         // ==========================================
-                        if (state.currentUser && state.currentUser.role === 'staff' && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
+                        if (state.currentUser && (newRec.id == state.currentUser.id || newRec.username == state.currentUser.username)) {
                             let needsRender = false;
                             
                             if (newRec.attendance !== undefined && newRec.attendance !== null) {
@@ -5872,31 +5873,32 @@ function initSwipeToCloseModals() {
                                 needsRender = true;
                             }
                             
-                            if (needsRender && typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
-                                renderCalendarGrid(calMonth, calYear);
-                                showNotification("🔄 Tự động đồng bộ", "Đã cập nhật ảnh chấm công mới!");
+                            // Nếu đang mở tab Cá nhân trên máy tính -> Cho nảy ảnh và lịch ngay lập tức
+                            const personalTab = document.getElementById('tab-personal');
+                            if (needsRender && personalTab && !personalTab.classList.contains('hidden')) {
+                                if (typeof renderCalendarGrid === 'function') renderCalendarGrid(calMonth, calYear);
                                 
                                 // TỰ ĐỘNG LÀM MỚI BẢNG CHI TIẾT ĐỂ ẢNH HIỆN RA NGAY LẬP TỨC
                                 const detailBox = document.getElementById('inlineDayDetail');
                                 if (detailBox && !detailBox.classList.contains('hidden') && typeof currentDetailDate !== 'undefined') {
                                     showDayDetail(currentDetailDate);
                                 }
+                                
+                                showNotification("🔄 Tự động đồng bộ", "Ảnh chấm công vừa được đồng bộ từ thiết bị khác!");
                             }
                         }
                         
                         // ==========================================
-                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG
+                        // LOGIC DÀNH CHO QUẢN LÝ / CHỦ CỬA HÀNG (Mắt Thần)
                         // ==========================================
                         if (state.currentUser && state.currentUser.role !== 'staff') {
-                            if (typeof renderStaffManagement === 'function' && !document.getElementById('tab-staff').classList.contains('hidden')) {
+                            const staffTab = document.getElementById('tab-staff');
+                            if (typeof renderStaffManagement === 'function' && staffTab && !staffTab.classList.contains('hidden')) {
                                 renderStaffManagement();
                                 
-                                // TỰ ĐỘNG LÀM MỚI BẢNG CHI TIẾT CỦA QUẢN LÝ NẾU ĐANG MỞ
                                 const mgrBox = document.getElementById('mgrDayDetailBox');
                                 if (mgrBox && !mgrBox.classList.contains('hidden') && typeof mgrCurrentStaffId !== 'undefined') {
-                                    renderMgrCalendar(); // Cập nhật lại tiền lương & giờ làm
-                                    
-                                    // Đọc ngày đang xem và load lại ảnh
+                                    renderMgrCalendar(); 
                                     const titleEl = document.querySelector('#mgrDayDetailBox h4');
                                     if(titleEl) {
                                         const dateText = titleEl.innerText.replace('Chi tiết: ', '');
