@@ -7296,41 +7296,44 @@ function initSwipeToCloseModals() {
             document.getElementById('leaveEnd').value = '';
             document.getElementById('leaveReason').value = '';
         }
-        // HÀM 1: ĐẨY LỊCH LÊN CLOUD (KÈM BÁO LỖI NẾU BỊ CHẶN)
+        // HÀM 1: ĐẨY LỊCH THỰC TẾ LÊN CLOUD (CHẤM CÔNG)
         async function syncAttendanceToCloud(ledger) {
             if (!navigator.onLine || !state.currentUser) return;
             try {
                 const { error } = await supabaseClient.from('users').update({ attendance: ledger }).eq('username', state.currentUser.username);
-                
-                // Nếu Supabase từ chối lưu, bung thông báo đỏ ngay lập tức
-                if (error) {
-                    showNotification("⚠️ Lỗi Đồng Bộ Mây", "Supabase từ chối lưu Lịch: " + error.message);
-                    console.error("Lỗi Supabase:", error);
-                }
-            } catch (e) { 
-                console.error("Lỗi code đẩy lịch:", e); 
-            }
+                if (error) showNotification("⚠️ Lỗi Đồng Bộ", "Supabase từ chối lưu Lịch: " + error.message);
+            } catch (e) { console.error(e); }
         }
 
-        // HÀM 2: KÉO LỊCH TỪ CLOUD VỀ (TRỘN DỮ LIỆU THÔNG MINH)
-        async function fetchAttendanceFromCloud() {
+        // HÀM 2: ĐẨY LỊCH TUẦN LÊN CLOUD (CÁC Ô TÍCH)
+        async function syncScheduleToCloud(scheduleData) {
             if (!navigator.onLine || !state.currentUser) return;
             try {
-                const { data, error } = await supabaseClient.from('users').select('attendance').eq('username', state.currentUser.username).single();
+                await supabaseClient.from('users').update({ schedule: scheduleData }).eq('username', state.currentUser.username);
+            } catch (e) { console.error(e); }
+        }
+
+        // HÀM 3: KÉO TOÀN BỘ DỮ LIỆU CÁ NHÂN TỪ CLOUD VỀ
+        async function fetchPersonalDataFromCloud() {
+            if (!navigator.onLine || !state.currentUser) return;
+            try {
+                const { data } = await supabaseClient.from('users').select('attendance, schedule').eq('username', state.currentUser.username).single();
                 
-                if (data && data.attendance) {
-                    // Trộn dữ liệu mây với dữ liệu hiện tại (để không bị mất ảnh vừa chụp)
-                    const localLedger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
-                    const mergedLedger = { ...localLedger, ...data.attendance };
+                if (data) {
+                    if (data.attendance) {
+                        const localLedger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+                        localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify({ ...localLedger, ...data.attendance }));
+                    }
+                    if (data.schedule) {
+                        localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(data.schedule));
+                    }
                     
-                    localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(mergedLedger));
-                    
-                    // Vẽ lại lịch nếu đang mở tab Cá nhân
-                    if (typeof renderCalendarGrid === 'function') renderCalendarGrid(calMonth, calYear);
+                    if (typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
+                        renderCalendarGrid(calMonth, calYear);
+                        renderWeeklySchedule(); // Tự động nảy dấu tích lên bảng
+                    }
                 }
-            } catch (e) { 
-                console.error("Lỗi kéo lịch từ Cloud:", e); 
-            }
+            } catch (e) { console.error(e); }
         }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
