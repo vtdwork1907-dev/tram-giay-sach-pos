@@ -7105,7 +7105,7 @@ function initSwipeToCloseModals() {
         }        
         let currentDetailDate = '';
 
-        function showDayDetail(dateStr) {
+       function showDayDetail(dateStr) {
             currentDetailDate = dateStr;
             const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
             const dayData = ledger[dateStr];
@@ -7132,17 +7132,33 @@ function initSwipeToCloseModals() {
                         ? '<span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-1 rounded font-bold">Đi muộn</span>' 
                         : '<span class="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded font-bold">Đúng giờ</span>';
                     
+                    // Lấy đường dẫn ảnh và định vị để hiển thị
+                    const imgIn = dayData.photoIn ? `<img src="${dayData.photoIn}" onclick="if(typeof openImageViewer === 'function') openImageViewer('${dayData.photoIn}')" class="w-full h-24 md:h-32 object-cover rounded-lg cursor-pointer shadow-sm mt-2 hover:opacity-90 transition">` : '';
+                    const imgOut = dayData.photoOut ? `<img src="${dayData.photoOut}" onclick="if(typeof openImageViewer === 'function') openImageViewer('${dayData.photoOut}')" class="w-full h-24 md:h-32 object-cover rounded-lg cursor-pointer shadow-sm mt-2 hover:opacity-90 transition">` : '';
+
                     contentHtml = `
-                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 mb-2">
                             <span class="font-bold text-slate-600 text-xs">Trạng thái:</span> ${statusBadge}
                         </div>
-                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 mt-2">
-                            <span class="font-bold text-slate-600 text-xs"><i class="fa-solid fa-right-to-bracket text-emerald-500 mr-1"></i> Giờ Đến:</span>
-                            <span class="font-mono font-bold text-slate-800 text-xs">${dayData.checkIn ? dayData.checkIn.split(' - ')[0] : '--:--:--'}</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 mt-2">
-                            <span class="font-bold text-slate-600 text-xs"><i class="fa-solid fa-right-from-bracket text-amber-500 mr-1"></i> Giờ Về:</span>
-                            <span class="font-mono font-bold text-slate-800 text-xs">${dayData.checkOut ? dayData.checkOut.split(' - ')[0] : '--:--:--'}</span>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex flex-col justify-between">
+                                <div class="flex justify-between items-center w-full">
+                                    <span class="font-bold text-slate-600 text-[11px] md:text-xs"><i class="fa-solid fa-right-to-bracket text-emerald-500 mr-1"></i> Đến:</span>
+                                    <span class="font-mono font-bold text-slate-800 text-[11px] md:text-xs">${dayData.checkIn ? dayData.checkIn.split(' - ')[0] : '--:--'}</span>
+                                </div>
+                                ${imgIn}
+                                ${dayData.locIn ? `<span class="text-[9px] text-slate-500 mt-1 truncate w-full block" title="${dayData.locIn}"><i class="fa-solid fa-location-dot text-red-400"></i> ${dayData.locIn.split(',')[0]}</span>` : ''}
+                            </div>
+                            
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex flex-col justify-between">
+                                <div class="flex justify-between items-center w-full">
+                                    <span class="font-bold text-slate-600 text-[11px] md:text-xs"><i class="fa-solid fa-right-from-bracket text-amber-500 mr-1"></i> Về:</span>
+                                    <span class="font-mono font-bold text-slate-800 text-[11px] md:text-xs">${dayData.checkOut ? dayData.checkOut.split(' - ')[0] : '--:--'}</span>
+                                </div>
+                                ${imgOut}
+                                ${dayData.locOut ? `<span class="text-[9px] text-slate-500 mt-1 truncate w-full block" title="${dayData.locOut}"><i class="fa-solid fa-location-dot text-red-400"></i> ${dayData.locOut.split(',')[0]}</span>` : ''}
+                            </div>
                         </div>
                     `;
                 } else if (dayData.status === 'registered') {
@@ -7152,9 +7168,8 @@ function initSwipeToCloseModals() {
                             <div class="font-bold text-amber-700 text-xs">Có đăng ký lịch làm</div>
                         </div>
                     `;
-                    if (targetDate < today) needExplanation = true; // Trót đăng ký mà không đi làm/không báo nghỉ -> Phải giải trình
+                    if (targetDate < today) needExplanation = true; 
                 } else if (dayData.status === 'leave') {
-                    // ĐÃ XÓA MÀU ĐỎ: Chỉ hiển thị màu xám trung tính cho việc Nghỉ phép
                     contentHtml = `
                         <div class="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
                             <span class="font-bold text-slate-600"><i class="fa-solid fa-bed"></i> Nghỉ phép</span>
@@ -7191,7 +7206,6 @@ function initSwipeToCloseModals() {
             detailWrapper.classList.remove('hidden');
             detailWrapper.classList.add('flex');
         }
-
         function hideDayDetail() {
             document.getElementById('inlineDayDetail').classList.add('hidden');
             document.getElementById('inlineDayDetail').classList.remove('flex');
