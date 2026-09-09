@@ -8036,17 +8036,17 @@ function initSwipeToCloseModals() {
             const u = state.users.find(x => x.id === userId);
             if (!u || !u.requests) return;
             
-            const req = u.requests.find(r => r.id === reqId);
+            let reqList = Array.isArray(u.requests) ? u.requests : (typeof u.requests === 'string' ? JSON.parse(u.requests) : []);
+            const req = reqList.find(r => r.id === reqId);
             if (!req) return;
 
+            // Đổi trạng thái đơn thành approved hoặc rejected
             req.status = action;
 
-            // XỬ LÝ LOGIC ĐẶC BIỆT KHI DUYỆT
             if (action === 'approved') {
                 const ledger = u.attendance || {};
                 
                 if (req.type === 'explanation') {
-                    // Chuyển ngày giải trình thành Đã đi làm (worked) để tính tiền
                     if (ledger[req.targetDate]) {
                         ledger[req.targetDate].status = 'worked';
                         ledger[req.targetDate].note = "Đã duyệt giải trình: " + req.reason;
@@ -8055,7 +8055,6 @@ function initSwipeToCloseModals() {
                     }
                 } 
                 else if (req.type === 'leave') {
-                    // Cập nhật các ngày trong khoảng thành leave
                     let curr = new Date(req.startDate);
                     let end = new Date(req.endDate);
                     while(curr <= end) {
@@ -8064,22 +8063,24 @@ function initSwipeToCloseModals() {
                         curr.setDate(curr.getDate() + 1);
                     }
                 }
-                
                 u.attendance = ledger;
             }
 
-            // Đẩy lên mây
+            u.requests = reqList; // Gán lại mảng mới vào User
+
             if (navigator.onLine) {
-                await supabaseClient.from('users').update({ 
+                const { error } = await supabaseClient.from('users').update({ 
                     requests: u.requests,
                     attendance: u.attendance
                 }).eq('id', userId);
+                
+                if (error) return alert("Lỗi khi duyệt trên máy chủ: " + error.message);
             }
 
-            showNotification(action === 'approved' ? "✅ Đã duyệt" : "❌ Đã từ chối", "Đơn đã được xử lý và cập nhật vào hệ thống!");
+            showNotification(action === 'approved' ? "✅ Đã duyệt" : "❌ Đã từ chối", "Đơn đã được xử lý và lưu vào hệ thống!");
             updatePendingBadge();
-            renderMgrApprovals();
-            if (mgrCurrentStaffId === userId) renderMgrCalendar(); // Update lịch nếu đang mở
+            renderMgrApprovals(); // Tự động làm mất Đơn khỏi màn hình sau khi bấm
+            if (typeof mgrCurrentStaffId !== 'undefined' && mgrCurrentStaffId === userId) renderMgrCalendar();
         }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
