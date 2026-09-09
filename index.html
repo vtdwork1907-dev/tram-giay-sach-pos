@@ -705,24 +705,24 @@
                         </div>
                     </div>
 
-                    <!-- SUB-TAB 2: ĐĂNG KÝ LỊCH LÀM & LỊCH CÁ NHÂN -->
-                    <div id="sub-schedule" class="hidden flex-col gap-3">
+                   <!-- SUB-TAB 2: ĐĂNG KÝ LỊCH LÀM & LỊCH CÁ NHÂN -->
+                    <div id="sub-schedule" class="hidden flex-col lg:flex-row gap-4 items-start w-full">
                         
-                        <!-- KHỐI 1: BẢNG ĐĂNG KÝ LỊCH TUẦN -->
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
+                        <!-- KHỐI 1: BẢNG ĐĂNG KÝ LỊCH TUẦN (Chiếm phần còn lại) -->
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 w-full lg:flex-1">
                             <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2 border-b border-slate-100 pb-2"><i class="fa-solid fa-pen-to-square text-blue-500"></i> Đăng Ký Lịch Tuần Này</h3>
                             
-                            <div class="overflow-hidden w-full border border-slate-200 rounded-xl">
-                                <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap">
+                            <div class="overflow-x-auto w-full border border-slate-200 rounded-xl hide-scroll">
+                                <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap min-w-[240px]">
                                     <thead>
                                         <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold text-center">
-                                            <th class="p-2.5 border-r border-slate-200 w-20">Ngày</th>
+                                            <th class="p-2.5 border-r border-slate-200 w-16 md:w-20">Ngày</th>
                                             <th class="p-2.5 border-r border-slate-200">Ca 1<br><span class="text-[9px] font-medium">(8h - 13h)</span></th>
                                             <th class="p-2.5">Ca 2<br><span class="text-[9px] font-medium">(13h - 18h)</span></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 text-center" id="weeklyScheduleBody">
-                                        <!-- Được tự động render bằng JavaScript -->
+                                        <!-- Render tự động -->
                                     </tbody>
                                 </table>
                             </div>
@@ -732,60 +732,60 @@
                             </button>
                         </div>
 
-                        <!-- KHỐI 2: LỊCH CÁ NHÂN & THỐNG KÊ (GIỐNG IPHONE) -->
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
-                            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                                <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-regular fa-calendar text-indigo-500"></i> Lịch Cá Nhân</h3>
-                                <!-- Nút chuyển tháng -->
-                                <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                                    <button onclick="changeCalendarMonth(-1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                                    <span id="calendarMonthYear" class="font-bold text-slate-800 text-[11px] md:text-xs w-20 text-center">Tháng...</span>
-                                    <button onclick="changeCalendarMonth(1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                        <!-- KHỐI 2: LỊCH CÁ NHÂN & THỐNG KÊ (Giới hạn kích thước trên Máy tính) -->
+                        <div class="flex flex-col gap-4 w-full lg:w-[320px] xl:w-[350px] shrink-0">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
+                                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-regular fa-calendar text-indigo-500"></i> Lịch Thực Tế</h3>
+                                    <!-- Nút chuyển tháng -->
+                                    <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                                        <button onclick="changeCalendarMonth(-1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                                        <span id="calendarMonthYear" class="font-bold text-slate-800 text-[11px] md:text-xs w-[68px] text-center">...</span>
+                                        <button onclick="changeCalendarMonth(1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-7 gap-1 text-center text-[10px] md:text-xs font-bold text-slate-400 mb-1">
+                                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+                                </div>
+                                
+                                <!-- Khung Lịch -->
+                                <div id="calendarGrid" class="grid grid-cols-7 gap-y-1 gap-x-1 text-center text-xs font-semibold">
+                                </div>
+                                
+                                <div class="flex items-center justify-center gap-4 mt-2 text-[9px] md:text-[10px] text-slate-500 font-medium border-t border-slate-100 pt-2">
+                                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đi làm</span>
+                                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Nghỉ phép</span>
                                 </div>
                             </div>
-                            
-                            <!-- Grid Tiêu đề Thứ -->
-                            <div class="grid grid-cols-7 gap-1 text-center text-[10px] md:text-xs font-bold text-slate-400 mb-1">
-                                <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
-                            </div>
-                            
-                            <!-- Grid Ngày Tháng -->
-                            <div id="calendarGrid" class="grid grid-cols-7 gap-y-2 gap-x-1 text-center text-xs md:text-sm font-semibold">
-                                <!-- JS sẽ đổ ngày và dấu chấm xanh/đỏ vào đây -->
-                            </div>
-                            
-                            <!-- Chú thích -->
-                            <div class="flex items-center justify-center gap-4 mt-2 text-[9px] md:text-[10px] text-slate-500 font-medium">
-                                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đi làm</span>
-                                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Nghỉ phép</span>
-                            </div>
-                        </div>
 
-                        <!-- KHỐI 3: THỐNG KÊ THÁNG -->
-                        <div class="grid grid-cols-3 gap-2 w-full">
-                            <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[9px] md:text-[10px] font-bold text-emerald-700 uppercase mb-0.5 text-center">Số Công</span>
-                                <span id="statWorked" class="font-extrabold text-emerald-600 text-lg md:text-xl">0</span>
-                            </div>
-                            <div class="bg-red-50 border border-red-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[9px] md:text-[10px] font-bold text-red-700 uppercase mb-0.5 text-center">Nghỉ Phép</span>
-                                <span id="statLeave" class="font-extrabold text-red-600 text-lg md:text-xl">0</span>
-                            </div>
-                            <div class="bg-amber-50 border border-amber-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[9px] md:text-[10px] font-bold text-amber-700 uppercase mb-0.5 text-center">Đi Muộn</span>
-                                <span id="statLate" class="font-extrabold text-amber-600 text-lg md:text-xl">0</span>
+                            <!-- Thống Kê Tháng -->
+                            <div class="grid grid-cols-3 gap-2 w-full">
+                                <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] md:text-[10px] font-bold text-emerald-700 uppercase mb-0.5 text-center">Số Công</span>
+                                    <span id="statWorked" class="font-extrabold text-emerald-600 text-lg md:text-xl">0</span>
+                                </div>
+                                <div class="bg-red-50 border border-red-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] md:text-[10px] font-bold text-red-700 uppercase mb-0.5 text-center">Nghỉ Phép</span>
+                                    <span id="statLeave" class="font-extrabold text-red-600 text-lg md:text-xl">0</span>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-100 p-2.5 rounded-2xl flex flex-col items-center justify-center shadow-sm">
+                                    <span class="text-[9px] md:text-[10px] font-bold text-amber-700 uppercase mb-0.5 text-center">Đi Muộn</span>
+                                    <span id="statLate" class="font-extrabold text-amber-600 text-lg md:text-xl">0</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SUB-TAB 3: XIN NGHỈ PHÉP -->
+                    <!-- SUB-TAB 3: XIN NGHỈ PHÉP (Sửa hiển thị điện thoại) -->
                     <div id="sub-leave" class="hidden flex-col gap-3">
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
                             <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2 border-b border-slate-100 pb-2"><i class="fa-solid fa-house-chimney-medical text-amber-500"></i> Yêu Cầu Xin Nghỉ Phép</h3>
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div><label class="block text-[11px] font-bold text-slate-600 mb-1">Từ ngày</label><input type="date" id="leaveStart" class="w-full p-2.5 text-[16px] md:text-xs border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 transition"></div>
-                                    <div><label class="block text-[11px] font-bold text-slate-600 mb-1">Đến ngày</label><input type="date" id="leaveEnd" class="w-full p-2.5 text-[16px] md:text-xs border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 transition"></div>
+                                <!-- Chỉnh thành flex-col trên điện thoại để tách rời 2 ô -->
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="flex-1"><label class="block text-[11px] font-bold text-slate-600 mb-1">Từ ngày</label><input type="date" id="leaveStart" class="w-full p-2.5 text-[16px] md:text-xs border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 transition"></div>
+                                    <div class="flex-1"><label class="block text-[11px] font-bold text-slate-600 mb-1">Đến ngày</label><input type="date" id="leaveEnd" class="w-full p-2.5 text-[16px] md:text-xs border border-slate-300 rounded-xl outline-none font-bold text-slate-700 bg-slate-50 transition"></div>
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Lý do nghỉ</label>
@@ -795,7 +795,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
             </section>
 
             <!-- TAB CÀI ĐẶT -->
