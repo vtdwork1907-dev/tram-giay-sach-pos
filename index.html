@@ -5446,6 +5446,8 @@ window.editDelayNote = async function(orderId) {
 
                 await saveLocalState(); 
                 renderLogo(); renderOrdersTable(); renderDashboard(); updateReportMetrics(); renderCustomersTable(); renderExpensesTable(); renderCategoryTabs(); renderServicesGrid(); renderSettingsServicesTable(); renderSettingsUsersTable(); renderSettingsBrandsTable();
+                // THÊM DÒNG NÀY ĐỂ KÉO LỊCH TỪ MÂY VỀ MÁY:
+                await fetchAttendanceFromCloud();
                 
                 adjustPOSLayout(); 
                 if (window.location.hash.startsWith('#track=')) checkUrlTracking();
