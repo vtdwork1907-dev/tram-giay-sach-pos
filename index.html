@@ -7197,10 +7197,17 @@ function initSwipeToCloseModals() {
             document.getElementById('inlineDayDetail').classList.remove('flex');
         }
 
-        function submitDayExplanation() {
+       function submitDayExplanation() {
             const text = document.getElementById('dayExplanationText').value.trim();
             if (!text) return alert("Vui lòng nhập nội dung giải trình!");
-            showNotification("✅ Đã gửi giải trình", `Giải trình cho ngày ${currentDetailDate.split('-').reverse().join('/')} đã gửi tới Quản lý.`);
+            
+            let reqs = state.currentUser.requests || [];
+            reqs.push({ id: Date.now().toString(), type: 'explanation', targetDate: currentDetailDate, reason: text, status: 'pending', created_at: Date.now() });
+            state.currentUser.requests = reqs;
+            
+            if(navigator.onLine) supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
+
+            showNotification("✅ Đã gửi giải trình", "Chờ Quản lý duyệt để được tính công.");
             hideDayDetail();
         }
         // Dữ liệu mô phỏng để test giao diện (Tạo random dấu chấm dựa vào ngày tháng)
