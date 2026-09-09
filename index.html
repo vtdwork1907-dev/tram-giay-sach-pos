@@ -6714,7 +6714,14 @@ function initSwipeToCloseModals() {
             let totalChecked = 0;
             let scheduleData = {};
             
-            // Lưu trạng thái của tất cả các checkbox
+            // Tính ra các ngày cụ thể của Tuần hiện tại (Thứ 2 đến Chủ nhật)
+            const curr = new Date();
+            const dayOfWeek = curr.getDay() === 0 ? 6 : curr.getDay() - 1; 
+            const monday = new Date(curr);
+            monday.setDate(curr.getDate() - dayOfWeek);
+
+            let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+
             for(let i = 0; i < 7; i++) {
                 const shift1 = document.getElementById(`shift1_${i}`).checked;
                 const shift2 = document.getElementById(`shift2_${i}`).checked;
@@ -6722,16 +6729,32 @@ function initSwipeToCloseModals() {
                 scheduleData[`shift1_${i}`] = shift1;
                 scheduleData[`shift2_${i}`] = shift2;
                 
-                if(shift1) totalChecked++;
-                if(shift2) totalChecked++;
+                // Quy đổi vị trí i sang ngày tháng năm thật
+                const targetDate = new Date(monday);
+                targetDate.setDate(monday.getDate() + i);
+                const dStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+
+                if(shift1 || shift2) {
+                    totalChecked++;
+                    // Ghi nhận là "Có lịch làm" (registered) nếu hôm đó chưa chấm công
+                    if (!ledger[dStr] || (ledger[dStr].status !== 'worked' && ledger[dStr].status !== 'late')) {
+                        ledger[dStr] = { status: 'registered' };
+                    }
+                } else {
+                    // Nếu nhân viên bỏ tích, xóa chấm vàng
+                    if (ledger[dStr] && ledger[dStr].status === 'registered') {
+                        delete ledger[dStr];
+                    }
+                }
             }
             
             if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
             
-            // Lưu vào LocalStorage để không bị mất dấu tích
             localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
+            localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
             
-            // Đổi giao diện nút bấm báo thành công
+            renderCalendarGrid(calMonth, calYear); // Load lại lịch để chấm vàng hiện lên
+            
             const btn = document.getElementById('btnSubmitSchedule');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Gửi Đăng Ký';
@@ -6744,7 +6767,7 @@ function initSwipeToCloseModals() {
                 btn.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-700');
             }, 2000);
 
-            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký cho ${totalChecked} ca làm trong tuần tới. (Dấu tích đã được lưu)`);
+            showNotification("✅ Ghi nhận thành công", `Đã gửi lịch cho ${totalChecked} ca làm. Lịch cá nhân đã xuất hiện chấm vàng!`);
         }
 
 
