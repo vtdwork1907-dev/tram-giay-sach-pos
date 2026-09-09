@@ -7665,43 +7665,76 @@ function initSwipeToCloseModals() {
 
         function updatePendingBadge() {
             let pendingCount = 0;
-            state.users.filter(u => u.role === 'staff').forEach(u => {
-                const reqs = u.requests || [];
-                pendingCount += reqs.filter(r => r.status === 'pending').length;
+            state.users.forEach(u => {
+                // MỞ RỘNG BỘ LỌC: Bỏ qua Chủ cửa hàng (owner), còn lại lấy hết
+                if (u.role !== 'owner' && u.requests) {
+                    let reqList = Array.isArray(u.requests) ? u.requests : (typeof u.requests === 'string' ? JSON.parse(u.requests) : []);
+                    pendingCount += reqList.filter(r => r.status === 'pending').length;
+                }
             });
             const badge = document.getElementById('mgrPendingCount');
-            if (pendingCount > 0) {
-                badge.innerText = pendingCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+            if (badge) {
+                if (pendingCount > 0) {
+                    badge.innerText = pendingCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
             }
         }
 
         // 2. Render Danh sách Nhân Viên (View 1)
-        function renderMgrStaffList() {
-            const grid = document.getElementById('mgrStaffListGrid');
-            const staffMembers = state.users.filter(u => u.role === 'staff');
+        function renderMgrApprovals() {
+            const list = document.getElementById('mgrApprovalList');
+            let allReqs = [];
             
-            if (staffMembers.length === 0) {
-                grid.innerHTML = '<div class="col-span-full p-4 text-center text-slate-500 italic bg-slate-50 rounded-xl">Chưa có tài khoản Nhân viên nào.</div>';
+            state.users.forEach(u => {
+                if (u.role !== 'owner' && u.requests) {
+                    let reqList = Array.isArray(u.requests) ? u.requests : (typeof u.requests === 'string' ? JSON.parse(u.requests) : []);
+                    reqList.forEach(r => {
+                        if (r.status === 'pending') allReqs.push({ ...r, userId: u.id, userName: u.name });
+                    });
+                }
+            });
+            
+            allReqs.sort((a,b) => b.created_at - a.created_at);
+
+            if (allReqs.length === 0) {
+                list.innerHTML = `<div class="p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center flex flex-col items-center gap-2"><i class="fa-regular fa-face-smile-wink text-4xl text-emerald-400"></i><span class="text-slate-500 font-semibold text-sm">Tuyệt vời! Không có đơn nào chờ duyệt.</span></div>`;
                 return;
             }
 
-            grid.innerHTML = staffMembers.map(u => {
-                const reqs = u.requests || [];
-                const pending = reqs.filter(r => r.status === 'pending').length;
-                let badgeHtml = pending > 0 ? `<span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse">${pending}</span>` : '';
+            list.innerHTML = allReqs.map(r => {
+                let icon = ''; let title = ''; let contentHtml = '';
                 
+                if (r.type === 'leave') {
+                    icon = '<i class="fa-solid fa-house-chimney-medical text-red-500"></i>'; title = 'Xin nghỉ phép';
+                    contentHtml = `<span class="font-bold text-slate-700">Từ:</span> ${r.startDate.split('-').reverse().join('/')} <span class="font-bold text-slate-700 ml-2">Đến:</span> ${r.endDate.split('-').reverse().join('/')}<br><span class="text-slate-500 italic">Lý do: ${escapeHtml(r.reason)}</span>`;
+                } else if (r.type === 'explanation') {
+                    icon = '<i class="fa-solid fa-pen-clip text-amber-500"></i>'; title = 'Giải trình thiếu công/đi muộn';
+                    contentHtml = `<span class="font-bold text-slate-700">Ngày:</span> ${r.targetDate.split('-').reverse().join('/')}<br><span class="text-slate-500 italic">Lý do: ${escapeHtml(r.reason)}</span>`;
+                } else if (r.type === 'schedule') {
+                    icon = '<i class="fa-regular fa-calendar-check text-blue-500"></i>'; title = 'Nộp lịch tuần';
+                    contentHtml = `<span class="text-slate-500 text-xs">Nhân viên vừa cập nhật lịch làm việc. (Nhấn Duyệt để xóa thông báo)</span>`;
+                }
+
                 return `
-                <div onclick="openMgrStaffDetail('${u.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-sky-400 hover:shadow-md transition active:scale-95 relative flex items-center gap-3">
-                    ${badgeHtml}
-                    <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center text-xl font-bold uppercase shrink-0">${u.name.charAt(0)}</div>
-                    <div class="flex flex-col min-w-0 flex-1">
-                        <span class="font-bold text-slate-800 text-sm truncate">${escapeHtml(u.name)}</span>
-                        <span class="text-[10px] text-slate-500 font-mono truncate">${escapeHtml(u.username)}</span>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 transition hover:shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div class="flex gap-2 items-center">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-lg">${icon}</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">${title}</h4>
+                                <span class="text-[10px] text-slate-500 font-bold uppercase">${escapeHtml(r.userName)}</span>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-slate-400">${new Date(r.created_at).toLocaleDateString('vi-VN')}</span>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                    <div class="text-xs bg-slate-50 p-2 rounded border border-slate-100 leading-relaxed">${contentHtml}</div>
+                    <div class="flex gap-2">
+                        <button onclick="handleRequest('${r.userId}', '${r.id}', 'rejected')" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg text-xs transition active:scale-95">Từ chối</button>
+                        <button onclick="handleRequest('${r.userId}', '${r.id}', 'approved')" class="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg text-xs transition shadow-sm active:scale-95">Duyệt & Đồng ý</button>
+                    </div>
                 </div>`;
             }).join('');
         }
