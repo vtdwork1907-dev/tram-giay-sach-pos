@@ -6679,26 +6679,52 @@ function initSwipeToCloseModals() {
             }, 1000); 
         });
 
-        // Hàm phụ trợ: Dịch tọa độ sang Tên Đường, Số Nhà, Phường, Quận, Thành Phố
+        // Hàm phụ trợ: Dịch GPS sang Tên Đường, Số Nhà (Đã loại bỏ hoàn toàn việc hiển thị tọa độ số)
         async function getAddressFromCoords(lat, lon) {
             try {
-                // 1. Dùng OpenStreetMap API: Thêm zoom=18 để ÉP hệ thống quét tới cấp độ chi tiết nhất (Số nhà/Đường/Ngõ)
+                // 1. Dùng OpenStreetMap API (Zoom cấp 18 để lấy đường nhỏ/ngõ)
                 const url1 = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=vi`;
                 const res1 = await fetch(url1);
                 
                 if (res1.ok) {
                     const data = await res1.json();
                     
-                    // Lấy chuỗi địa chỉ chi tiết và đầy đủ nhất do vệ tinh trả về
-                    if (data && data.display_name) {
-                        // Tách chuỗi thành các phần (ngăn cách bằng dấu phẩy)
-                        let parts = data.display_name.split(',').map(p => p.trim());
+                    if (data && data.address) {
+                        const ad = data.address;
+                        let addressParts = [];
+                        
+                        // 1. Số nhà & Đường
+                        let street = ad.road || ad.pedestrian || ad.street || '';
+                        let houseNum = ad.house_number || ad.street_number || '';
+                        let streetFull = houseNum ? `${houseNum} ${street}` : street;
+                        if (streetFull.trim()) addressParts.push(streetFull.trim());
 
-                        // Lọc bỏ mã bưu điện (các số dài 5-6 chữ số) và chữ "Việt Nam" để địa chỉ tự nhiên như thật
-                        let refinedAddress = parts.filter(p => !/^\d{5,6}$/.test(p) && p.toLowerCase() !== 'việt nam');
+                        // 2. Thôn/Xóm/Khu dân cư (Ngõ/Hẻm)
+                        let hamlet = ad.hamlet || ad.neighbourhood || ad.residential || '';
+                        if (hamlet && hamlet !== street) addressParts.push(hamlet);
 
-                        if (refinedAddress.length > 0) {
-                            return refinedAddress.join(', '); // Trả về VD: "Số 80, Tôn Đức Thắng, Phường Quốc Tử Giám, Quận Đống Đa, Hà Nội"
+                        // 3. Phường/Xã
+                        let ward = ad.suburb || ad.quarter || ad.village || '';
+                        if (ward && !addressParts.includes(ward)) addressParts.push(ward);
+
+                        // 4. Quận/Huyện
+                        let district = ad.city_district || ad.district || ad.county || '';
+                        if (district) addressParts.push(district);
+
+                        // 5. Tỉnh/Thành phố
+                        let city = ad.city || ad.state || ad.province || '';
+                        if (city) addressParts.push(city);
+
+                        // Gộp lại thành chuỗi địa chỉ
+                        if (addressParts.length > 0) {
+                            // Lọc bỏ các phần tử rỗng hoặc trùng lặp
+                            let uniqueParts = [...new Set(addressParts.filter(p => p))];
+                            return uniqueParts.join(', ');
+                        } else if (data.display_name) {
+                            // Nếu lỗi cấu trúc, dùng chuỗi dự phòng của hệ thống và cắt bỏ chữ "Việt Nam", mã bưu điện
+                            let parts = data.display_name.split(',').map(p => p.trim());
+                            let refined = parts.filter(p => !/^\d{5,6}$/.test(p) && p.toLowerCase() !== 'việt nam');
+                            return refined.join(', ');
                         }
                     }
                 }
@@ -6707,26 +6733,26 @@ function initSwipeToCloseModals() {
             }
 
             try {
-                // 2. ƯU TIÊN 2 (DỰ PHÒNG): Dùng BigDataCloud nếu API 1 bị quá tải
+                // 2. DỰ PHÒNG: Dùng API thứ 2 nếu API 1 sập (Tuyệt đối không kèm tọa độ)
                 const url2 = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=vi`;
                 const res2 = await fetch(url2);
                 
                 if (res2.ok) {
                     const data2 = await res2.json();
                     let locParts = [];
-                    if (data2.locality) locParts.push(data2.locality); // Phường / Quận
-                    if (data2.city || data2.principalSubdivision) locParts.push(data2.city || data2.principalSubdivision); // Tỉnh / TP
+                    if (data2.locality) locParts.push(data2.locality); 
+                    if (data2.city || data2.principalSubdivision) locParts.push(data2.city || data2.principalSubdivision); 
                     
                     if (locParts.length > 0) {
-                        return locParts.join(', ') + ` (Tọa độ: ${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+                        return locParts.join(', ');
                     }
                 }
             } catch (e) {
                 console.warn("API Bản đồ 2 bị lỗi mạng:", e);
             }
 
-            // 3. Nếu rớt mạng hoàn toàn, trả về tọa độ 
-            return `Tọa độ: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+            // 3. Nếu rớt mạng hoàn toàn hoặc không tra được dữ liệu, trả về dòng chữ thông báo thay vì tọa độ
+            return `Không thể tải dữ liệu tên đường`;
         }
         // Hàm chính: Xử lý chụp ảnh chấm công
         async function handleTimekeepingCam(event, type) {
