@@ -5650,7 +5650,7 @@ window.editDelayNote = async function(orderId) {
                     supabaseClient.from('users').select('*'), 
                     supabaseClient.from('services').select('*').order('sort_order', { ascending: true }),
                     supabaseClient.from('store_settings').select('*').eq('id', 'main').maybeSingle(), 
-                    supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(150)
+                    supabaseClient.from('orders').select('*').order('date', { ascending: false }).limit(3000)
                 ]);
                 
                 // TẢI VÔ HẠN CHI PHÍ BẰNG VÒNG LẶP (PHÁ GIỚI HẠN 5000)
