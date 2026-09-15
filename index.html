@@ -4440,7 +4440,7 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
                     loading.querySelector('.text-sm').innerText = 'Đang tìm dữ liệu cũ...'; 
                     try { 
                         if (navigator.onLine) {
-                            const { data, error } = await supabaseClient.from('orders').select('*').or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_name.ilike.%${searchVal}%`).order('date', { ascending: false }).limit(50); 
+                            const { data, error } = await supabaseClient.from('orders').select('*').or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_name.ilike.%${searchVal}%`).order('date', { ascending: false }).limit(500); 
                             if (data && !error) { 
                                 const fetchedOrders = data.map(mapOrderDbToJs); 
                                 fetchedOrders.forEach(fetchedObj => { 
