@@ -7499,215 +7499,225 @@ function initSwipeToCloseModals() {
             }
         }
        async function handleTimekeepingCam(event, type) {
-            const file = event.target.files[0];
-            if (!file) return;
+    const file = event.target.files[0];
+    if (!file) return;
 
-            // 1. KIỂM TRA MẠNG
-            if (!navigator.onLine) {
-                event.target.value = '';
-                return alert("❌ LỖI BẢO MẬT: Bạn phải bật mạng Internet (Wifi/4G) để chấm công. Hệ thống không chấp nhận chấm công offline!");
-            }
+    // 1. KIỂM TRA MẠNG
+    if (!navigator.onLine) {
+        event.target.value = '';
+        return alert("❌ LỖI BẢO MẬT: Bạn phải bật mạng Internet (Wifi/4G) để chấm công. Hệ thống không chấp nhận chấm công offline!");
+    }
 
-            if (!state.currentUser || !state.currentUser.username) {
-                return alert("❌ Lỗi: Không nhận diện được tài khoản. Vui lòng đăng nhập lại!");
-            }
+    if (!state.currentUser || !state.currentUser.username) {
+        return alert("❌ Lỗi: Không nhận diện được tài khoản. Vui lòng đăng nhập lại!");
+    }
 
-            // ==========================================
-            // PHẦN 1: HIỂN THỊ GIAO DIỆN NGAY LẬP TỨC
-            // ==========================================
-            const localUrl = URL.createObjectURL(file); 
-            
-            const prefix = type === 'in' ? 'tkIn' : 'tkOut';
-            const resultBox = document.getElementById(prefix + 'Result');
-            const photoEl = document.getElementById(prefix + 'Photo');
-            const timeEl = document.getElementById(prefix + 'Time');
-            const locationEl = document.getElementById(prefix + 'Location');
+    // ==========================================
+    // PHẦN 1: HIỂN THỊ GIAO DIỆN NGAY LẬP TỨC
+    // ==========================================
+    const localUrl = URL.createObjectURL(file); 
+    
+    const prefix = type === 'in' ? 'tkIn' : 'tkOut';
+    const resultBox = document.getElementById(prefix + 'Result');
+    const photoEl = document.getElementById(prefix + 'Photo');
+    const timeEl = document.getElementById(prefix + 'Time');
+    const locationEl = document.getElementById(prefix + 'Location');
 
-            if (photoEl) photoEl.src = localUrl;
-            if (resultBox) {
-                resultBox.classList.remove('hidden');
-                resultBox.classList.add('flex');
-            }
+    if (photoEl) photoEl.src = localUrl;
+    if (resultBox) {
+        resultBox.classList.remove('hidden');
+        resultBox.classList.add('flex');
+    }
 
-            // TÍNH TOÁN GIỜ PHÚT CHUẨN XÁC THEO HỆ 60 PHÚT
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMin = now.getMinutes();
-            const currentTotalMins = currentHour * 60 + currentMin;
+    // TÍNH TOÁN GIỜ PHÚT CHUẨN XÁC THEO HỆ 60 PHÚT
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentTotalMins = currentHour * 60 + currentMin;
 
-            const currentTimeStr = String(currentHour).padStart(2, '0') + ':' + String(currentMin).padStart(2, '0');
-            const timeStringDisplay = currentTimeStr + ' - ' + String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth()+1).padStart(2, '0') + '/' + now.getFullYear();
+    const currentTimeStr = String(currentHour).padStart(2, '0') + ':' + String(currentMin).padStart(2, '0');
+    const timeStringDisplay = currentTimeStr + ' - ' + String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth()+1).padStart(2, '0') + '/' + now.getFullYear();
 
-            const shift1Config = state.currentUser?.cfgShift1 || "08:00-13:00";
-            const shift2Config = state.currentUser?.cfgShift2 || "13:00-18:00";
+    const shift1Config = state.currentUser?.cfgShift1 || "08:00-13:00";
+    const shift2Config = state.currentUser?.cfgShift2 || "13:00-18:00";
 
-            let expectedTime = "";
-            let statusMsg = "Đúng giờ";
-            let statusColor = "text-emerald-500";
+    let expectedTime = "";
+    let statusMsg = "Đúng giờ";
+    let statusColor = "text-emerald-500";
 
-            // Nhận diện Ca làm và tính Du di 15 phút (Grace period)
-            if (type === 'in') {
-                if (currentHour < 11) expectedTime = shift1Config.split('-')[0]; // Trước 11h sáng là Ca 1
-                else expectedTime = shift2Config.split('-')[0]; // Sau 11h là Ca 2
+    // ==========================================
+    // LOGIC MỚI: NHẬN DIỆN CA VÀ KIỂM TRA CHUẨN XÁC
+    // ==========================================
+    if (type === 'in') {
+        // Lấy mốc 11h30 để chia tự động ĐẾN ca 1 hay ca 2
+        if (currentTotalMins <= (11 * 60 + 30)) {
+            expectedTime = shift1Config.split('-')[0]; // VD: 08:00
+        } else {
+            expectedTime = shift2Config.split('-')[0]; // VD: 13:00
+        }
 
-                const expH = parseInt(expectedTime.split(':')[0]);
-                const expM = parseInt(expectedTime.split(':')[1]);
-                const expTotalMins = expH * 60 + expM;
+        const expH = parseInt(expectedTime.split(':')[0], 10);
+        const expM = parseInt(expectedTime.split(':')[1], 10);
+        const expTotalMins = expH * 60 + expM;
 
-                // Nếu thời gian thực tế > thời gian quy định + 15 phút -> Đi muộn
-                if (currentTotalMins > expTotalMins + 15) {
-                    statusMsg = "Đi muộn";
-                    statusColor = "text-red-500";
-                }
-            } else if (type === 'out') {
-                if (currentHour < 15) expectedTime = shift1Config.split('-')[1]; // Về trước 15h là kết thúc Ca 1
-                else expectedTime = shift2Config.split('-')[1]; // Về sau 15h là kết thúc Ca 2
+        // Điểm sửa 1: CHỈ xét đi muộn khi giờ ĐẾN lớn hơn giờ quy định
+        if (currentTotalMins > expTotalMins) {
+            statusMsg = "Đi muộn";
+            statusColor = "text-red-500";
+        }
+    } else if (type === 'out') {
+        // Lấy mốc 14h30 để chia tự động VỀ ca 1 hay ca 2
+        if (currentTotalMins <= (14 * 60 + 30)) {
+            expectedTime = shift1Config.split('-')[1]; // VD: 13:00
+        } else {
+            expectedTime = shift2Config.split('-')[1]; // VD: 18:00
+        }
 
-                const expH = parseInt(expectedTime.split(':')[0]);
-                const expM = parseInt(expectedTime.split(':')[1]);
-                const expTotalMins = expH * 60 + expM;
+        const expH = parseInt(expectedTime.split(':')[0], 10);
+        const expM = parseInt(expectedTime.split(':')[1], 10);
+        const expTotalMins = expH * 60 + expM;
 
-                // Nếu thời gian thực tế < thời gian quy định -> Về sớm
-                if (currentTotalMins < expTotalMins) {
-                    statusMsg = "Về sớm";
-                    statusColor = "text-amber-500";
-                }
-            }
+        // Điểm sửa 2: CHỈ xét về sớm khi giờ VỀ nhỏ hơn giờ quy định
+        if (currentTotalMins < expTotalMins) {
+            statusMsg = "Về sớm";
+            statusColor = "text-amber-500";
+        }
+    }
 
-            // Ghi giờ lên màn hình
-            if (timeEl) {
-                timeEl.innerHTML = `${timeStringDisplay} <br><span class="${statusColor} font-extrabold">(${statusMsg}, chuẩn: ${expectedTime})</span>`;
-            }
+    // Ghi giờ lên màn hình
+    if (timeEl) {
+        timeEl.innerHTML = `${timeStringDisplay} <br><span class="${statusColor} font-extrabold">(${statusMsg}, chuẩn: ${expectedTime})</span>`;
+    }
 
-            if (locationEl) {
-                locationEl.innerHTML = `<span class="text-amber-500 animate-pulse font-bold text-[10px] md:text-xs"><i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS & Lưu máy chủ...</span>`;
-            }
+    if (locationEl) {
+        locationEl.innerHTML = `<span class="text-amber-500 animate-pulse font-bold text-[10px] md:text-xs"><i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS & Lưu máy chủ...</span>`;
+    }
 
-            // ==========================================
-            // PHẦN 2: XỬ LÝ NGẦM ĐỒNG BỘ LÊN MÁY CHỦ
-            // ==========================================
+    // ==========================================
+    // PHẦN 2: XỬ LÝ NGẦM ĐỒNG BỘ LÊN MÁY CHỦ
+    // ==========================================
+    try {
+        const getGPS = () => new Promise((resolve) => {
+            if (!navigator.geolocation) return resolve("Trình duyệt không hỗ trợ GPS");
+            navigator.geolocation.getCurrentPosition(
+                pos => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+                err => resolve("Bị từ chối cấp quyền GPS"),
+                { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+            );
+        });
+        
+        let locationData = await getGPS();
+        let finalLocationText = locationData;
+        
+        if (locationData.includes(',') && typeof getAddressFromCoords === 'function') {
             try {
-                const getGPS = () => new Promise((resolve) => {
-                    if (!navigator.geolocation) return resolve("Trình duyệt không hỗ trợ GPS");
-                    navigator.geolocation.getCurrentPosition(
-                        pos => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
-                        err => resolve("Bị từ chối cấp quyền GPS"),
-                        { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
-                    );
-                });
-                
-                let locationData = await getGPS();
-                let finalLocationText = locationData;
-                
-                if (locationData.includes(',') && typeof getAddressFromCoords === 'function') {
-                    try {
-                        const coords = locationData.split(',');
-                        finalLocationText = await getAddressFromCoords(parseFloat(coords[0]), parseFloat(coords[1]));
-                    } catch (e) {
-                        finalLocationText = locationData;
-                    }
-                }
-
-                const base64Photo = await compressImage(file, 200, 800);
-                let imageUrl = base64Photo; 
-                if (typeof uploadFileToR2 === 'function') {
-                    try {
-                        imageUrl = await uploadFileToR2(base64Photo, 'timekeep');
-                    } catch(e) {
-                        console.error("Lỗi upload ảnh:", e);
-                    }
-                }
-
-                if (typeof supabaseClient !== 'undefined') {
-                    const { error } = await supabaseClient.from('timekeeping').insert([{
-                        user_email: state.currentUser.username,
-                        user_name: state.currentUser.name,
-                        type: type,
-                        expected_time: expectedTime,
-                        status: statusMsg,
-                        image_url: imageUrl,
-                        location: finalLocationText
-                    }]);
-
-                    if (error) throw error;
-                }
-
-                if (locationEl) {
-                    if (locationData.includes(",")) {
-                        locationEl.innerHTML = `<a href="https://maps.google.com/?q=${locationData}" target="_blank" class="text-sky-600 underline">${finalLocationText}</a> <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
-                    } else {
-                        locationEl.innerHTML = `${finalLocationText} <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
-                    }
-                }
-
-                // Ẩn nút chụp
-                if (event.target && event.target.parentElement) {
-                    event.target.parentElement.style.display = 'none';
-                }
-
-                if (type === 'out') {
-                    const successMsg = document.getElementById('tkSuccessMsg');
-                    if (successMsg) {
-                        successMsg.classList.remove('hidden');
-                        successMsg.classList.add('flex');
-                    }
-                }
-
-                // ==========================================
-                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ (ĐÃ SỬA LỖI LOGIC)
-                // ==========================================
-                const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-                let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
-                let todayData = ledger[dateString] || {};
-
-                if (type === 'in') {
-                    todayData.checkIn = currentTimeStr;
-                    todayData.photoIn = imageUrl;
-                    todayData.locIn = finalLocationText;
-                    todayData.statusIn = statusMsg; // "Đi muộn" hoặc "Đúng giờ"
-                } else if (type === 'out') {
-                    todayData.checkOut = currentTimeStr;
-                    todayData.photoOut = imageUrl;
-                    todayData.locOut = finalLocationText;
-                    todayData.statusOut = statusMsg; // "Về sớm" hoặc "Đúng giờ"
-                }
-
-                // Chốt công cuối ngày: Tách bạch rõ ràng "Đi muộn" và "Về sớm"
-                if (todayData.checkIn && todayData.checkOut) {
-                    if (todayData.statusIn === 'Đi muộn' && todayData.statusOut === 'Về sớm') {
-                        todayData.status = 'late_and_early'; // Vi phạm cả 2
-                    } else if (todayData.statusIn === 'Đi muộn') {
-                        todayData.status = 'late'; // CHỈ bị gán 'late' khi thực sự ĐI MUỘN
-                    } else if (todayData.statusOut === 'Về sớm') {
-                        todayData.status = 'leave_early'; // Trạng thái mới: Về sớm (Không bị nhầm thành Đi muộn nữa)
-                    } else {
-                        todayData.status = 'worked'; // Đủ công (Xanh lá)
-                    }
-                } else {
-                    todayData.status = 'working'; 
-                }
-
-                ledger[dateString] = todayData;
-                localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
-
-                if (typeof renderCalendarGrid === 'function') {
-                    renderCalendarGrid(now.getMonth(), now.getFullYear());
-                }
-
-                if (typeof showNotification === 'function') {
-                    showNotification("✅ Chốt ca hoàn tất", `Hệ thống đã ghi nhận bạn ${statusMsg}!`);
-                }
-
-            } catch (err) {
-                console.error("Lỗi ngầm:", err);
-                if (locationEl) {
-                    locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được!'}</span>`;
-                }
-                alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Hãy bấm chụp lại nhé."));
-            } finally {
-                event.target.value = ''; 
+                const coords = locationData.split(',');
+                finalLocationText = await getAddressFromCoords(parseFloat(coords[0]), parseFloat(coords[1]));
+            } catch (e) {
+                finalLocationText = locationData;
             }
         }
+
+        const base64Photo = await compressImage(file, 200, 800);
+        let imageUrl = base64Photo; 
+        if (typeof uploadFileToR2 === 'function') {
+            try {
+                imageUrl = await uploadFileToR2(base64Photo, 'timekeep');
+            } catch(e) {
+                console.error("Lỗi upload ảnh:", e);
+            }
+        }
+
+        if (typeof supabaseClient !== 'undefined') {
+            const { error } = await supabaseClient.from('timekeeping').insert([{
+                user_email: state.currentUser.username,
+                user_name: state.currentUser.name,
+                type: type,
+                expected_time: expectedTime,
+                status: statusMsg,
+                image_url: imageUrl,
+                location: finalLocationText
+            }]);
+
+            if (error) throw error;
+        }
+
+        if (locationEl) {
+            if (locationData.includes(",")) {
+                locationEl.innerHTML = `<a href="https://maps.google.com/?q=${locationData}" target="_blank" class="text-sky-600 underline">${finalLocationText}</a> <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
+            } else {
+                locationEl.innerHTML = `${finalLocationText} <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
+            }
+        }
+
+        // Ẩn nút chụp
+        if (event.target && event.target.parentElement) {
+            event.target.parentElement.style.display = 'none';
+        }
+
+        if (type === 'out') {
+            const successMsg = document.getElementById('tkSuccessMsg');
+            if (successMsg) {
+                successMsg.classList.remove('hidden');
+                successMsg.classList.add('flex');
+            }
+        }
+
+        // ==========================================
+        // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ
+        // ==========================================
+        const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+        let todayData = ledger[dateString] || {};
+
+        if (type === 'in') {
+            todayData.checkIn = currentTimeStr;
+            todayData.photoIn = imageUrl;
+            todayData.locIn = finalLocationText;
+            todayData.statusIn = statusMsg;
+        } else if (type === 'out') {
+            todayData.checkOut = currentTimeStr;
+            todayData.photoOut = imageUrl;
+            todayData.locOut = finalLocationText;
+            todayData.statusOut = statusMsg;
+        }
+
+        // Điểm sửa 3: TÁCH BẠCH RÕ RÀNG, KHÔNG GỘP CHUNG VÀO "LATE" NỮA
+        if (todayData.checkIn && todayData.checkOut) {
+            if (todayData.statusIn === 'Đi muộn' && todayData.statusOut === 'Về sớm') {
+                todayData.status = 'late_early';     // Vi phạm cả 2
+            } else if (todayData.statusIn === 'Đi muộn') {
+                todayData.status = 'late';           // CHỈ xét là Đi muộn khi ĐẾN muộn
+            } else if (todayData.statusOut === 'Về sớm') {
+                todayData.status = 'early';          // Trạng thái độc lập: Về sớm
+            } else {
+                todayData.status = 'worked';         // Xanh lá (Đúng giờ toàn bộ)
+            }
+        } else {
+            todayData.status = 'working'; 
+        }
+
+        ledger[dateString] = todayData;
+        localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+
+        if (typeof renderCalendarGrid === 'function') {
+            renderCalendarGrid(now.getMonth(), now.getFullYear());
+        }
+
+        if (typeof showNotification === 'function') {
+            showNotification("✅ Chốt ca hoàn tất", `Hệ thống đã ghi nhận bạn ${statusMsg}!`);
+        }
+
+    } catch (err) {
+        console.error("Lỗi ngầm:", err);
+        if (locationEl) {
+            locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được!'}</span>`;
+        }
+        alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Hãy bấm chụp lại nhé."));
+    } finally {
+        event.target.value = ''; 
+    }
+}
         // 1. (Nhân viên) Gửi đơn xin nghỉ
         async function submitLeaveRequest() {
             const start = document.getElementById('leaveStart').value;
