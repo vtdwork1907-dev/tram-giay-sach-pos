@@ -8331,6 +8331,81 @@ function initSwipeToCloseModals() {
         window.addEventListener('DOMContentLoaded', () => {
             updateCurrentWeekRange();
         });
+        // =========================================================================
+        // PHỤC HỒI GIAO DIỆN CHẤM CÔNG HÔM NAY TỪ CACHE (CHỐNG MẤT ẢNH)
+        // =========================================================================
+        window.loadTodayTimekeepingUI = function() {
+            const now = new Date();
+            const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+            const todayData = ledger[dateString];
+
+            if (todayData) {
+                // Phục hồi khung ảnh CHẤM CÔNG ĐẾN
+                if (todayData.photoIn) {
+                    const photoIn = document.getElementById('tkInPhoto');
+                    const resultIn = document.getElementById('tkInResult');
+                    const inputIn = document.querySelector('input[onchange*="in"]');
+                    
+                    if (photoIn && resultIn) {
+                        photoIn.src = todayData.photoIn;
+                        resultIn.classList.remove('hidden');
+                        resultIn.classList.add('flex');
+                        
+                        const timeEl = document.getElementById('tkInTime');
+                        if (timeEl) timeEl.innerHTML = `${todayData.checkIn} <span class="font-extrabold text-sky-600">(${todayData.statusIn})</span>`;
+                        
+                        const locEl = document.getElementById('tkInLocation');
+                        if (locEl) locEl.innerHTML = todayData.locIn;
+                        
+                        // Ẩn nút chụp ảnh đi để không cho chụp lại
+                        if (inputIn && inputIn.parentElement) inputIn.parentElement.style.display = 'none';
+                    }
+                }
+
+                // Phục hồi khung ảnh CHẤM CÔNG VỀ
+                if (todayData.photoOut) {
+                    const photoOut = document.getElementById('tkOutPhoto');
+                    const resultOut = document.getElementById('tkOutResult');
+                    const inputOut = document.querySelector('input[onchange*="out"]');
+                    
+                    if (photoOut && resultOut) {
+                        photoOut.src = todayData.photoOut;
+                        resultOut.classList.remove('hidden');
+                        resultOut.classList.add('flex');
+                        
+                        const timeEl = document.getElementById('tkOutTime');
+                        if (timeEl) timeEl.innerHTML = `${todayData.checkOut} <span class="font-extrabold text-sky-600">(${todayData.statusOut})</span>`;
+                        
+                        const locEl = document.getElementById('tkOutLocation');
+                        if (locEl) locEl.innerHTML = todayData.locOut;
+                        
+                        // Ẩn nút chụp ảnh đi để không cho chụp lại
+                        if (inputOut && inputOut.parentElement) inputOut.parentElement.style.display = 'none';
+
+                        // Hiện banner chúc mừng đã hoàn thành ca
+                        const successMsg = document.getElementById('tkSuccessMsg');
+                        if (successMsg) {
+                            successMsg.classList.remove('hidden');
+                            successMsg.classList.add('flex');
+                        }
+                    }
+                }
+            }
+        };
+
+        // Lắng nghe sự kiện: Mỗi khi bấm vào Tab "Cá Nhân" hoặc "Chấm Công", lập tức gọi lại ảnh
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (target && (target.id === 'btn-sub-timekeep' || target.id === 'nav-personal')) {
+                setTimeout(loadTodayTimekeepingUI, 50);
+            }
+        });
+
+        // Chạy lần đầu tiên khi vừa tải trang web xong
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadTodayTimekeepingUI, 500);
+        });
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
