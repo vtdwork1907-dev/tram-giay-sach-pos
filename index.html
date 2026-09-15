@@ -7498,10 +7498,7 @@ function initSwipeToCloseModals() {
                 }
             }
         }
-       // =========================================================================
-        // LOGIC CHẤM CÔNG THÔNG MINH - ĐÃ FIX LỖI TÍNH PHÚT & DU DI 15 PHÚT
-        // =========================================================================
-        async function handleTimekeepingCam(event, type) {
+       async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -7657,7 +7654,7 @@ function initSwipeToCloseModals() {
                 }
 
                 // ==========================================
-                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ
+                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ (ĐÃ SỬA LỖI LOGIC)
                 // ==========================================
                 const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
                 let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
@@ -7667,18 +7664,22 @@ function initSwipeToCloseModals() {
                     todayData.checkIn = currentTimeStr;
                     todayData.photoIn = imageUrl;
                     todayData.locIn = finalLocationText;
-                    todayData.statusIn = statusMsg;
+                    todayData.statusIn = statusMsg; // "Đi muộn" hoặc "Đúng giờ"
                 } else if (type === 'out') {
                     todayData.checkOut = currentTimeStr;
                     todayData.photoOut = imageUrl;
                     todayData.locOut = finalLocationText;
-                    todayData.statusOut = statusMsg;
+                    todayData.statusOut = statusMsg; // "Về sớm" hoặc "Đúng giờ"
                 }
 
-                // Chốt công cuối ngày
+                // Chốt công cuối ngày: Tách bạch rõ ràng "Đi muộn" và "Về sớm"
                 if (todayData.checkIn && todayData.checkOut) {
-                    if (todayData.statusIn === 'Đi muộn' || todayData.statusOut === 'Về sớm') {
-                        todayData.status = 'late'; // UI Lịch sẽ hiển thị là "Đi muộn"
+                    if (todayData.statusIn === 'Đi muộn' && todayData.statusOut === 'Về sớm') {
+                        todayData.status = 'late_and_early'; // Vi phạm cả 2
+                    } else if (todayData.statusIn === 'Đi muộn') {
+                        todayData.status = 'late'; // CHỈ bị gán 'late' khi thực sự ĐI MUỘN
+                    } else if (todayData.statusOut === 'Về sớm') {
+                        todayData.status = 'leave_early'; // Trạng thái mới: Về sớm (Không bị nhầm thành Đi muộn nữa)
                     } else {
                         todayData.status = 'worked'; // Đủ công (Xanh lá)
                     }
