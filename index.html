@@ -3216,45 +3216,66 @@ function mapOrderDbToJs(db) {
             }).join('');
         }
 
-        async function addNewAccount() {
-            const name = document.getElementById('addUserName').value.trim(); 
-            const email = document.getElementById('addUserLogin').value.trim();
-            const pass = document.getElementById('addUserPass').value.trim(); 
-            const role = document.getElementById('addUserRole').value;
-            const workType = document.getElementById('addUserType').value;
-            
-            if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-            if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
-            if(!navigator.onLine) return alert("Tính năng tạo tài khoản yêu cầu kết nối mạng!");
-            
-            const loading = document.getElementById('globalLoading'); 
-            loading.style.display = 'flex'; 
-            loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signUp({ email: email, password: pass });
-                if (error) throw error;
-                
-                // Thêm thuộc tính workType vào object newUser
-                const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name, workType };
-                await supabaseClient.from('users').insert(newUser);
-                
-                state.users.push(newUser); 
-                await saveLocalState(); 
-                renderSettingsUsersTable();
-                
-                document.getElementById('addUserName').value=''; 
-                document.getElementById('addUserLogin').value=''; 
-                document.getElementById('addUserPass').value='';
-                
-                showNotification("Thành công", "Tạo tài khoản thành công!");
-            } catch(error) { 
-                alert("Lỗi tạo tài khoản: " + error.message); 
-            } finally { 
-                loading.style.display = 'none'; 
-            }
-        }
+       async function addNewAccount() {
+    const name = document.getElementById('addUserName').value.trim(); 
+    const email = document.getElementById('addUserLogin').value.trim();
+    const pass = document.getElementById('addUserPass').value.trim(); 
+    const role = document.getElementById('addUserRole').value;
+    const workType = document.getElementById('addUserType').value;
+    
+    if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
+    if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
+    if(!navigator.onLine) return alert("Tính năng tạo tài khoản yêu cầu kết nối mạng!");
+    
+    const loading = document.getElementById('globalLoading'); 
+    loading.style.display = 'flex'; 
+    loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
+    
+    try {
+        // 1. Tạo tài khoản trên hệ thống Supabase Auth
+        const { data, error: authError } = await supabaseClient.auth.signUp({ email: email, password: pass });
+        if (authError) throw authError;
+        
+        const userId = data.user ? data.user.id : ('U-' + Date.now());
 
+        // 2. CHUẨN HOÁ DỮ LIỆU ĐỂ LƯU VÀO DATABASE
+        // Tuyệt đối không nhồi biến "password" vào đây để tránh CSDL từ chối
+        // Chuyển workType thành work_type để chuẩn hóa theo quy tắc đặt tên của SQL
+        const dbUser = { 
+            id: userId, 
+            username: email, 
+            role: role, 
+            name: name, 
+            work_type: workType 
+        };
+
+        // 3. Lưu vào Database và BẮT LỖI CHẶT CHẼ
+        const { error: dbError } = await supabaseClient.from('users').insert([dbUser]);
+        
+        if (dbError) {
+            console.error("Chi tiết lỗi CSDL:", dbError);
+            throw new Error(`Tạo Auth thành công nhưng CSDL từ chối lưu: ${dbError.message}. Hãy kiểm tra xem bảng 'users' đã có cột 'work_type' chưa!`);
+        }
+        
+        // 4. Cập nhật state cục bộ để hiển thị lên bảng giao diện
+        // Khối này vẫn giữ các biến cũ để không làm gãy UI
+        const newUserUI = { id: userId, username: email, password: '***', role, name, workType };
+        state.users.push(newUserUI); 
+        
+        await saveLocalState(); 
+        renderSettingsUsersTable();
+        
+        document.getElementById('addUserName').value = ''; 
+        document.getElementById('addUserLogin').value = ''; 
+        document.getElementById('addUserPass').value = '';
+        
+        showNotification("Thành công", "Tạo tài khoản nhân viên thành công!");
+    } catch(error) { 
+        alert("❌ Lỗi tạo tài khoản: \n" + error.message); 
+    } finally { 
+        loading.style.display = 'none'; 
+    }
+}
         async function deleteAccount(id) {
             if(confirm("Xóa quyền quản trị của tài khoản này?")) {
                 if(!navigator.onLine) return alert("Vui lòng kết nối mạng để xóa tài khoản!");
