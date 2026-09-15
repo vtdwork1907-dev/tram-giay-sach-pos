@@ -3192,64 +3192,64 @@ function mapOrderDbToJs(db) {
         // =========================================================================
         // 13. CÀI ĐẶT: PHÂN QUYỀN TÀI KHOẢN (USERS)
         // =========================================================================
-        function renderSettingsUsersTable() {
-    document.getElementById('settingsUsersTable').innerHTML = state.users.map(u => {
-        const isOwner = u.role === 'owner';
-        const roleLabel = isOwner ? 'Chủ Cửa Hàng' : (u.role === 'manager' ? 'Quản Lý' : 'Nhân Viên');
-        const roleClass = isOwner ? 'bg-amber-100 text-amber-800' : (u.role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700');
-        
-        const typeLabel = u.workType === 'parttime' ? 'Part-time' : (u.workType === 'fulltime' ? 'Full-time' : 'Mặc định');
-        const typeClass = u.workType === 'parttime' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800';
+       function renderSettingsUsersTable() {
+            document.getElementById('settingsUsersTable').innerHTML = state.users.map(u => {
+                const isOwner = u.role === 'owner';
+                const roleLabel = isOwner ? 'Chủ Cửa Hàng' : (u.role === 'manager' ? 'Quản Lý' : 'Nhân Viên');
+                const roleClass = isOwner ? 'bg-amber-100 text-amber-800' : (u.role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700');
+                
+                const typeLabel = u.workType === 'parttime' ? 'Part-time' : (u.workType === 'fulltime' ? 'Full-time' : 'Mặc định');
+                const typeClass = u.workType === 'parttime' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800';
 
-        return `
-        <tr class="border-b hover:bg-slate-50">
-            <td class="p-3 font-bold">${escapeHtml(u.name)} ${isOwner ? '<i class="fa-solid fa-crown text-amber-500 ml-1"></i>' : ''}</td>
-            <td class="p-3 text-sky-700 font-mono">${escapeHtml(u.username)}</td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${typeClass}">${typeLabel}</span></td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${roleClass}">${roleLabel}</span></td>
-            <td class="p-3 text-right">${isOwner ? '<span class="text-[10px] text-slate-400">Không thể xóa</span>' : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
-        </tr>`;
-    }).join('');
-}
+                return `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3 font-bold">${escapeHtml(u.name)} ${isOwner ? '<i class="fa-solid fa-crown text-amber-500 ml-1"></i>' : ''}</td>
+                    <td class="p-3 text-sky-700 font-mono">${escapeHtml(u.username)}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${typeClass}">${typeLabel}</span></td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${roleClass}">${roleLabel}</span></td>
+                    <td class="p-3 text-right">${isOwner ? '<span class="text-[10px] text-slate-400">Không thể xóa</span>' : `<button onclick="deleteAccount('${u.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded"><i class="fa-solid fa-trash"></i></button>`}</td>
+                </tr>`;
+            }).join('');
+        }
 
-async function addNewAccount() {
-    const name = document.getElementById('addUserName').value.trim(); 
-    const email = document.getElementById('addUserLogin').value.trim();
-    const pass = document.getElementById('addUserPass').value.trim(); 
-    const role = document.getElementById('addUserRole').value;
-    const workType = document.getElementById('addUserType').value;
-    
-    if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-    if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
-    if(!navigator.onLine) return alert("Tính năng tạo tài khoản yêu cầu kết nối mạng!");
-    
-    const loading = document.getElementById('globalLoading'); 
-    loading.style.display = 'flex'; 
-    loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
-    
-    try {
-        const { data, error } = await supabaseClient.auth.signUp({ email: email, password: pass });
-        if (error) throw error;
-        
-        // Thêm thuộc tính workType vào object newUser
-        const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name, workType };
-        await supabaseClient.from('users').insert(newUser);
-        
-        state.users.push(newUser); 
-        await saveLocalState(); 
-        renderSettingsUsersTable();
-        
-        document.getElementById('addUserName').value=''; 
-        document.getElementById('addUserLogin').value=''; 
-        document.getElementById('addUserPass').value='';
-        
-        showNotification("Thành công", "Tạo tài khoản thành công!");
-    } catch(error) { 
-        alert("Lỗi tạo tài khoản: " + error.message); 
-    } finally { 
-        loading.style.display = 'none'; 
-    }
-}
+        async function addNewAccount() {
+            const name = document.getElementById('addUserName').value.trim(); 
+            const email = document.getElementById('addUserLogin').value.trim();
+            const pass = document.getElementById('addUserPass').value.trim(); 
+            const role = document.getElementById('addUserRole').value;
+            const workType = document.getElementById('addUserType').value;
+            
+            if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
+            if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
+            if(!navigator.onLine) return alert("Tính năng tạo tài khoản yêu cầu kết nối mạng!");
+            
+            const loading = document.getElementById('globalLoading'); 
+            loading.style.display = 'flex'; 
+            loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({ email: email, password: pass });
+                if (error) throw error;
+                
+                // Thêm thuộc tính workType vào object newUser
+                const newUser = { id: data.user ? data.user.id : ('U-' + Date.now()), username: email, password: '***', role, name, workType };
+                await supabaseClient.from('users').insert(newUser);
+                
+                state.users.push(newUser); 
+                await saveLocalState(); 
+                renderSettingsUsersTable();
+                
+                document.getElementById('addUserName').value=''; 
+                document.getElementById('addUserLogin').value=''; 
+                document.getElementById('addUserPass').value='';
+                
+                showNotification("Thành công", "Tạo tài khoản thành công!");
+            } catch(error) { 
+                alert("Lỗi tạo tài khoản: " + error.message); 
+            } finally { 
+                loading.style.display = 'none'; 
+            }
+        }
 
         async function deleteAccount(id) {
             if(confirm("Xóa quyền quản trị của tài khoản này?")) {
