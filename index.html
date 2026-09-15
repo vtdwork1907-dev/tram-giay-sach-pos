@@ -7499,7 +7499,7 @@ function initSwipeToCloseModals() {
             }
         }
        // =========================================================================
-        // LOGIC CHẤM CÔNG THÔNG MINH - SIÊU TỐC ĐỘ (HIỂN THỊ ẢNH NGAY LẬP TỨC & LƯU CACHE)
+        // LOGIC CHẤM CÔNG THÔNG MINH - ĐÃ FIX LỖI TÍNH PHÚT & DU DI 15 PHÚT
         // =========================================================================
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
@@ -7516,7 +7516,7 @@ function initSwipeToCloseModals() {
             }
 
             // ==========================================
-            // PHẦN 1: HIỂN THỊ GIAO DIỆN NGAY LẬP TỨC (0.1s)
+            // PHẦN 1: HIỂN THỊ GIAO DIỆN NGAY LẬP TỨC
             // ==========================================
             const localUrl = URL.createObjectURL(file); 
             
@@ -7532,36 +7532,49 @@ function initSwipeToCloseModals() {
                 resultBox.classList.add('flex');
             }
 
-            // 2. LẤY GIỜ CHUẨN XÁC 24H (Khắc phục lỗi chuỗi 4h sáng > 13h chiều)
+            // TÍNH TOÁN GIỜ PHÚT CHUẨN XÁC THEO HỆ 60 PHÚT
             const now = new Date();
-            const currentHour = String(now.getHours()).padStart(2, '0');
-            const currentMinute = String(now.getMinutes()).padStart(2, '0');
-            const currentTimeStr = `${currentHour}:${currentMinute}`; // Ép chuẩn định dạng "04:20" thay vì "4:20"
-            const timeStringDisplay = `${currentTimeStr} - ${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth()+1).padStart(2, '0')}/${now.getFullYear()}`;
+            const currentHour = now.getHours();
+            const currentMin = now.getMinutes();
+            const currentTotalMins = currentHour * 60 + currentMin;
+
+            const currentTimeStr = String(currentHour).padStart(2, '0') + ':' + String(currentMin).padStart(2, '0');
+            const timeStringDisplay = currentTimeStr + ' - ' + String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth()+1).padStart(2, '0') + '/' + now.getFullYear();
 
             const shift1Config = state.currentUser?.cfgShift1 || "08:00-13:00";
             const shift2Config = state.currentUser?.cfgShift2 || "13:00-18:00";
-            
-            // Giả lập ca làm việc (Sau này có thể gọi cấu hình thật từ DB)
-            const isWorkingShift1 = true;
-            const isWorkingShift2 = true;
 
             let expectedTime = "";
-            let statusMsg = "";
-            let statusColor = "";
+            let statusMsg = "Đúng giờ";
+            let statusColor = "text-emerald-500";
 
+            // Nhận diện Ca làm và tính Du di 15 phút (Grace period)
             if (type === 'in') {
-                if (isWorkingShift1) { expectedTime = shift1Config.split('-')[0]; } 
-                else if (isWorkingShift2) { expectedTime = shift2Config.split('-')[0]; }
+                if (currentHour < 11) expectedTime = shift1Config.split('-')[0]; // Trước 11h sáng là Ca 1
+                else expectedTime = shift2Config.split('-')[0]; // Sau 11h là Ca 2
 
-                if (currentTimeStr > expectedTime) { statusMsg = `Đi muộn`; statusColor = "text-red-500"; } 
-                else { statusMsg = `Đúng giờ`; statusColor = "text-emerald-500"; }
+                const expH = parseInt(expectedTime.split(':')[0]);
+                const expM = parseInt(expectedTime.split(':')[1]);
+                const expTotalMins = expH * 60 + expM;
+
+                // Nếu thời gian thực tế > thời gian quy định + 15 phút -> Đi muộn
+                if (currentTotalMins > expTotalMins + 15) {
+                    statusMsg = "Đi muộn";
+                    statusColor = "text-red-500";
+                }
             } else if (type === 'out') {
-                if (isWorkingShift2) { expectedTime = shift2Config.split('-')[1]; } 
-                else if (isWorkingShift1) { expectedTime = shift1Config.split('-')[1]; }
+                if (currentHour < 15) expectedTime = shift1Config.split('-')[1]; // Về trước 15h là kết thúc Ca 1
+                else expectedTime = shift2Config.split('-')[1]; // Về sau 15h là kết thúc Ca 2
 
-                if (currentTimeStr < expectedTime) { statusMsg = `Về sớm`; statusColor = "text-amber-500"; } 
-                else { statusMsg = `Đúng giờ`; statusColor = "text-emerald-500"; }
+                const expH = parseInt(expectedTime.split(':')[0]);
+                const expM = parseInt(expectedTime.split(':')[1]);
+                const expTotalMins = expH * 60 + expM;
+
+                // Nếu thời gian thực tế < thời gian quy định -> Về sớm
+                if (currentTotalMins < expTotalMins) {
+                    statusMsg = "Về sớm";
+                    statusColor = "text-amber-500";
+                }
             }
 
             // Ghi giờ lên màn hình
@@ -7569,7 +7582,6 @@ function initSwipeToCloseModals() {
                 timeEl.innerHTML = `${timeStringDisplay} <br><span class="${statusColor} font-extrabold">(${statusMsg}, chuẩn: ${expectedTime})</span>`;
             }
 
-            // Báo hiệu đang chạy ngầm lấy GPS
             if (locationEl) {
                 locationEl.innerHTML = `<span class="text-amber-500 animate-pulse font-bold text-[10px] md:text-xs"><i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS & Lưu máy chủ...</span>`;
             }
@@ -7631,6 +7643,7 @@ function initSwipeToCloseModals() {
                     }
                 }
 
+                // Ẩn nút chụp
                 if (event.target && event.target.parentElement) {
                     event.target.parentElement.style.display = 'none';
                 }
@@ -7644,7 +7657,7 @@ function initSwipeToCloseModals() {
                 }
 
                 // ==========================================
-                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ & LÀM SÁNG LỊCH
+                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ
                 // ==========================================
                 const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
                 let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
@@ -7662,11 +7675,12 @@ function initSwipeToCloseModals() {
                     todayData.statusOut = statusMsg;
                 }
 
+                // Chốt công cuối ngày
                 if (todayData.checkIn && todayData.checkOut) {
                     if (todayData.statusIn === 'Đi muộn' || todayData.statusOut === 'Về sớm') {
-                        todayData.status = 'late';
+                        todayData.status = 'late'; // UI Lịch sẽ hiển thị là "Đi muộn"
                     } else {
-                        todayData.status = 'worked'; 
+                        todayData.status = 'worked'; // Đủ công (Xanh lá)
                     }
                 } else {
                     todayData.status = 'working'; 
@@ -7680,16 +7694,15 @@ function initSwipeToCloseModals() {
                 }
 
                 if (typeof showNotification === 'function') {
-                    showNotification("✅ Chốt ca hoàn tất", `Hệ thống đã lưu ảnh và vị trí của bạn an toàn.`);
+                    showNotification("✅ Chốt ca hoàn tất", `Hệ thống đã ghi nhận bạn ${statusMsg}!`);
                 }
 
             } catch (err) {
                 console.error("Lỗi ngầm:", err);
-                
                 if (locationEl) {
-                    locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được, hãy chụp lại!'}</span>`;
+                    locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được!'}</span>`;
                 }
-                alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Bạn hãy thử bấm chụp lại nhé."));
+                alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Hãy bấm chụp lại nhé."));
             } finally {
                 event.target.value = ''; 
             }
