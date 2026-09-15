@@ -7499,7 +7499,7 @@ function initSwipeToCloseModals() {
             }
         }
        // =========================================================================
-        // LOGIC CHẤM CÔNG THÔNG MINH - SIÊU TỐC ĐỘ (HIỂN THỊ ẢNH NGAY LẬP TỨC)
+        // LOGIC CHẤM CÔNG THÔNG MINH - SIÊU TỐC ĐỘ (HIỂN THỊ ẢNH NGAY LẬP TỨC & LƯU CACHE)
         // =========================================================================
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
@@ -7571,9 +7571,6 @@ function initSwipeToCloseModals() {
                 locationEl.innerHTML = `<span class="text-amber-500 animate-pulse font-bold text-[10px] md:text-xs"><i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS & Lưu máy chủ...</span>`;
             }
 
-            // Xóa bộ nhớ input để có thể chụp lại ngay lập tức nếu muốn
-            event.target.value = ''; 
-
             // ==========================================
             // PHẦN 2: XỬ LÝ NGẦM ĐỒNG BỘ LÊN MÁY CHỦ (Không khóa màn hình)
             // ==========================================
@@ -7637,12 +7634,55 @@ function initSwipeToCloseModals() {
                     }
                 }
 
+                // 5. ẨN NÚT CHỤP ẢNH ĐỂ KHÔNG CHO XÓA/CHỤP LẠI TRONG NGÀY
+                if (event.target && event.target.parentElement) {
+                    event.target.parentElement.style.display = 'none';
+                }
+
                 if (type === 'out') {
                     const successMsg = document.getElementById('tkSuccessMsg');
                     if (successMsg) {
                         successMsg.classList.remove('hidden');
                         successMsg.classList.add('flex');
                     }
+                }
+
+                // ==========================================
+                // PHẦN 3: LƯU CACHE GIAO DIỆN VÀO THIẾT BỊ & LÀM SÁNG LỊCH
+                // ==========================================
+                const dateString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
+                let todayData = ledger[dateString] || {};
+
+                if (type === 'in') {
+                    todayData.checkIn = currentTimeStr;
+                    todayData.photoIn = imageUrl;
+                    todayData.locIn = finalLocationText;
+                    todayData.statusIn = statusMsg;
+                } else if (type === 'out') {
+                    todayData.checkOut = currentTimeStr;
+                    todayData.photoOut = imageUrl;
+                    todayData.locOut = finalLocationText;
+                    todayData.statusOut = statusMsg;
+                }
+
+                // Tính toán để hiển thị màu trên Lịch cá nhân
+                if (todayData.checkIn && todayData.checkOut) {
+                    if (todayData.statusIn === 'Đi muộn' || todayData.statusOut === 'Về sớm') {
+                        todayData.status = 'late';
+                    } else {
+                        todayData.status = 'worked'; // Đủ công (Màu xanh lá)
+                    }
+                } else {
+                    todayData.status = 'working'; 
+                }
+
+                ledger[dateString] = todayData;
+                localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+
+                // Cập nhật lại màu trên giao diện Lịch ngay lập tức
+                if (typeof renderCalendarGrid === 'function') {
+                    renderCalendarGrid(now.getMonth(), now.getFullYear());
                 }
 
                 if (typeof showNotification === 'function') {
@@ -7657,6 +7697,8 @@ function initSwipeToCloseModals() {
                     locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được, hãy chụp lại!'}</span>`;
                 }
                 alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Bạn hãy thử bấm chụp lại nhé."));
+            } finally {
+                event.target.value = ''; // Xóa bộ nhớ input
             }
         }
         // 1. (Nhân viên) Gửi đơn xin nghỉ
