@@ -7498,12 +7498,14 @@ function initSwipeToCloseModals() {
                 }
             }
         }
-        // 4. Xử lý chụp ảnh chấm công (Đã sửa lỗi khai báo biến Ledger & Đồng bộ ảnh ngay lập tức)
+       // =========================================================================
+        // LOGIC CHẤM CÔNG THÔNG MINH - SIÊU TỐC ĐỘ (HIỂN THỊ ẢNH NGAY LẬP TỨC)
+        // =========================================================================
         async function handleTimekeepingCam(event, type) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // 1. KIỂM TRA BẢO MẬT: BẮT BUỘC PHẢI CÓ MẠNG ĐỂ CHỐNG GIAN LẬN
+            // 1. KIỂM TRA MẠNG
             if (!navigator.onLine) {
                 event.target.value = '';
                 return alert("❌ LỖI BẢO MẬT: Bạn phải bật mạng Internet (Wifi/4G) để chấm công. Hệ thống không chấp nhận chấm công offline!");
@@ -7513,77 +7515,83 @@ function initSwipeToCloseModals() {
                 return alert("❌ Lỗi: Không nhận diện được tài khoản. Vui lòng đăng nhập lại!");
             }
 
-            const loading = document.getElementById('globalLoading');
-            if (loading) {
-                loading.style.display = 'flex';
-                loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu về Máy chủ...';
+            // ==========================================
+            // PHẦN 1: HIỂN THỊ GIAO DIỆN NGAY LẬP TỨC (0.1s)
+            // ==========================================
+            const localUrl = URL.createObjectURL(file); // Tạo link ảnh tạm thời
+            
+            const prefix = type === 'in' ? 'tkIn' : 'tkOut';
+            const resultBox = document.getElementById(prefix + 'Result');
+            const photoEl = document.getElementById(prefix + 'Photo');
+            const timeEl = document.getElementById(prefix + 'Time');
+            const locationEl = document.getElementById(prefix + 'Location');
+
+            // Bật khung ảnh và hiển thị ảnh ngay lập tức
+            if (photoEl) photoEl.src = localUrl;
+            if (resultBox) {
+                resultBox.classList.remove('hidden');
+                resultBox.classList.add('flex');
             }
 
+            // Tính toán giờ hiển thị ngay
+            const now = new Date();
+            const currentTimeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const timeStringDisplay = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
+
+            const shift1Config = state.currentUser?.cfgShift1 || "08:00-13:00";
+            const shift2Config = state.currentUser?.cfgShift2 || "13:00-18:00";
+            const isWorkingShift1 = true;
+            const isWorkingShift2 = true;
+
+            let expectedTime = "";
+            let statusMsg = "";
+            let statusColor = "";
+
+            if (type === 'in') {
+                if (isWorkingShift1) { expectedTime = shift1Config.split('-')[0]; } 
+                else if (isWorkingShift2) { expectedTime = shift2Config.split('-')[0]; }
+
+                if (currentTimeStr > expectedTime) { statusMsg = `Đi muộn`; statusColor = "text-red-500"; } 
+                else { statusMsg = `Đúng giờ`; statusColor = "text-emerald-500"; }
+            } else if (type === 'out') {
+                if (isWorkingShift2) { expectedTime = shift2Config.split('-')[1]; } 
+                else if (isWorkingShift1) { expectedTime = shift1Config.split('-')[1]; }
+
+                if (currentTimeStr < expectedTime) { statusMsg = `Về sớm`; statusColor = "text-amber-500"; } 
+                else { statusMsg = `Đúng giờ`; statusColor = "text-emerald-500"; }
+            }
+
+            // Ghi giờ lên màn hình
+            if (timeEl) {
+                timeEl.innerHTML = `${timeStringDisplay} <br><span class="${statusColor} font-extrabold">(${statusMsg}, chuẩn: ${expectedTime})</span>`;
+            }
+
+            // Báo hiệu đang chạy ngầm lấy GPS
+            if (locationEl) {
+                locationEl.innerHTML = `<span class="text-amber-500 animate-pulse font-bold text-[10px] md:text-xs"><i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS & Lưu máy chủ...</span>`;
+            }
+
+            // Xóa bộ nhớ input để có thể chụp lại ngay lập tức nếu muốn
+            event.target.value = ''; 
+
+            // ==========================================
+            // PHẦN 2: XỬ LÝ NGẦM ĐỒNG BỘ LÊN MÁY CHỦ (Không khóa màn hình)
+            // ==========================================
             try {
-                // 2. LẤY THỜI GIAN THỰC TẾ
-                const now = new Date();
-                const currentTimeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                const timeStringDisplay = now.toLocaleTimeString('vi-VN') + ' - ' + now.toLocaleDateString('vi-VN');
-
-                // Lấy cấu hình ca làm việc của nhân viên (mặc định nếu chưa cài đặt)
-                const shift1Config = state.currentUser?.cfgShift1 || "08:00-13:00";
-                const shift2Config = state.currentUser?.cfgShift2 || "13:00-18:00";
-
-                // Tạm thời mặc định nhân viên làm cả 2 ca
-                const isWorkingShift1 = true;
-                const isWorkingShift2 = true;
-
-                let expectedTime = "";
-                let statusMsg = "";
-                let statusColor = "";
-
-                // 3. SO SÁNH GIỜ CA LÀM (TÍNH TOÁN ĐI MUỘN / VỀ SỚM)
-                if (type === 'in') {
-                    if (isWorkingShift1) {
-                        expectedTime = shift1Config.split('-')[0];
-                    } else if (isWorkingShift2) {
-                        expectedTime = shift2Config.split('-')[0];
-                    }
-
-                    if (currentTimeStr > expectedTime) {
-                        statusMsg = `Đi muộn`;
-                        statusColor = "text-red-500";
-                    } else {
-                        statusMsg = `Đúng giờ`;
-                        statusColor = "text-emerald-500";
-                    }
-                } else if (type === 'out') {
-                    if (isWorkingShift2) {
-                        expectedTime = shift2Config.split('-')[1];
-                    } else if (isWorkingShift1) {
-                        expectedTime = shift1Config.split('-')[1];
-                    }
-
-                    if (currentTimeStr < expectedTime) {
-                        statusMsg = `Về sớm`;
-                        statusColor = "text-amber-500";
-                    } else {
-                        statusMsg = `Đúng giờ`;
-                        statusColor = "text-emerald-500";
-                    }
-                }
-
-                // 4. LẤY TỌA ĐỘ GPS (Ép buộc đợi lấy xong mới chạy tiếp)
-                if (loading) loading.querySelector('.text-sm').innerText = 'Đang quét tọa độ vệ tinh GPS...';
-                
+                // 1. Lấy tọa độ GPS (Đợi ngầm tối đa 7 giây)
                 const getGPS = () => new Promise((resolve) => {
                     if (!navigator.geolocation) return resolve("Trình duyệt không hỗ trợ GPS");
                     navigator.geolocation.getCurrentPosition(
                         pos => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
                         err => resolve("Bị từ chối cấp quyền GPS"),
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                        { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
                     );
                 });
                 
                 let locationData = await getGPS();
-                
-                // Thử chuyển đổi tọa độ thành địa chỉ nếu có hàm getAddressFromCoords
                 let finalLocationText = locationData;
+                
+                // Dịch tọa độ thành tên đường (nếu có API)
                 if (locationData.includes(',') && typeof getAddressFromCoords === 'function') {
                     try {
                         const coords = locationData.split(',');
@@ -7593,11 +7601,9 @@ function initSwipeToCloseModals() {
                     }
                 }
 
-                // 5. NÉN VÀ ĐẨY ẢNH LÊN CLOUDFLARE R2
-                if (loading) loading.querySelector('.text-sm').innerText = 'Đang tải ảnh lên máy chủ...';
+                // 2. Nén và đẩy ảnh lên Cloudflare R2
                 const base64Photo = await compressImage(file, 200, 800);
-                let imageUrl = base64Photo; // Dự phòng bằng base64 nếu mây lỗi
-                
+                let imageUrl = base64Photo; 
                 if (typeof uploadFileToR2 === 'function') {
                     try {
                         imageUrl = await uploadFileToR2(base64Photo, 'timekeep');
@@ -7606,9 +7612,7 @@ function initSwipeToCloseModals() {
                     }
                 }
 
-                // 6. ĐẨY DỮ LIỆU LÊN BẢNG 'timekeeping' TRÊN SUPABASE
-                if (loading) loading.querySelector('.text-sm').innerText = 'Đang chốt ca trên hệ thống Máy chủ...';
-
+                // 3. Đẩy dữ liệu lên bảng 'timekeeping' trên Supabase
                 if (typeof supabaseClient !== 'undefined') {
                     const { error } = await supabaseClient.from('timekeeping').insert([{
                         user_email: state.currentUser.username,
@@ -7620,34 +7624,16 @@ function initSwipeToCloseModals() {
                         location: finalLocationText
                     }]);
 
+                    // BẮT LỖI TẠI ĐÂY NẾU SUPABASE TỪ CHỐI
                     if (error) throw error;
                 }
 
-                // ==========================================
-                // 7. CẬP NHẬT GIAO DIỆN HTML SAU KHI LƯU THÀNH CÔNG
-                // ==========================================
-                const prefix = type === 'in' ? 'tkIn' : 'tkOut';
-                const resultBox = document.getElementById(prefix + 'Result');
-                const photoEl = document.getElementById(prefix + 'Photo');
-                const timeEl = document.getElementById(prefix + 'Time');
-                const locationEl = document.getElementById(prefix + 'Location');
-
-                if (photoEl) photoEl.src = imageUrl;
-                
-                if (resultBox) {
-                    resultBox.classList.remove('hidden');
-                    resultBox.classList.add('flex');
-                }
-
-                if (timeEl) {
-                    timeEl.innerHTML = `${timeStringDisplay} <br><span class="${statusColor} font-extrabold">(${statusMsg}, chuẩn: ${expectedTime})</span>`;
-                }
-
+                // 4. CẬP NHẬT GIAO DIỆN "THÀNH CÔNG"
                 if (locationEl) {
                     if (locationData.includes(",")) {
-                        locationEl.innerHTML = `<a href="https://maps.google.com/?q=${locationData}" target="_blank" class="text-sky-600 underline">${finalLocationText}</a>`;
+                        locationEl.innerHTML = `<a href="https://maps.google.com/?q=${locationData}" target="_blank" class="text-sky-600 underline">${finalLocationText}</a> <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
                     } else {
-                        locationEl.innerText = finalLocationText;
+                        locationEl.innerHTML = `${finalLocationText} <span class="text-emerald-500 font-bold ml-1.5"><i class="fa-solid fa-cloud-arrow-up"></i> Đã lưu</span>`;
                     }
                 }
 
@@ -7660,17 +7646,17 @@ function initSwipeToCloseModals() {
                 }
 
                 if (typeof showNotification === 'function') {
-                    showNotification("✅ Chấm công thành công", `Hệ thống Máy chủ đã ghi nhận bạn ${statusMsg}!`);
-                } else {
-                    alert(`Chấm công thành công! Hệ thống ghi nhận bạn ${statusMsg}.`);
+                    showNotification("✅ Chốt ca hoàn tất", `Hệ thống đã lưu ảnh và vị trí của bạn an toàn.`);
                 }
 
             } catch (err) {
-                console.error(err);
-                alert("❌ Lỗi chấm công: " + (err.message || "Không thể kết nối đến Máy chủ."));
-            } finally {
-                if (loading) loading.style.display = 'none';
-                event.target.value = ''; // Xóa bộ nhớ file input để bấm chụp lại được
+                console.error("Lỗi ngầm:", err);
+                
+                // CẬP NHẬT GIAO DIỆN "LỖI" ĐỂ NHÂN VIÊN BIẾT
+                if (locationEl) {
+                    locationEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi: ${err.message || 'Chưa lưu được, hãy chụp lại!'}</span>`;
+                }
+                alert("❌ Lỗi lưu dữ liệu máy chủ: \n" + (err.message || "Bạn hãy thử bấm chụp lại nhé."));
             }
         }
         // 1. (Nhân viên) Gửi đơn xin nghỉ
