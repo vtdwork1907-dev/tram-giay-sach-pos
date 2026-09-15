@@ -8210,6 +8210,44 @@ function initSwipeToCloseModals() {
             renderMgrApprovals(); // Tự động làm mất Đơn khỏi màn hình sau khi bấm
             if (typeof mgrCurrentStaffId !== 'undefined' && mgrCurrentStaffId === userId) renderMgrCalendar();
         }
+        // =========================================================================
+        // TÍNH TOÁN HIỂN THỊ NGÀY THÁNG CHO TAB ĐĂNG KÝ LỊCH (PART-TIME)
+        // =========================================================================
+        function updateCurrentWeekRange() {
+            const today = new Date();
+            const currentDay = today.getDay(); // Trả về từ 0 (Chủ nhật) đến 6 (Thứ 7)
+            
+            // Tính khoảng cách lùi về ngày Thứ 2 đầu tuần
+            const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+            
+            // Set ngày Thứ 2
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - distanceToMonday);
+            
+            // Set ngày Chủ nhật (Thứ 2 + 6 ngày)
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            
+            // Hàm format ngày tháng cho đẹp (VD: 14/09)
+            const formatDate = (dateObj) => {
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                return `${d}/${m}`;
+            };
+            
+            const rangeText = `(${formatDate(monday)} - ${formatDate(sunday)})`;
+            
+            // Hiển thị ra ngoài giao diện HTML
+            const displayEl = document.getElementById('currentWeekRangeDisplay');
+            if (displayEl) {
+                displayEl.innerText = rangeText;
+            }
+        }
+
+        // Chạy hàm này ngay khi tải trang xong
+        window.addEventListener('DOMContentLoaded', () => {
+            updateCurrentWeekRange();
+        });
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
