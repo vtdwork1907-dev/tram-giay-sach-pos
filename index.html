@@ -3279,16 +3279,57 @@ function mapOrderDbToJs(db) {
         loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
     }
 }
+        // HÀM MỚI: Xóa sạch bóng ma giao diện của người cũ
+function resetPersonalUI() {
+    // 1. Xóa Lịch thực tế & Thống kê
+    const calGrid = document.getElementById('calendarGrid');
+    if(calGrid) calGrid.innerHTML = '';
+    
+    ['statWorked', 'statLeave', 'statLate'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = '0';
+    });
+
+    // 2. Đóng bảng chi tiết ngày (chứa ảnh chấm công cũ)
+    const dayDetail = document.getElementById('inlineDayDetail');
+    if(dayDetail) dayDetail.classList.add('hidden');
+
+    // 3. Xóa lịch đăng ký tuần
+    const weekBody = document.getElementById('weeklyScheduleBody');
+    if(weekBody) weekBody.innerHTML = '';
+
+    // 4. Xóa khối chấm công in/out hôm nay
+    ['tkInResult', 'tkOutResult', 'tkSuccessMsg'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        }
+    });
+}
 
         async function handleLogout() {
     if(confirm("Bạn muốn đăng xuất? Vui lòng đảm bảo các đơn hàng đã được đẩy hết lên Cloud trước khi đăng xuất.")) {
-        const loading = document.getElementById('globalLoading'); loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
+        const loading = document.getElementById('globalLoading'); 
+        loading.style.display = 'flex'; 
+        loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
+        
         if (navigator.onLine) { await supabaseClient.auth.signOut(); }
-        state.currentUser = null; localStorage.removeItem('TRAM_LAST_TAB'); 
+        
+        state.currentUser = null; 
+        localStorage.removeItem('TRAM_LAST_TAB'); 
         await idbClear('settings');
-        await idbClear('pending_sync'); // Thêm dòng này để dọn sạch đơn kẹt
-        await idbClear('upload_queue'); // Thêm dòng này để dọn sạch ảnh kẹt
-        loading.style.display = 'none'; document.getElementById('authScreen').style.display = 'flex'; setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+        await idbClear('pending_sync'); 
+        await idbClear('upload_queue'); 
+
+        // 👉 LỆNH QUAN TRỌNG NHẤT: Xóa sạch giao diện của người cũ
+        if (typeof resetPersonalUI === 'function') {
+            resetPersonalUI();
+        }
+
+        loading.style.display = 'none'; 
+        document.getElementById('authScreen').style.display = 'flex'; 
+        setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
     }
 }
 
