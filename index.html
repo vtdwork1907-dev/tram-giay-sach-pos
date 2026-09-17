@@ -7964,6 +7964,7 @@ function updateMgrBadgeCount() {
 }
 
 // 4. HIỂN THỊ DANH SÁCH NHÂN VIÊN
+// 4. HIỂN THỊ DANH SÁCH NHÂN VIÊN
 function renderMgrStaffList() {
     const grid = document.getElementById('mgrStaffListGrid');
     if (!grid) return;
@@ -7986,7 +7987,8 @@ function renderMgrStaffList() {
                 <span class="text-[9px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">${wType}</span>
             </div>
             <div class="flex gap-2">
-                <button onclick="alert('Tính năng xem chi tiết hồ sơ sẽ được mở ở bản cập nhật sau!')" class="flex-1 bg-slate-50 hover:bg-sky-50 text-sky-700 font-bold py-2 rounded-xl border border-slate-200 hover:border-sky-200 text-xs transition active:scale-95"><i class="fa-solid fa-calendar-days"></i> Hồ sơ / Lịch</button>
+                <!-- ĐÃ SỬA NÚT BẤM: GỌI HÀM MỞ HỒ SƠ THAY VÌ HIỆN THÔNG BÁO -->
+                <button onclick="openMgrStaffDetail('${staff.username}')" class="flex-1 bg-slate-50 hover:bg-sky-50 text-sky-700 font-bold py-2 rounded-xl border border-slate-200 hover:border-sky-200 text-xs transition active:scale-95"><i class="fa-solid fa-calendar-days"></i> Hồ sơ / Lịch</button>
             </div>
         </div>`;
     }).join('');
@@ -8193,6 +8195,267 @@ async function handleScheduleApproval(username, status) {
     } finally {
         loading.style.display = 'none';
     }
+}
+        // =========================================================================
+// 7. XEM CHI TIẾT HỒ SƠ NHÂN VIÊN (LỊCH, CHẤM CÔNG, LƯƠNG)
+// =========================================================================
+let currentViewedStaff = null;
+let currentMgrCalendarDate = new Date();
+
+// Mở màn hình chi tiết
+async function openMgrStaffDetail(username) {
+    const staff = mgrData.staffList.find(s => s.username === username);
+    if (!staff) return;
+    
+    currentViewedStaff = staff;
+    currentMgrCalendarDate = new Date(); // Reset về tháng hiện tại
+
+    // Đổi giao diện
+    document.getElementById('mgr-view-list').style.display = 'none';
+    document.getElementById('mgr-view-approve').style.display = 'none';
+    document.getElementById('mgr-view-detail').style.display = 'flex';
+
+    // Ẩn bảng chi tiết ngày cũ
+    const dayBox = document.getElementById('mgrDayDetailBox');
+    if(dayBox) {
+        dayBox.classList.add('hidden');
+        dayBox.classList.remove('flex');
+    }
+
+    document.getElementById('mgrDetailName').innerText = staff.name;
+    document.getElementById('mgrDetailUsername').innerText = staff.username;
+
+    // Tải dữ liệu và vẽ lịch
+    await renderMgrStaffCalendar();
+}
+
+// Đóng màn hình chi tiết (Quay lại danh sách)
+function closeMgrStaffDetail() {
+    currentViewedStaff = null;
+    switchMgrSubTab('list');
+}
+
+// Chuyển tháng trên lịch
+function changeMgrCalendarMonth(delta) {
+    currentMgrCalendarDate.setMonth(currentMgrCalendarDate.getMonth() + delta);
+    renderMgrStaffCalendar();
+}
+
+// Vẽ Lịch và Tính toán Thống kê (Lương, Giờ làm)
+async function renderMgrStaffCalendar() {
+    if (!currentViewedStaff) return;
+    
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang kéo lịch sử làm việc...';
+
+    try {
+        const year = currentMgrCalendarDate.getFullYear();
+        const month = currentMgrCalendarDate.getMonth();
+        document.getElementById('mgrCalendarMonthYear').innerText = `${month + 1}/${year}`;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        // Chỉnh múi giờ để format string không bị lùi ngày
+        const offsetFirstDay = new Date(firstDay.getTime() - (firstDay.getTimezoneOffset() * 60000));
+        const offsetLastDay = new Date(lastDay.getTime() - (lastDay.getTimezoneOffset() * 60000));
+        const startStr = offsetFirstDay.toISOString().split('T')[0];
+        const endStr = offsetLastDay.toISOString().split('T')[0];
+
+        // A. Kéo Lịch đã duyệt
+        const { data: schedules } = await supabaseClient.from('schedules')
+            .select('*')
+            .eq('username', currentViewedStaff.username)
+            .gte('date', startStr)
+            .lte('date', endStr)
+            .eq('status', 'approved');
+
+        // B. Kéo Ảnh chấm công
+        const { data: timesheets } = await supabaseClient.from('timesheets')
+            .select('*')
+            .eq('username', currentViewedStaff.username)
+            .gte('date', startStr)
+            .lte('date', endStr);
+
+        // C. Kéo Ngày xin nghỉ
+        const { data: leaves } = await supabaseClient.from('leave_requests')
+            .select('*')
+            .eq('username', currentViewedStaff.username)
+            .eq('status', 'approved')
+            .lte('start_date', endStr)
+            .gte('end_date', startStr);
+
+        // D. Kéo Cài đặt mức lương
+        const { data: settings } = await supabaseClient.from('staff_settings')
+            .select('*')
+            .eq('username', currentViewedStaff.username)
+            .single();
+
+        const hourlyRate = settings ? (settings.hourly_rate || 0) : 0;
+
+        // E. Bắt đầu vẽ Lưới lịch
+        const grid = document.getElementById('mgrCalendarGrid');
+        let html = '';
+        
+        let startingDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Tính thứ 2 là ngày đầu tuần
+        for (let i = 0; i < startingDay; i++) { 
+            html += `<div></div>`; // Ô trống đầu tháng
+        }
+
+        let totalHours = 0;
+        let leaveDaysCount = 0;
+        let lateCount = 0;
+        let totalPenalty = 0;
+
+        // Bắt đầu quét từng ngày trong tháng
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            const currentDate = new Date(year, month, i);
+            const offsetCurrent = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000));
+            const dateStr = offsetCurrent.toISOString().split('T')[0];
+            
+            const offsetToday = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
+            const todayStr = offsetToday.toISOString().split('T')[0];
+
+            const sched = schedules?.find(s => s.date === dateStr);
+            const dayTimesheets = timesheets?.filter(t => t.date === dateStr) || [];
+            const isLeave = leaves?.some(l => dateStr >= l.start_date && dateStr <= l.end_date);
+
+            let bgColor = 'bg-white';
+            let textColor = 'text-slate-700';
+            let dotHtml = '';
+
+            // LOGIC TÔ MÀU LỊCH VÀ TÍNH TOÁN
+            if (isLeave) {
+                bgColor = 'bg-red-50'; textColor = 'text-red-500'; dotHtml = 'Nghỉ';
+                leaveDaysCount++;
+            } else if (sched) {
+                const hasIn = dayTimesheets.some(t => t.type === 'in');
+                const hasOut = dayTimesheets.some(t => t.type === 'out');
+
+                if (sched.daily_status === 'penalized') {
+                    // Đã bị phạt
+                    bgColor = 'bg-amber-100'; textColor = 'text-amber-800'; 
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>`;
+                    lateCount++;
+                    // Cờ -1 là đại diện cho trừ 50% lương ca đó
+                    if (sched.penalty_amount === -1) {
+                        let shiftHours = 0;
+                        if(sched.shift_1) shiftHours += 5;
+                        if(sched.shift_2) shiftHours += 5;
+                        totalPenalty += (shiftHours * hourlyRate) / 2;
+                    } else {
+                        totalPenalty += sched.penalty_amount || 0;
+                    }
+                } 
+                else if (sched.daily_status === 'forgiven' || (hasIn && hasOut)) {
+                    // Đi đủ hoặc Sếp châm chước
+                    bgColor = 'bg-emerald-50'; textColor = 'text-emerald-700';
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>`;
+                    
+                    if (hasIn && hasOut) {
+                        const tIn = new Date(dayTimesheets.find(t => t.type === 'in').time_log);
+                        const tOut = new Date(dayTimesheets.find(t => t.type === 'out').time_log);
+                        let diff = (tOut - tIn) / (1000 * 60 * 60); // Tính ra số giờ
+                        if (diff > 0 && diff < 24) totalHours += diff; 
+                    } else if (sched.daily_status === 'forgiven') {
+                        // Sếp duyệt trắng án thì khoán mặc định 5h/ca
+                        if (sched.shift_1) totalHours += 5;
+                        if (sched.shift_2) totalHours += 5;
+                    }
+                } 
+                else if (dateStr < todayStr) {
+                    // Quá khứ: Có lịch nhưng không chấm công -> Đỏ (Trốn ca)
+                    bgColor = 'bg-red-100'; textColor = 'text-red-600'; 
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>`; 
+                } 
+                else {
+                    // Tương lai: Có lịch nhưng chưa tới ngày -> Vàng
+                    bgColor = 'bg-amber-50'; textColor = 'text-amber-600';
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>`; 
+                }
+            }
+
+            // Gói dữ liệu để truyền vào hàm click
+            const encodedTimesheets = escapeHtml(JSON.stringify(dayTimesheets));
+            
+            html += `<div onclick="showMgrDayDetail('${dateStr}', '${encodedTimesheets}', ${!!sched})" class="${bgColor} ${textColor} p-1 md:p-2 rounded-lg border border-slate-100 flex flex-col items-center justify-center cursor-pointer hover:border-sky-300 transition aspect-square shadow-sm">
+                <span class="font-bold text-[11px] md:text-xs">${i}</span>
+                <div class="flex gap-0.5 mt-0.5">${dotHtml}</div>
+            </div>`;
+        }
+        grid.innerHTML = html;
+
+        // F. Cập nhật con số lên 4 ô Thống kê phía trên
+        document.getElementById('mgrStatHours').innerText = `${totalHours.toFixed(1)}h`;
+        
+        let tempSalary = Math.round((totalHours * hourlyRate) - totalPenalty);
+        if (tempSalary < 0) tempSalary = 0; // Tránh lương âm
+        
+        document.getElementById('mgrStatSalary').innerText = `${tempSalary.toLocaleString('vi-VN')}đ`;
+        document.getElementById('mgrStatLeave').innerText = leaveDaysCount;
+        document.getElementById('mgrStatLate').innerText = lateCount;
+
+    } catch (err) {
+        console.error("Lỗi vẽ lịch chi tiết:", err);
+        alert("Có lỗi khi tải hồ sơ: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// Bấm vào ngày nào hiện ảnh chấm công của ngày đó
+function showMgrDayDetail(dateStr, timesheetsJson, hasSchedule) {
+    const box = document.getElementById('mgrDayDetailBox');
+    box.classList.remove('hidden');
+    box.classList.add('flex');
+    
+    // Đảo chuỗi Json bị mã hóa về dạng mảng
+    const timesheets = JSON.parse(timesheetsJson.replace(/&quot;/g, '"'));
+    
+    // Tách mảng ngày chuẩn xác để tránh lỗi múi giờ hiển thị
+    const dParts = dateStr.split('-');
+    const dateDisplay = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
+
+    let html = `<div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <h4 class="font-bold text-sky-700 text-sm"><i class="fa-solid fa-clock-rotate-left"></i> Chi tiết ngày ${dateDisplay}</h4>
+        <button onclick="document.getElementById('mgrDayDetailBox').classList.add('hidden'); document.getElementById('mgrDayDetailBox').classList.remove('flex');" class="text-slate-400 hover:text-red-500 font-bold text-xs"><i class="fa-solid fa-times"></i> Đóng</button>
+    </div>`;
+
+    if (!hasSchedule && timesheets.length === 0) {
+        html += `<div class="text-center text-slate-400 text-xs italic py-6 bg-slate-50 rounded-xl mt-2">Không có ca làm việc và không có dữ liệu chấm công.</div>`;
+    } else {
+        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">`;
+        
+        const inRecord = timesheets.find(t => t.type === 'in');
+        const outRecord = timesheets.find(t => t.type === 'out');
+
+        // Bảng ĐẾN LÀM (IN)
+        html += `<div class="bg-slate-50 p-2 rounded-xl border ${inRecord ? 'border-emerald-200 shadow-sm bg-white' : 'border-slate-200'}">
+            <div class="font-bold text-xs mb-1.5 ${inRecord ? 'text-emerald-600' : 'text-slate-500'}"><i class="fa-solid fa-right-to-bracket"></i> ĐẾN LÀM (IN)</div>
+            ${inRecord 
+                ? `<img src="${inRecord.image_url}" onclick="openImageViewer('${inRecord.image_url}')" class="w-full h-32 md:h-40 object-cover rounded-lg mb-2 cursor-pointer shadow-sm hover:opacity-90 transition border border-slate-100">
+                   <div class="text-[10px] md:text-[11px] font-medium text-slate-600 mb-0.5"><i class="fa-regular fa-clock text-sky-500 w-3"></i> ${new Date(inRecord.time_log).toLocaleTimeString('vi-VN')}</div>
+                   <div class="text-[10px] md:text-[11px] font-medium text-slate-600 truncate" title="${inRecord.location}"><i class="fa-solid fa-location-dot text-red-500 w-3"></i> ${inRecord.location}</div>`
+                : `<div class="h-32 flex flex-col items-center justify-center text-slate-400 italic text-[10px] bg-slate-100 rounded-lg border border-dashed border-slate-300"><i class="fa-solid fa-camera-slash text-xl mb-1"></i> Không có dữ liệu</div>`
+            }
+        </div>`;
+
+        // Bảng TAN LÀM (OUT)
+        html += `<div class="bg-slate-50 p-2 rounded-xl border ${outRecord ? 'border-amber-200 shadow-sm bg-white' : 'border-slate-200'}">
+            <div class="font-bold text-xs mb-1.5 ${outRecord ? 'text-amber-600' : 'text-slate-500'}"><i class="fa-solid fa-right-from-bracket"></i> TAN LÀM (OUT)</div>
+            ${outRecord 
+                ? `<img src="${outRecord.image_url}" onclick="openImageViewer('${outRecord.image_url}')" class="w-full h-32 md:h-40 object-cover rounded-lg mb-2 cursor-pointer shadow-sm hover:opacity-90 transition border border-slate-100">
+                   <div class="text-[10px] md:text-[11px] font-medium text-slate-600 mb-0.5"><i class="fa-regular fa-clock text-sky-500 w-3"></i> ${new Date(outRecord.time_log).toLocaleTimeString('vi-VN')}</div>
+                   <div class="text-[10px] md:text-[11px] font-medium text-slate-600 truncate" title="${outRecord.location}"><i class="fa-solid fa-location-dot text-red-500 w-3"></i> ${outRecord.location}</div>`
+                : `<div class="h-32 flex flex-col items-center justify-center text-slate-400 italic text-[10px] bg-slate-100 rounded-lg border border-dashed border-slate-300"><i class="fa-solid fa-camera-slash text-xl mb-1"></i> Không có dữ liệu</div>`
+            }
+        </div>`;
+
+        html += `</div>`;
+    }
+    
+    box.innerHTML = html;
 }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
