@@ -7988,7 +7988,7 @@ function renderMgrStaffList() {
 // =========================================================================
 // 5. GIAO DIỆN & LOGIC PHÊ DUYỆT 3 LỚP
 // =========================================================================
-function renderMgrApprovals() {
+async function renderMgrApprovals() {
     const container = document.getElementById('mgrApprovalList');
     if (!container) return;
 
@@ -8042,11 +8042,11 @@ function renderMgrApprovals() {
         }).join('');
     }
 
-    // --- LỚP 3: ĐĂNG KÝ LỊCH TUẦN ---
+    // --- LỚP 3: ĐĂNG KÝ LỊCH TUẦN (ĐÃ TỐI ƯU HIỂN THỊ GIỜ & XỬ LÝ LỊCH MỒ CÔI) ---
     if (mgrData.pendingSchedules.length > 0) {
         html += `<h4 class="font-bold text-sky-600 text-xs uppercase mb-2 mt-4 flex items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i> Đăng Ký Lịch Làm (${mgrData.pendingSchedules.length})</h4>`;
         
-        // Gom nhóm lịch theo Username để duyệt 1 lần cho lẹ
+        // Gom nhóm lịch theo Username
         const groupedSched = {};
         mgrData.pendingSchedules.forEach(s => {
             if (!groupedSched[s.username]) groupedSched[s.username] = [];
@@ -8054,22 +8054,38 @@ function renderMgrApprovals() {
         });
 
         for (const [uname, scheds] of Object.entries(groupedSched)) {
-            const staff = mgrData.staffList.find(s => s.username === uname) || { name: uname };
+            const staff = mgrData.staffList.find(s => s.username === uname) || { name: uname, work_type: 'parttime' };
+            
+            // Lấy khung giờ chuẩn từ cấu hình của nhân viên đó (Mặc định 08:00-13:00 và 13:00-18:00)
+            let s1Text = "08:00 - 13:00";
+            let s2Text = "13:00 - 18:00";
+
+            // Nếu trong staffList có kèm settings cấu hình riêng thì bóc tách ra
+            if (staff.settings) {
+                if (staff.settings.shift1_time) s1Text = staff.settings.shift1_time.replace('-', ' đến ');
+                if (staff.settings.shift2_time) s2Text = staff.settings.shift2_time.replace('-', ' đến ');
+            }
             
             let daysHtml = scheds.map(s => {
                 const d = new Date(s.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
-                return `<div class="bg-white p-1.5 rounded border border-sky-100 flex justify-between text-[10px]">
+                
+                // Thay vì hiện chữ Ca 1 / Ca 2, hệ thống sẽ bóc ra khung giờ cụ thể
+                let shiftsDetails = [];
+                if (s.shift_1) shiftsDetails.push(`Ca 1: ${s1Text}`);
+                if (s.shift_2) shiftsDetails.push(`Ca 2: ${s2Text}`);
+
+                return `<div class="bg-white p-2 rounded border border-sky-100 flex justify-between items-center text-[10px] md:text-xs">
                     <span class="font-bold text-slate-700">${d}</span>
-                    <span class="text-sky-700 font-bold">${s.shift_1 ? '[Ca 1]' : ''} ${s.shift_2 ? '[Ca 2]' : ''}</span>
+                    <span class="text-sky-700 font-bold">${shiftsDetails.join(' | ')}</span>
                 </div>`;
             }).join('');
 
             html += `
             <div class="bg-sky-50 border border-sky-200 p-3 md:p-4 rounded-xl shadow-sm flex flex-col gap-2">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)} <span class="text-[10px] text-slate-500 font-normal">đã gửi ${scheds.length} ngày</span></span>
+                    <span class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)} <span class="text-[10px] text-slate-500 font-normal">(${uname})</span></span>
                 </div>
-                <div class="grid grid-cols-2 gap-1.5 mb-2">${daysHtml}</div>
+                <div class="flex flex-col gap-1.5 mb-2">${daysHtml}</div>
                 <div class="flex gap-2">
                     <button onclick="handleScheduleApproval('${uname}', 'approved')" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-check"></i> Chốt Lịch</button>
                     <button onclick="handleScheduleApproval('${uname}', 'rejected')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-trash"></i> Xóa Bỏ</button>
