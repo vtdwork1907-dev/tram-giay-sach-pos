@@ -3967,106 +3967,99 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
         // =========================================================================
         // 18. ZERO-LATENCY SAVE: LƯU ĐƠN NHANH
         // =========================================================================
-        async function processOrder() {
-            // --- BẮT ĐẦU: KHÓA NÚT 3 GIÂY CHỐNG BẤM ĐÚP ---
-            const saveBtn = document.getElementById('saveOrderBtn');
-            if (saveBtn) {
-                // Vô hiệu hóa và làm mờ nút, đổi icon thành vòng xoay loading
-                saveBtn.disabled = true;
-                saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG LƯU...';
-                
-                // Hẹn giờ đúng 3 giây (3000ms) sau tự động mở lại nút
-                setTimeout(() => {
-                    saveBtn.disabled = false;
-                    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    saveBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG';
-                }, 3000);
-            }
-            // --- KẾT THÚC: KHÓA NÚT ---
+       async function processOrder() {
+    const saveBtn = document.getElementById('saveOrderBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG LƯU...';
+        setTimeout(() => {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            saveBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> LƯU ĐƠN HÀNG';
+        }, 3000);
+    }
 
-            let finalCartItems = []; 
-            let finalImageUrls = []; 
-            let mainBrand = 'Asics'; // Đã đổi thành Asics
-            const dateStr = document.getElementById('orderDateInput').value;
+    let finalCartItems = []; 
+    let finalImageUrls = []; 
+    let mainBrand = 'Asics'; 
+    const dateStr = document.getElementById('orderDateInput').value;
 
-            if (state.multiShoeMode) {
-                if (state.shoes.length === 0) return alert("Vui lòng thêm ít nhất một đôi giày!");
-                let hasServices = false;
-                
-                state.shoes.forEach((s) => {
-                    if (s.services.length > 0) hasServices = true; 
-                    const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
-                    
-                    s.services.forEach(svc => { 
-                        finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || 'Asics' }); // Đã đổi
-                    });
-                    s.images.forEach(img => { 
-                        const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
-                        if (url) finalImageUrls.push(url); 
-                    });
-                });
-                if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
-                if(state.shoes.length > 0 && state.shoes[0].services.length > 0) mainBrand = state.shoes[0].services[0].brand || 'Asics'; // Đã đổi
-            } else {
-                if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
-                mainBrand = state.cart[0].brand || 'Asics'; // Đã đổi
+    if (state.multiShoeMode) {
+        if (state.shoes.length === 0) return alert("Vui lòng thêm ít nhất một đôi giày!");
+        let hasServices = false;
+        
+        state.shoes.forEach((s) => {
+            if (s.services.length > 0) hasServices = true; 
+            const shoeLabel = s.note ? `${s.name} (${s.note})` : s.name;
+            
+            s.services.forEach(svc => { 
+                finalCartItems.push({ ...svc, status: svc.status || 'RECEIVED', warrantyDate: null, name: `[${shoeLabel}] ${svc.name}`, brand: svc.brand || 'Asics' }); 
+            });
+            s.images.forEach(img => { 
+                const url = typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); 
+                if (url) finalImageUrls.push(url); 
+            });
+        });
+        if (!hasServices) return alert("Vui lòng chọn dịch vụ cho ít nhất một đôi giày!");
+        if(state.shoes.length > 0 && state.shoes[0].services.length > 0) mainBrand = state.shoes[0].services[0].brand || 'Asics'; 
+    } else {
+        if(state.cart.length === 0) return alert("Vui lòng chọn ít nhất một dịch vụ!");
+        mainBrand = state.cart[0].brand || 'Asics'; 
 
-                finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: i.brand || mainBrand }));
-                finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
-            }
-            
-            const name = document.getElementById('custName').value.trim(); 
-            const phone = document.getElementById('custPhone').value.trim();
-            // ... (Giữ nguyên toàn bộ phần code bên dưới của hàm này)
-            if(!phone || !name) return alert("Vui lòng nhập đầy đủ Tên và Số điện thoại khách hàng!");
+        finalCartItems = JSON.parse(JSON.stringify(state.cart)).map(i => ({ ...i, status: i.status || 'RECEIVED', warrantyDate: null, brand: i.brand || mainBrand }));
+        finalImageUrls = state.uploadedImages.map(img => { return typeof img === 'string' ? img : (img.r2Url || img.localUrl || img.url); }).filter(url => url !== null);
+    }
+    
+    const name = document.getElementById('custName').value.trim(); 
+    const phone = document.getElementById('custPhone').value.trim();
+    if(!phone || !name) return alert("Vui lòng nhập đầy đủ Tên và Số điện thoại khách hàng!");
 
-            const sub = parseInt(document.getElementById('subtotalInput').value) || 0; 
-            const disc = parseInt(document.getElementById('discountInput').value) || 0; 
-            const initStatus = document.getElementById('cartOrderStatus').value;
-            
-            let pmDate = null;
-            let pMethod = null;
-            // NẾU TẠO ĐƠN MÀ CHỌN LUÔN "ĐÃ THANH TOÁN" THÌ CHỐT SỔ NGÀY GIỜ NGAY LẬP TỨC
-            if (['DELIVERED', 'PAID'].includes(initStatus)) {
-                const nowD = new Date();
-                pmDate = `${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-${String(nowD.getDate()).padStart(2,'0')} ${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
-                pMethod = 'CASH'; 
-            }
+    const sub = parseInt(document.getElementById('subtotalInput').value) || 0; 
+    const disc = parseInt(document.getElementById('discountInput').value) || 0; 
+    const initStatus = document.getElementById('cartOrderStatus').value;
+    
+    let pmDate = null;
+    let pMethod = null;
+    if (['DELIVERED', 'PAID'].includes(initStatus)) {
+        const nowD = new Date();
+        pmDate = `${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-${String(nowD.getDate()).padStart(2,'0')} ${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
+        pMethod = 'CASH'; 
+    }
 
-            const newOrder = { 
-                id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
-                tracking_id: generateShortTrackingId(), 
-                date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '), 
-                customer: {name, phone, note: document.getElementById('custNote').value}, 
-                brand: mainBrand,
-                items: finalCartItems, images: finalImageUrls, imagesAfter: [], 
-                subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), 
-                status: initStatus, shoes: state.multiShoeMode ? JSON.parse(JSON.stringify(state.shoes)) : null, 
-                paymentMethod: pMethod, payment_date: pmDate, extraFeeVal: 0, extraFeeReason: '' 
-            };
-            
-            if (['DELIVERED', 'PAID'].includes(initStatus)) setOrderWarrantyOnDelivery(newOrder);
+    const newOrder = { 
+        id: 'BON-' + Math.floor(1000 + Math.random() * 9000), 
+        tracking_id: generateShortTrackingId(), 
+        date: dateStr ? dateStr.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' '), 
+        customer: {name, phone, note: document.getElementById('custNote').value}, 
+        brand: mainBrand,
+        items: finalCartItems, images: finalImageUrls, imagesAfter: [], 
+        subtotalVal: sub, discountVal: disc, total: Math.max(0, sub - disc), 
+        status: initStatus, shoes: state.multiShoeMode ? JSON.parse(JSON.stringify(state.shoes)) : null, 
+        paymentMethod: pMethod, payment_date: pmDate, extraFeeVal: 0, extraFeeReason: '',
+        created_by: state.currentUser ? state.currentUser.username : null // Lưu email người tạo
+    };
+    
+    if (['DELIVERED', 'PAID'].includes(initStatus)) setOrderWarrantyOnDelivery(newOrder);
 
-            state.orders.unshift(newOrder); 
-            clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
-            
-            const svcsStr = finalCartItems.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
-            const totalAmountStr = (newOrder.total + (newOrder.extraFeeVal || 0)).toLocaleString('vi-VN') + ' đ';
-            showNotification("📦 ĐÃ TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)}\nDịch vụ: ${svcsStr}\nTổng tiền: ${totalAmountStr}`);
-            
-            const uploads = await idbGetAll('upload_queue');
-            for (const url of finalImageUrls) { 
-                const match = uploads.find(u => u.localUrl === url); 
-                if (match) { match.orderId = newOrder.id; await idbPut('upload_queue', match); } 
-            }
-            
-            await dbInsertOrder(newOrder);
-            autoPrintOrderLabels(newOrder); // <-- Dòng code vừa thêm để kích hoạt máy in tự động
-            
-            clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
-            if (navigator.onLine) { sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`); }
-        }
+    state.orders.unshift(newOrder); 
+    clearCart(); renderOrdersTable(true); renderCustomersTable(); updateReportMetrics(); renderDashboard();
+    
+    const svcsStr = finalCartItems.map(i => `${escapeHtml(i.name)} (x${i.qty})`).join(', ');
+    const totalAmountStr = (newOrder.total + (newOrder.extraFeeVal || 0)).toLocaleString('vi-VN') + ' đ';
+    showNotification("📦 ĐÃ TẠO ĐƠN MỚI", `Khách: ${escapeHtml(name)}\nDịch vụ: ${svcsStr}\nTổng tiền: ${totalAmountStr}`);
+    
+    const uploads = await idbGetAll('upload_queue');
+    for (const url of finalImageUrls) { 
+        const match = uploads.find(u => u.localUrl === url); 
+        if (match) { match.orderId = newOrder.id; await idbPut('upload_queue', match); } 
+    }
+    
+    await dbInsertOrder(newOrder);
+    if(typeof autoPrintOrderLabels === 'function') autoPrintOrderLabels(newOrder); 
+    
+    if (navigator.onLine) { sendNtfyAlert(`📦 Đơn mới: ${name} - ${newOrder.total.toLocaleString()}đ`, `SĐT: ${phone} | Dịch vụ: ${svcsStr}`); }
+}
         
         function renderPOSBrandSelects() {
             if(!state.brands || state.brands.length === 0) state.brands = ['Asics', 'Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
