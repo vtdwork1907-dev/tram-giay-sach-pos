@@ -7955,8 +7955,6 @@ function updateMgrBadgeCount() {
     }
 }
 
-// 4. HIỂN THỊ DANH SÁCH NHÂN VIÊN
-// 4. HIỂN THỊ DANH SÁCH NHÂN VIÊN
 function renderMgrStaffList() {
     const grid = document.getElementById('mgrStaffListGrid');
     if (!grid) return;
@@ -7968,19 +7966,20 @@ function renderMgrStaffList() {
 
     grid.innerHTML = mgrData.staffList.map(staff => {
         const wType = staff.work_type === 'parttime' ? 'Part-time' : 'Full-time';
+        const jobTitle = staff.job_title || 'Nhân Viên';
+        
         return `
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div onclick="openMgrStaffDetail('${staff.username}')" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-sky-300 hover:shadow-md transition group">
             <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
-                <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center font-bold text-xl uppercase shadow-inner">${staff.name.charAt(0)}</div>
+                <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center font-bold text-xl uppercase shadow-inner group-hover:scale-105 transition">${staff.name.charAt(0)}</div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)}</h3>
+                    <h3 class="font-bold text-slate-800 text-sm group-hover:text-sky-700 transition">${escapeHtml(staff.name)}</h3>
                     <p class="text-[10px] text-slate-500 font-mono">${escapeHtml(staff.username)}</p>
                 </div>
-                <span class="text-[9px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">${wType}</span>
             </div>
-            <div class="flex gap-2">
-                <!-- ĐÃ SỬA NÚT BẤM: GỌI HÀM MỞ HỒ SƠ THAY VÌ HIỆN THÔNG BÁO -->
-                <button onclick="openMgrStaffDetail('${staff.username}')" class="flex-1 bg-slate-50 hover:bg-sky-50 text-sky-700 font-bold py-2 rounded-xl border border-slate-200 hover:border-sky-200 text-xs transition active:scale-95"><i class="fa-solid fa-calendar-days"></i> Hồ sơ / Lịch</button>
+            <div class="flex justify-between items-center px-1">
+                <span class="text-[10px] font-bold text-slate-500"><i class="fa-solid fa-briefcase mr-1"></i>${staff.work_type === 'fulltime' ? escapeHtml(jobTitle) : 'Nhân Viên Ca'}</span>
+                <span class="text-[9px] font-bold px-2 py-1 rounded ${staff.work_type === 'fulltime' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${wType}</span>
             </div>
         </div>`;
     }).join('');
