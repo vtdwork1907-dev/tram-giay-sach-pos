@@ -3312,24 +3312,35 @@ function resetPersonalUI() {
     if(confirm("Bạn muốn đăng xuất? Vui lòng đảm bảo các đơn hàng đã được đẩy hết lên Cloud trước khi đăng xuất.")) {
         const loading = document.getElementById('globalLoading'); 
         loading.style.display = 'flex'; 
-        loading.querySelector('.text-sm').innerText = 'Đang dọn dẹp bộ nhớ và đăng xuất...';
+        loading.querySelector('.text-sm').innerText = 'Đang dọn dẹp sạch sẽ bộ nhớ thiết bị...';
         
-        // 1. Đăng xuất khỏi hệ thống mây Supabase
-        if (navigator.onLine) { 
-            await supabaseClient.auth.signOut(); 
-        }
-        
-        // 2. Xóa các biến nhận diện người dùng
-        state.currentUser = null; 
-        localStorage.removeItem('TRAM_LAST_TAB'); 
-        
-        // 3. Xóa các dữ liệu đang chờ đồng bộ
-        await idbClear('pending_sync'); 
-        await idbClear('upload_queue'); 
+        try {
+            // 1. Gửi lệnh hủy phiên đăng nhập lên máy chủ Supabase (nếu có mạng)
+            if (navigator.onLine) { 
+                await supabaseClient.auth.signOut(); 
+            }
+            
+            // 2. PHƯƠNG PHÁP TỐI THƯỢNG 1: Quét sạch sành sanh Local Storage
+            // Lệnh này tiêu diệt vĩnh viễn Mã Token đăng nhập bị kẹt và dữ liệu rác của người cũ
+            localStorage.clear(); 
+            
+            // 3. Quét sạch Session Storage (bộ nhớ phiên)
+            sessionStorage.clear();
 
-        // 4. PHƯƠNG PHÁP TỐI THƯỢNG: Tải lại toàn bộ trang web (F5)
-        // Quét sạch 100% hình ảnh, con số và giao diện cũ đang kẹt trên điện thoại
-        window.location.reload(); 
+            // 4. PHƯƠNG PHÁP TỐI THƯỢNG 2: Xóa trắng toàn bộ cơ sở dữ liệu ngầm (IndexedDB)
+            if (typeof idbClear === 'function') {
+                await idbClear('settings'); 
+                await idbClear('pending_sync'); 
+                await idbClear('upload_queue'); 
+            }
+            
+        } catch (e) {
+            console.error("Lỗi khi dọn dẹp bộ nhớ:", e);
+        } finally {
+            // 5. Đặt lại đường dẫn gốc và ép trình duyệt tải lại từ đầu
+            // Việc này làm sạch hoàn toàn RAM, giúp người sau đăng nhập vào một môi trường trắng tinh 100%
+            window.location.replace(window.location.pathname);
+        }
     }
 }
 
