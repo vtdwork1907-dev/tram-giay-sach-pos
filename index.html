@@ -8155,6 +8155,45 @@ async function handleViolation(scheduleId, action, type) {
         loading.style.display = 'none';
     }
 }
+        // HÀM MỚI: Xử lý khi Quản lý bấm "Không duyệt" vi phạm
+async function handleDisapproveViolation(scheduleId, type) {
+    let penaltyAmount = 0;
+    let dailyStatus = 'penalized';
+
+    if (type === 'MISSING') {
+        if (!confirm("Bạn không duyệt giải trình này? Hệ thống sẽ tự động áp dụng hình thức trừ 50% lương ca làm việc đó.")) return;
+        penaltyAmount = -1; // -1 đại diện cho mã trừ 50% lương
+    } else if (type === 'LATE') {
+        // Nếu là lỗi đi muộn, khi bấm "Không duyệt" sẽ bật bảng nhập số tiền phạt
+        const amountStr = prompt("Bạn không duyệt đi muộn. Nhập SỐ TIỀN muốn phạt nhân viên (VD: 20000):", "20000");
+        if (amountStr === null) return; // Nếu bấm Hủy thì thoát, không làm gì cả
+        
+        const amount = parseInt(amountStr);
+        if (isNaN(amount) || amount <= 0) return alert("Số tiền phạt không hợp lệ!");
+        penaltyAmount = amount;
+    }
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang lưu quyết định xử phạt...';
+
+    try {
+        const { error } = await supabaseClient.from('schedules').update({
+            daily_status: dailyStatus,
+            penalty_amount: penaltyAmount
+        }).eq('id', scheduleId);
+
+        if (error) throw error;
+        
+        showNotification("Thành công", "Đã ghi nhận hình thức xử lý kỷ luật!");
+        await initStaffManagement(); // Tải lại danh sách phê duyệt
+
+    } catch (err) {
+        alert("Lỗi: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
 
 // B. DUYỆT ĐƠN XIN NGHỈ
 async function handleLeaveApproval(leaveId, status) {
