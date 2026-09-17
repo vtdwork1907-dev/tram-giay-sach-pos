@@ -8178,14 +8178,14 @@ async function handleLeaveApproval(leaveId, status) {
 
 // C. DUYỆT LỊCH LÀM VIỆC
 async function handleScheduleApproval(username, status) {
-    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ các lịch chờ duyệt của nhân viên này?")) return;
+    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ các lịch chờ duyệt này?")) return;
 
     const loading = document.getElementById('globalLoading');
     loading.style.display = 'flex';
 
     try {
         if (status === 'rejected') {
-            // Xóa bỏ luôn các lịch chưa duyệt
+            // Xóa bỏ tất cả các dòng lịch đang ở trạng thái pending CỦA USERNAME NÀY (Bất kể tài khoản còn tồn tại hay đã bị xóa khỏi bảng users)
             const { error } = await supabaseClient.from('schedules').delete().eq('username', username).eq('status', 'pending');
             if (error) throw error;
         } else {
