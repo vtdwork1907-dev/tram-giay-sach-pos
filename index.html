@@ -6988,6 +6988,50 @@ async function handleTimekeepingCam(e, type) {
         e.target.value = ''; // Reset input file
     }
 }
+        // HÀM MỚI: Tải dữ liệu chấm công hôm nay của RIÊNG nhân viên đang đăng nhập
+async function loadTodayTimekeeping() {
+    // 1. QUAN TRỌNG NHẤT: Dọn dẹp sạch sẽ giao diện cũ của người đăng nhập trước đó
+    document.getElementById('tkInResult').classList.add('hidden');
+    document.getElementById('tkInResult').classList.remove('flex');
+    document.getElementById('tkOutResult').classList.add('hidden');
+    document.getElementById('tkOutResult').classList.remove('flex');
+    document.getElementById('tkSuccessMsg').classList.add('hidden');
+    document.getElementById('tkSuccessMsg').classList.remove('flex');
+
+    if (!state.currentUser || !navigator.onLine) return;
+
+    // 2. Kéo dữ liệu chấm công của ngày hôm nay TỪ MÂY về
+    const dateStr = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabaseClient.from('timesheets')
+        .select('*')
+        .eq('username', state.currentUser.username) // Chỉ lấy đúng dữ liệu của user này
+        .eq('date', dateStr);
+
+    if (data && data.length > 0) {
+        // 3. Nếu user này đã chấm công, vẽ lại ảnh và giờ ra màn hình
+        data.forEach(record => {
+            const timeObj = new Date(record.time_log);
+            const timeStr = timeObj.toLocaleTimeString('vi-VN');
+
+            if (record.type === 'in') {
+                document.getElementById('tkInResult').classList.remove('hidden');
+                document.getElementById('tkInResult').classList.add('flex');
+                document.getElementById('tkInPhoto').src = record.image_url;
+                document.getElementById('tkInLocation').innerText = record.location;
+                document.getElementById('tkInTime').innerText = timeStr;
+            } else if (record.type === 'out') {
+                document.getElementById('tkOutResult').classList.remove('hidden');
+                document.getElementById('tkOutResult').classList.add('flex');
+                document.getElementById('tkOutPhoto').src = record.image_url;
+                document.getElementById('tkOutLocation').innerText = record.location;
+                document.getElementById('tkOutTime').innerText = timeStr;
+                
+                document.getElementById('tkSuccessMsg').classList.remove('hidden');
+                document.getElementById('tkSuccessMsg').classList.add('flex');
+            }
+        });
+    }
+}
      // 3. XỬ LÝ XIN NGHỈ PHÉP
 async function submitLeaveRequest() {
     const start = document.getElementById('leaveStart').value;
