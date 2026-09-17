@@ -3323,12 +3323,12 @@ function resetPersonalUI() {
         state.currentUser = null; 
         localStorage.removeItem('TRAM_LAST_TAB'); 
         
-        // 3. Xóa các dữ liệu đang chờ đồng bộ (để không đẩy nhầm dữ liệu của người cũ bằng tài khoản người mới)
+        // 3. Xóa các dữ liệu đang chờ đồng bộ
         await idbClear('pending_sync'); 
         await idbClear('upload_queue'); 
 
-        // 4. PHƯƠNG PHÁP TỐI THƯỢNG: Tải lại toàn bộ trang web
-        // Lệnh này sẽ quét sạch 100% các biến, mảng, hình ảnh đang lưu trong RAM của điện thoại
+        // 4. PHƯƠNG PHÁP TỐI THƯỢNG: Tải lại toàn bộ trang web (F5)
+        // Quét sạch 100% hình ảnh, con số và giao diện cũ đang kẹt trên điện thoại
         window.location.reload(); 
     }
 }
