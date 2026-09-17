@@ -8012,7 +8012,8 @@ async function renderMgrApprovals() {
                 <p class="text-xs text-red-800 font-medium mb-1">${v.desc}</p>
                 <div class="flex gap-2 mt-1">
                     <button onclick="handleViolation(${v.id}, 'forgive')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-hand-holding-heart"></i> Duyệt (Châm chước)</button>
-                    <button onclick="handleViolation(${v.id}, 'penalize', '${v.type}')" class="flex-1 bg-slate-800 hover:bg-black text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-gavel"></i> Phạt Tiền</button>
+                    <!-- ĐÃ ĐỔI THÀNH NÚT KHÔNG DUYỆT -->
+                    <button onclick="handleDisapproveViolation(${v.id}, '${v.type}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-times"></i> Không duyệt</button>
                 </div>
             </div>`;
         }).join('');
