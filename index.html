@@ -934,73 +934,65 @@
                 </div>
             </section>
 
-            <!-- MODAL CẤU HÌNH NHÂN VIÊN -->
-            <div id="mgrSettingsModal" class="fixed inset-0 bg-slate-900/60 z-[99999] hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity">
-                <div id="mgrSettingsBox" class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col transform scale-95 transition-transform">
-                    <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center">
-                        <h3 class="font-bold text-sm">Cấu hình: <span id="mgrSettingName"></span></h3>
-                        <button onclick="closeMgrSettings()" class="text-2xl leading-none">&times;</button>
+           <!-- MODAL CẤU HÌNH NHÂN VIÊN (ĐÃ NÂNG CẤP FULL-TIME / PART-TIME) -->
+<div id="mgrSettingsModal" class="fixed inset-0 bg-slate-900/60 z-[99999] hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity">
+    <div id="mgrSettingsBox" class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col transform scale-95 transition-transform max-h-[90vh]">
+        <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center shrink-0">
+            <h3 class="font-bold text-sm">Cấu hình: <span id="mgrSettingName"></span></h3>
+            <button onclick="closeMgrSettings()" class="text-2xl leading-none">&times;</button>
+        </div>
+        <div class="p-4 space-y-4 text-xs md:text-sm bg-slate-50 flex-1 overflow-y-auto hide-scroll">
+            
+            <!-- CHỌN LOẠI HÌNH & CHỨC VỤ -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-navy-800 border-b pb-1 mb-2">Loại hình & Chức vụ</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Loại hình làm việc</label>
+                        <select id="cfgWorkType" onchange="toggleWorkTypeConfig()" class="w-full p-2 border rounded-lg outline-none font-bold text-xs bg-slate-50">
+                            <option value="parttime">Part-time (Theo ca)</option>
+                            <option value="fulltime">Full-time (Toàn thời gian)</option>
+                        </select>
                     </div>
-                    <div class="p-4 space-y-4 text-xs md:text-sm bg-slate-50 flex-1 overflow-y-auto max-h-[70vh]">
-                        <div class="bg-white p-3 rounded-xl border border-slate-200">
-                            <h4 class="font-bold text-sky-700 border-b pb-1 mb-2">Ca Làm Việc</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 1 (Từ - Đến)</label><input type="text" id="cfgShift1" placeholder="VD: 08:00-13:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 2 (Từ - Đến)</label><input type="text" id="cfgShift2" placeholder="VD: 13:00-18:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200">
-                            <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2">Cập nhật Lương (VNĐ/Giờ)</h4>
-                            <div class="flex gap-2">
-                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Mức lương mới</label><input type="number" id="cfgNewSalary" placeholder="VD: 25000" class="w-full p-2 border rounded outline-none font-bold text-xs"></div>
-                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Áp dụng từ ngày</label><input type="date" id="cfgSalaryDate" class="w-full p-2 border rounded outline-none font-bold text-xs text-slate-700"></div>
-                            </div>
-                            <button onclick="saveNewSalaryRate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded mt-2 text-xs transition shadow">Thêm Mốc Lương Mới</button>
-                            
-                            <h4 class="font-bold text-slate-600 mt-4 mb-1 text-[10px] uppercase">Lịch sử Lương</h4>
-                            <div id="mgrSalaryHistory" class="space-y-1 max-h-32 overflow-y-auto hide-scroll text-[10px]"></div>
-                        </div>
-                    </div>
-                    <div class="p-3 bg-white border-t border-slate-200 flex justify-end gap-2">
-                        <button onclick="closeMgrSettings()" class="px-4 py-2 bg-slate-200 font-bold rounded-lg text-xs">Hủy</button>
-                        <button onclick="saveMgrSettings()" class="px-4 py-2 bg-navy-800 text-white font-bold rounded-lg text-xs">Lưu Cấu Hình</button>
+                    <div id="cfgJobTitleBox" class="hidden">
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Chức vụ</label>
+                        <input type="text" id="cfgJobTitle" placeholder="VD: Cửa hàng trưởng" class="w-full p-2 border rounded-lg outline-none font-bold text-xs">
                     </div>
                 </div>
             </div>
 
-            <!-- MODAL CẤU HÌNH NHÂN VIÊN -->
-            <div id="mgrSettingsModal" class="fixed inset-0 bg-slate-900/60 z-[99999] hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity">
-                <div id="mgrSettingsBox" class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col transform scale-95 transition-transform">
-                    <div class="bg-navy-800 text-white px-4 py-3 flex justify-between items-center">
-                        <h3 class="font-bold text-sm">Cấu hình: <span id="mgrSettingName"></span></h3>
-                        <button onclick="closeMgrSettings()" class="text-2xl leading-none">&times;</button>
-                    </div>
-                    <div class="p-4 space-y-4 text-xs md:text-sm bg-slate-50 flex-1 overflow-y-auto max-h-[70vh]">
-                        <div class="bg-white p-3 rounded-xl border border-slate-200">
-                            <h4 class="font-bold text-sky-700 border-b pb-1 mb-2">Ca Làm Việc</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 1 (Từ - Đến)</label><input type="text" id="cfgShift1" placeholder="VD: 08:00-13:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500">Ca 2 (Từ - Đến)</label><input type="text" id="cfgShift2" placeholder="VD: 13:00-18:00" class="w-full p-2 border rounded outline-none font-mono text-xs"></div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200">
-                            <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2">Cập nhật Lương (VNĐ/Giờ)</h4>
-                            <div class="flex gap-2">
-                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Mức lương mới</label><input type="number" id="cfgNewSalary" placeholder="VD: 25000" class="w-full p-2 border rounded outline-none font-bold text-xs"></div>
-                                <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Áp dụng từ ngày</label><input type="date" id="cfgSalaryDate" class="w-full p-2 border rounded outline-none font-bold text-xs text-slate-700"></div>
-                            </div>
-                            <button onclick="saveNewSalaryRate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded mt-2 text-xs transition shadow">Thêm Mốc Lương Mới</button>
-                            
-                            <h4 class="font-bold text-slate-600 mt-4 mb-1 text-[10px] uppercase">Lịch sử Lương</h4>
-                            <div id="mgrSalaryHistory" class="space-y-1 max-h-32 overflow-y-auto hide-scroll text-[10px]"></div>
-                        </div>
-                    </div>
-                    <div class="p-3 bg-white border-t border-slate-200 flex justify-end gap-2">
-                        <button onclick="closeMgrSettings()" class="px-4 py-2 bg-slate-200 font-bold rounded-lg text-xs">Hủy</button>
-                        <button onclick="saveMgrSettings()" class="px-4 py-2 bg-navy-800 text-white font-bold rounded-lg text-xs">Lưu Cấu Hình</button>
-                    </div>
+            <!-- KHUNG CA LÀM VIỆC (CHỈ HIỆN KHI PART-TIME) -->
+            <div id="cfgShiftBox" class="bg-white p-3 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-sky-700 border-b pb-1 mb-2">Khung Giờ Đăng Ký Ca Làm</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="block text-[10px] font-bold text-slate-500">Ca 1 (Từ - Đến)</label><input type="text" id="cfgShift1" placeholder="VD: 08:00-13:00" class="w-full p-2 border rounded-lg outline-none font-mono text-xs bg-slate-50"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-500">Ca 2 (Từ - Đến)</label><input type="text" id="cfgShift2" placeholder="VD: 13:00-18:00" class="w-full p-2 border rounded-lg outline-none font-mono text-xs bg-slate-50"></div>
                 </div>
-            </div>            
+                <p class="text-[9px] text-slate-400 mt-2 italic">*Hệ thống sẽ dựa vào mốc giờ này để bắt lỗi đi muộn.</p>
+            </div>
+
+            <!-- KHUNG CẬP NHẬT LƯƠNG -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2 flex justify-between items-center">
+                    <span>Mức Lương Mới</span>
+                    <span id="cfgSalaryUnitLabel" class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">VNĐ / Giờ</span>
+                </h4>
+                <div class="flex gap-2">
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Mức lương áp dụng</label><input type="number" id="cfgNewSalary" placeholder="Nhập số tiền..." class="w-full p-2 border rounded-lg outline-none font-bold text-xs bg-slate-50"></div>
+                    <div class="flex-1"><label class="block text-[10px] font-bold text-slate-500">Áp dụng từ ngày</label><input type="date" id="cfgSalaryDate" class="w-full p-2 border rounded-lg outline-none font-bold text-xs text-slate-700 bg-slate-50"></div>
+                </div>
+                <button onclick="saveNewSalaryRate()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg mt-2 text-xs transition shadow active:scale-95 flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus"></i> Thêm Mốc Lương Mới</button>
+                
+                <h4 class="font-bold text-slate-600 mt-4 mb-1 text-[10px] uppercase flex items-center gap-1"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử Lương</h4>
+                <div id="mgrSalaryHistory" class="space-y-1.5 max-h-32 overflow-y-auto hide-scroll text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100"></div>
+            </div>
+        </div>
+        <div class="p-3 bg-white border-t border-slate-200 flex justify-end gap-2 shrink-0">
+            <button onclick="closeMgrSettings()" class="px-4 py-2 bg-slate-200 font-bold rounded-lg text-xs hover:bg-slate-300 transition">Đóng</button>
+            <button onclick="saveMgrSettings()" class="px-4 py-2 bg-navy-800 text-white font-bold rounded-lg text-xs shadow-md transition active:scale-95">Lưu Thông Tin</button>
+        </div>
+    </div>
+</div>
         </section>
 
            <!-- TAB CÀI ĐẶT -->
