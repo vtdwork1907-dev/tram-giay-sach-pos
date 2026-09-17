@@ -4957,44 +4957,44 @@ function openAddExpenseModal() {
         
         function closeExpenseModal() { document.getElementById('addExpenseModal').classList.add('hidden'); }
         
-        async function saveNewExpense() {
-            const name = document.getElementById('expName').value; 
-            const amt = parseInt(document.getElementById('expAmount').value) || 0;
-            if(!name || amt<=0) return alert("Nhập đủ thông tin");
-            
-            const finalImageUrls = expenseTempImages.map(img => img.localUrl || img.r2Url || img.url).filter(url => url !== null);
-            
-            const newExp = { 
-                id: Date.now(), 
-                date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], 
-                name, 
-                amount: amt, 
-                cat: document.getElementById('expCategory').value, 
-                images: finalImageUrls 
-            };
-            
-            state.expenses.unshift(newExp); 
-            closeExpenseModal(); 
-            updateExpensesView(); 
-            updateReportMetrics(); 
-            
-            document.getElementById('expName').value=''; 
-            document.getElementById('expAmount').value=''; 
-            showNotification("💸 ĐÃ LƯU KHOẢN CHI", "Dữ liệu đang được đồng bộ ngầm.");
+       async function saveNewExpense() {
+    const name = document.getElementById('expName').value; 
+    const amt = parseInt(document.getElementById('expAmount').value) || 0;
+    if(!name || amt<=0) return alert("Nhập đủ thông tin");
+    
+    const finalImageUrls = expenseTempImages.map(img => img.localUrl || img.r2Url || img.url).filter(url => url !== null);
+    
+    const newExp = { 
+        id: Date.now(), 
+        date: document.getElementById('expDate').value || new Date().toISOString().split('T')[0], 
+        name, 
+        amount: amt, 
+        cat: document.getElementById('expCategory').value, 
+        images: finalImageUrls,
+        created_by: state.currentUser ? state.currentUser.username : null // Lưu email người tạo
+    };
+    
+    state.expenses.unshift(newExp); 
+    closeExpenseModal(); 
+    updateExpensesView(); 
+    updateReportMetrics(); 
+    
+    document.getElementById('expName').value=''; 
+    document.getElementById('expAmount').value=''; 
+    showNotification("💸 ĐÃ LƯU KHOẢN CHI", "Dữ liệu đang được đồng bộ ngầm.");
 
-            const uploads = await idbGetAll('upload_queue'); 
-            for (const url of finalImageUrls) { 
-                const match = uploads.find(u => u.localUrl === url); 
-                if (match) { 
-                    match.expenseId = newExp.id; 
-                    await idbPut('upload_queue', match); 
-                } 
-            }
-            
-            await saveLocalState(); 
-            await idbPut('pending_sync', { syncId: Date.now() + '_' + Math.random().toString(36).substr(2, 5), type: 'INSERT_EXPENSE', data: newExp }); 
-            syncPendingData();
-        }
+    const uploads = await idbGetAll('upload_queue'); 
+    for (const url of finalImageUrls) { 
+        const match = uploads.find(u => u.localUrl === url); 
+        if (match) { 
+            match.expenseId = newExp.id; 
+            await idbPut('upload_queue', match); 
+        } 
+    }
+    
+    await idbPut('pending_sync', { syncId: Date.now() + '_' + Math.random().toString(36).substr(2, 5), type: 'INSERT_EXPENSE', data: newExp }); 
+    syncPendingData();
+}
 
         async function deleteExpenseDB(id) { 
             if(!confirm("Bạn muốn xóa khoản chi này?")) return; 
