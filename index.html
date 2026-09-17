@@ -8448,6 +8448,186 @@ function showMgrDayDetail(dateStr, timesheetsJson, hasSchedule) {
     
     box.innerHTML = html;
 }
+        // =========================================================================
+// LOGIC CẤU HÌNH NHÂN SỰ & LƯƠNG LỊCH SỬ
+// =========================================================================
+
+async function openMgrSettings() {
+    if (!currentViewedStaff) return;
+    
+    document.getElementById('mgrSettingName').innerText = currentViewedStaff.name;
+    document.getElementById('cfgWorkType').value = currentViewedStaff.work_type || 'parttime';
+    
+    // Mặc định cài đặt sẵn 1 biến nhớ tạm để xử lý nếu DB chưa có
+    currentViewedStaff.settings = { shift1_time: '08:00-13:00', shift2_time: '13:00-18:00', hourly_rate: 0, monthly_salary: 0, job_title: 'Nhân Viên' };
+
+    try {
+        // Tải cài đặt hiện tại
+        const { data: setDb } = await supabaseClient.from('staff_settings').select('*').eq('username', currentViewedStaff.username).single();
+        if (setDb) currentViewedStaff.settings = setDb;
+        
+        // Cập nhật lại UI cho user list nếu phát hiện title mới
+        currentViewedStaff.job_title = currentViewedStaff.settings.job_title;
+
+    } catch(e) {}
+
+    // Điền vào Form
+    document.getElementById('cfgShift1').value = currentViewedStaff.settings.shift1_time;
+    document.getElementById('cfgShift2').value = currentViewedStaff.settings.shift2_time;
+    document.getElementById('cfgJobTitle').value = currentViewedStaff.settings.job_title;
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('cfgSalaryDate').value = today;
+    document.getElementById('cfgNewSalary').value = '';
+
+    // Bật tắt khung UI
+    toggleWorkTypeConfig();
+
+    // Tải và Vẽ Lịch sử lương
+    await renderSalaryHistory();
+
+    const modal = document.getElementById('mgrSettingsModal');
+    const box = document.getElementById('mgrSettingsBox');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+    }, 10);
+}
+
+function closeMgrSettings() {
+    const modal = document.getElementById('mgrSettingsModal');
+    const box = document.getElementById('mgrSettingsBox');
+    modal.classList.add('opacity-0');
+    box.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
+
+function toggleWorkTypeConfig() {
+    const type = document.getElementById('cfgWorkType').value;
+    const shiftBox = document.getElementById('cfgShiftBox');
+    const jobTitleBox = document.getElementById('cfgJobTitleBox');
+    const unitLabel = document.getElementById('cfgSalaryUnitLabel');
+
+    if (type === 'fulltime') {
+        shiftBox.style.display = 'none';
+        jobTitleBox.style.display = 'block';
+        unitLabel.innerText = 'VNĐ / Tháng';
+        unitLabel.className = 'text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded';
+    } else {
+        shiftBox.style.display = 'block';
+        jobTitleBox.style.display = 'none';
+        unitLabel.innerText = 'VNĐ / Giờ';
+        unitLabel.className = 'text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded';
+    }
+}
+
+async function renderSalaryHistory() {
+    const container = document.getElementById('mgrSalaryHistory');
+    container.innerHTML = '<div class="text-center italic text-slate-400 py-2">Đang tải...</div>';
+    
+    const { data: history } = await supabaseClient.from('salary_history')
+        .select('*')
+        .eq('username', currentViewedStaff.username)
+        .order('apply_date', { ascending: false });
+
+    if (!history || history.length === 0) {
+        container.innerHTML = '<div class="text-center italic text-slate-400 py-2">Chưa có lịch sử lương</div>';
+        return;
+    }
+
+    container.innerHTML = history.map(h => {
+        const dStr = new Date(h.apply_date).toLocaleDateString('vi-VN');
+        const isFT = h.work_type === 'fulltime';
+        const amount = isFT ? h.monthly_salary : h.hourly_rate;
+        return `
+        <div class="flex justify-between items-center border-b border-slate-200/50 pb-1.5 last:border-0 last:pb-0">
+            <div>
+                <span class="font-bold text-slate-700">${dStr}</span>
+                <span class="ml-2 text-[9px] ${isFT ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'} px-1.5 rounded">${isFT ? 'Lương Tháng' : 'Lương Giờ'}</span>
+            </div>
+            <span class="font-bold ${isFT ? 'text-amber-600' : 'text-emerald-600'}">${amount.toLocaleString('vi-VN')} đ</span>
+        </div>`;
+    }).join('');
+}
+
+async function saveNewSalaryRate() {
+    const amount = parseInt(document.getElementById('cfgNewSalary').value);
+    const applyDate = document.getElementById('cfgSalaryDate').value;
+    const wType = document.getElementById('cfgWorkType').value;
+
+    if (isNaN(amount) || amount <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+    if (!applyDate) return alert("Vui lòng chọn ngày áp dụng!");
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+
+    try {
+        let hr = 0, ms = 0;
+        if (wType === 'fulltime') ms = amount; else hr = amount;
+
+        // 1. Thêm vào bảng lịch sử
+        const { error: histErr } = await supabaseClient.from('salary_history').insert([{
+            username: currentViewedStaff.username,
+            work_type: wType,
+            hourly_rate: hr,
+            monthly_salary: ms,
+            apply_date: applyDate
+        }]);
+        if (histErr) throw histErr;
+
+        // 2. Cập nhật vào bảng cấu hình chính
+        const { error: setErr } = await supabaseClient.from('staff_settings').upsert({
+            username: currentViewedStaff.username,
+            hourly_rate: hr,
+            monthly_salary: ms,
+            apply_date: applyDate
+        }, { onConflict: 'username' });
+        if (setErr) throw setErr;
+
+        document.getElementById('cfgNewSalary').value = '';
+        showNotification("Thành công", "Đã thêm mốc lương mới!");
+        await renderSalaryHistory(); // Tải lại bảng lịch sử
+
+    } catch (err) {
+        alert("Lỗi lưu lương: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+async function saveMgrSettings() {
+    const wType = document.getElementById('cfgWorkType').value;
+    const s1 = document.getElementById('cfgShift1').value;
+    const s2 = document.getElementById('cfgShift2').value;
+    const jTitle = document.getElementById('cfgJobTitle').value.trim() || 'Nhân Viên';
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+
+    try {
+        // 1. Cập nhật Users
+        await supabaseClient.from('users').update({ work_type: wType }).eq('username', currentViewedStaff.username);
+        
+        // 2. Cập nhật Settings
+        await supabaseClient.from('staff_settings').upsert({
+            username: currentViewedStaff.username,
+            shift1_time: s1,
+            shift2_time: s2,
+            job_title: jTitle
+        }, { onConflict: 'username' });
+
+        showNotification("Đã Lưu", "Cập nhật cấu hình nhân sự thành công!");
+        
+        closeMgrSettings();
+        await initStaffManagement(); // Refresh lại danh sách nhân viên
+
+    } catch (err) {
+        alert("Lỗi lưu cấu hình: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
