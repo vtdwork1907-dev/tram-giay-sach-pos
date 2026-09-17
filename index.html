@@ -2149,66 +2149,85 @@ function mapOrderDbToJs(db) {
         }
         
        function switchTab(id) {
-            // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
-            document.querySelectorAll('.tab-content').forEach(el => {
-                el.classList.add('hidden');
-                el.classList.remove('flex');
-            });
-            
-            // 2. Hiển thị tab được chọn (Dùng cả flex để hiển thị chuẩn khung giao diện)
-            const targetTab = document.getElementById('tab-' + id);
-            if (targetTab) {
-                targetTab.classList.remove('hidden');
-                targetTab.classList.add('flex');
-            }
-            
-            // 3. Xử lý đổi màu active cho các nút ở menu điều hướng
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
-                if(b.id === 'nav-payment') {
-                    b.classList.add('text-emerald-500'); b.classList.remove('text-slate-400');
-                } else {
-                    b.classList.add('text-slate-400'); b.classList.remove('text-emerald-500');
-                }
-            });
-            
-            const activeBtn = document.getElementById('nav-' + id);
-            if(activeBtn) { 
-                activeBtn.classList.remove('text-slate-400', 'text-emerald-500'); 
-                activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
-            }
-
-            // 4. Đồng bộ dữ liệu mây nếu cần
-            if (id === 'reports' || id === 'orders' || id === 'dashboard') {
-                if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
-            }
-
-            // 5. Kích hoạt vẽ giao diện cho từng tab riêng biệt
-            if(id === 'reports') { 
-                updateReportMetrics(true); 
-                setTimeout(() => { 
-                    if(barChartInst) barChartInst.resize(); 
-                    if(pieChartInst) pieChartInst.resize(); 
-                    if(expReportPieInst) expReportPieInst.resize(); 
-                }, 100); 
-            }
-            if(id === 'expenses') { renderExpensesTable(); updateExpenseCharts(); setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); }
-            if(id === 'customers') renderCustomersTable(); 
-            if(id === 'payment') updateQRView(); 
-            if(id === 'dashboard') renderDashboard();
-            if(id === 'gallery') { renderGalleryCategoryTabs(); switchGalleryCategory(currentGalleryCategory); }
-            
-            // 👉 ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN (ĐÃ GỘP VÀ TỐI ƯU)
-            if(id === 'staff') {
-                if (typeof initStaffManagement === 'function') {
-                    initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
-                } else if (typeof renderMgrStaffList === 'function') {
-                    renderMgrStaffList();
-                }
-            }
-            
-            localStorage.setItem('TRAM_LAST_TAB', id);
+    // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    });
+    
+    // 2. Hiển thị tab được chọn (Dùng cả flex để hiển thị chuẩn khung giao diện)
+    const targetTab = document.getElementById('tab-' + id);
+    if (targetTab) {
+        targetTab.classList.remove('hidden');
+        targetTab.classList.add('flex');
+    }
+    
+    // 3. Xử lý đổi màu active cho các nút ở menu điều hướng
+    document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
+        if(b.id === 'nav-payment') {
+            b.classList.add('text-emerald-500'); b.classList.remove('text-slate-400');
+        } else {
+            b.classList.add('text-slate-400'); b.classList.remove('text-emerald-500');
         }
+    });
+    
+    const activeBtn = document.getElementById('nav-' + id);
+    if(activeBtn) { 
+        activeBtn.classList.remove('text-slate-400', 'text-emerald-500'); 
+        activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
+    }
+
+    // 4. Đồng bộ dữ liệu mây nếu cần
+    if (id === 'reports' || id === 'orders' || id === 'dashboard') {
+        if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
+    }
+
+    // 5. Kích hoạt vẽ giao diện cho từng tab riêng biệt
+    if(id === 'reports') { 
+        updateReportMetrics(true); 
+        setTimeout(() => { 
+            if(barChartInst) barChartInst.resize(); 
+            if(pieChartInst) pieChartInst.resize(); 
+            if(expReportPieInst) expReportPieInst.resize(); 
+        }, 100); 
+    }
+    if(id === 'expenses') { 
+        renderExpensesTable(); 
+        updateExpenseCharts(); 
+        setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); 
+    }
+    if(id === 'customers') {
+        renderCustomersTable(); 
+    }
+    if(id === 'payment') {
+        updateQRView(); 
+    }
+    if(id === 'dashboard') {
+        renderDashboard();
+    }
+    if(id === 'gallery') { 
+        renderGalleryCategoryTabs(); 
+        switchGalleryCategory(currentGalleryCategory); 
+    }
+    
+    // 👉 TÍNH NĂNG MỚI: Vẽ giao diện Lịch tuần khi nhân viên bấm vào tab "Cá nhân"
+    if(id === 'personal') {
+        renderWeeklyScheduleUI();
+    }
+
+    // 👉 ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN (ĐÃ GỘP VÀ TỐI ƯU)
+    if(id === 'staff') {
+        if (typeof initStaffManagement === 'function') {
+            initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
+        } else if (typeof renderMgrStaffList === 'function') {
+            renderMgrStaffList();
+        }
+    }
+    
+    // 6. Lưu lại lịch sử tab để khi load lại trang không bị văng ra ngoài
+    localStorage.setItem('TRAM_LAST_TAB', id);
+}
 
         // =========================================================================
         // 11.5. QUẢN LÝ KHO ẢNH (GALLERY) & GHÉP ẢNH TỰ ĐỘNG
