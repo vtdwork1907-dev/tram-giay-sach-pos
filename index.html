@@ -1390,49 +1390,114 @@
         // =========================================================================
         // 6. GHI NHẬN LƯU TRỮ VÀO OFFLINE DB
         // =========================================================================
-        async function saveLocalState() {
-            try {
-                if (!localDB) await initDB();
-                await idbPut('settings', { 
-                    id: 'main_state', 
-                    data: {
-                        dailyGoal: state.dailyGoal, // <-- LƯU VÀO INDEXED DB
-                        users: state.users, logo: state.logo || '', services: state.services,
-                        orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig,
-                        brands: state.brands, soleImages: state.soleImages
-                    }
-                });
-                localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify({
-                    dailyGoal: state.dailyGoal, // <-- LƯU VÀO LOCAL STORAGE
-                    users: state.users, logo: state.logo || '', services: state.services,
-                    orders: state.orders, expenses: state.expenses, qrConfig: state.qrConfig,
-                    brands: state.brands, soleImages: state.soleImages
-                }));
-            } catch (e) { console.error("Lỗi khi saveLocalState:", e); }
+       async function saveLocalState() {
+    try {
+        if (!localDB) await initDB();
+        // LOẠI BỎ orders, expenses, users KHỎI LOCAL STORAGE
+        // Ép thiết bị phải dựa vào Supabase làm nguồn dữ liệu chính
+        const stateToSave = {
+            dailyGoal: state.dailyGoal,
+            logo: state.logo || '', 
+            services: state.services,
+            qrConfig: state.qrConfig,
+            brands: state.brands, 
+            soleImages: state.soleImages
+        };
+        
+        await idbPut('settings', { id: 'main_state', data: stateToSave });
+        localStorage.setItem('TRAM_LOCAL_STATE', JSON.stringify(stateToSave));
+    } catch (e) { console.error("Lỗi khi saveLocalState:", e); }
+}
+
+async function loadLocalState() {
+    try {
+        if (!localDB) await initDB();
+        const res = await idbGet('settings', 'main_state');
+        let parsed = null;
+        if (res && res.data) parsed = res.data;
+        else {
+            const localData = localStorage.getItem('TRAM_LOCAL_STATE');
+            if (localData) parsed = JSON.parse(localData);
         }
 
-        async function loadLocalState() {
-            try {
-                if (!localDB) await initDB();
-                const res = await idbGet('settings', 'main_state');
-                let parsed = null;
-                if (res && res.data) parsed = res.data;
-                else {
-                    const localData = localStorage.getItem('TRAM_LOCAL_STATE');
-                    if (localData) parsed = JSON.parse(localData);
-                }
-
-                if (parsed) {
-                    state.users = parsed.users || []; state.services = parsed.services || state.services;
-                    state.orders = parsed.orders || []; state.expenses = parsed.expenses || [];
-                    state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; 
-                    state.logo = parsed.logo || null;
-                    state.brands = parsed.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
-                    state.soleImages = parsed.soleImages || [];
-                    state.dailyGoal = parsed.dailyGoal || 2000000;
-                }
-            } catch(e) { console.error("Lỗi khi loadLocalState:", e); }
+        if (parsed) {
+            state.services = parsed.services || state.services;
+            state.qrConfig = parsed.qrConfig || { bank: 'ICB', accountNo: '', accountName: '' }; 
+            state.logo = parsed.logo || null;
+            state.brands = parsed.brands || ['Nike', 'Adidas', 'MLB', 'Jordan', 'Khác'];
+            state.soleImages = parsed.soleImages || [];
+            state.dailyGoal = parsed.dailyGoal || 2000000;
         }
+        
+        // LUÔN KHỞI TẠO RỖNG DỮ LIỆU ĐỂ CHỜ FETCH TỪ MÂY VỀ
+        state.orders = [];
+        state.expenses = [];
+        state.users = [];
+        
+    } catch(e) { console.error("Lỗi khi loadLocalState:", e); }
+}
+
+// BỔ SUNG HÀM NÀY (Hàm quan trọng nhất để mọi người thấy chung dữ liệu)
+async function fetchLatestDataFromCloud(isLogin = false) {
+    if (!navigator.onLine) return;
+    const loading = document.getElementById('globalLoading');
+    if (isLogin && loading) {
+        loading.style.display = 'flex';
+        loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu hệ thống...';
+    }
+
+    try {
+        // 1. Tải Đơn Hàng (TẤT CẢ mọi người đều tải chung toàn bộ đơn)
+        const { data: ordersData, error: ordersError } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .order('date', { ascending: false })
+            .limit(1000); // Lấy 1000 đơn gần nhất
+            
+        if (!ordersError && ordersData) {
+            state.orders = ordersData.map(mapOrderDbToJs);
+        }
+
+        // 2. Tải Chi Phí (TẤT CẢ mọi người đều tải chung)
+        const { data: expData, error: expError } = await supabaseClient
+            .from('expenses')
+            .select('*')
+            .order('date', { ascending: false })
+            .limit(1000);
+            
+        if (!expError && expData) {
+            state.expenses = expData;
+        }
+
+        // 3. Tải Users (Dành cho Chủ/Quản lý cấu hình)
+        const { data: usersData, error: usersError } = await supabaseClient.from('users').select('*');
+        if (!usersError && usersData) {
+            state.users = usersData.map(u => ({
+                id: u.id,
+                username: u.username,
+                name: u.name,
+                role: u.role,
+                workType: u.work_type,
+                password: '***'
+            }));
+        }
+
+        // Làm mới lại toàn bộ giao diện sau khi có dữ liệu đồng nhất
+        renderOrdersTable(true);
+        renderDashboard();
+        updateExpensesView();
+        updateReportMetrics();
+        
+        if (state.role === 'owner' || state.role === 'manager') {
+            if (typeof renderSettingsUsersTable === 'function') renderSettingsUsersTable();
+        }
+
+    } catch (e) {
+        console.error("Lỗi đồng bộ từ Supabase:", e);
+    } finally {
+        if (isLogin && loading) loading.style.display = 'none';
+    }
+}
 
         async function dbInsertOrder(o) { 
             await saveLocalState(); 
