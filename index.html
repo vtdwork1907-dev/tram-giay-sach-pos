@@ -6417,73 +6417,68 @@ function renderWeeklyScheduleUI() {
     // Gọi hàm load lịch cũ từ DB nếu đã từng đăng ký
     loadExistingSchedule(monday);
 }
-
-        // (Staff) Nộp lịch tuần, lưu chấm vàng và gửi thông báo báo Quản lý duyệt
-        async function submitSchedule() {
-            let totalChecked = 0;
-            let scheduleData = {};
-            const curr = new Date();
-            const dayOfWeek = curr.getDay() === 0 ? 6 : curr.getDay() - 1; 
-            const monday = new Date(curr);
-            monday.setDate(curr.getDate() - dayOfWeek);
-
-            let ledger = JSON.parse(localStorage.getItem('TRAM_ATTENDANCE_LEDGER')) || {};
-
-            for(let i = 0; i < 7; i++) {
-                const shift1 = document.getElementById(`shift1_${i}`).checked;
-                const shift2 = document.getElementById(`shift2_${i}`).checked;
-                scheduleData[`shift1_${i}`] = shift1;
-                scheduleData[`shift2_${i}`] = shift2;
-                
-                const targetDate = new Date(monday);
-                targetDate.setDate(monday.getDate() + i);
-                const dStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-
-                if(shift1 || shift2) {
-                    totalChecked++;
-                    if (!ledger[dStr] || (ledger[dStr].status !== 'worked' && ledger[dStr].status !== 'late')) {
-                        ledger[dStr] = { status: 'registered' };
-                    }
-                } else {
-                    if (ledger[dStr] && ledger[dStr].status === 'registered') delete ledger[dStr];
-                }
+        async function loadExistingSchedule(mondayDate) {
+    if (!state.currentUser || !navigator.onLine) return;
+    
+    // Kéo 7 ngày của tuần này
+    const sundayDate = new Date(mondayDate);
+    sundayDate.setDate(sundayDate.getDate() + 6);
+    
+    const startStr = mondayDate.toISOString().split('T')[0];
+    const endStr = sundayDate.toISOString().split('T')[0];
+    
+    const { data } = await supabaseClient.from('schedules')
+        .select('*')
+        .eq('username', state.currentUser.username)
+        .gte('date', startStr)
+        .lte('date', endStr);
+        
+    if (data && data.length > 0) {
+        data.forEach(sched => {
+            const tr = document.querySelector(`tr[data-date="${sched.date}"]`);
+            if (tr) {
+                tr.querySelector('.shift1-cb').checked = sched.shift_1;
+                tr.querySelector('.shift2-cb').checked = sched.shift_2;
             }
-            
-            if(totalChecked === 0) return alert("Vui lòng tích chọn ít nhất 1 ca làm trong tuần để đăng ký!");
-            
-            localStorage.setItem('TRAM_WEEKLY_SCHEDULE', JSON.stringify(scheduleData));
-            localStorage.setItem('TRAM_ATTENDANCE_LEDGER', JSON.stringify(ledger));
+        });
+    }
+}
 
-            let reqs = state.currentUser.requests;
-            if (typeof reqs === 'string') reqs = JSON.parse(reqs);
-            if (!Array.isArray(reqs)) reqs = [];
+       async function submitSchedule() {
+    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để gửi lịch!");
 
-            reqs.push({ id: Date.now().toString(), type: 'schedule', status: 'pending', created_at: Date.now() });
-            state.currentUser.requests = reqs;
+    const rows = document.querySelectorAll('#weeklyScheduleBody tr');
+    let schedulesToSave = [];
+    
+    rows.forEach(tr => {
+        const date = tr.getAttribute('data-date');
+        const shift1 = tr.querySelector('.shift1-cb').checked;
+        const shift2 = tr.querySelector('.shift2-cb').checked;
+        
+        schedulesToSave.push({
+            username: state.currentUser.username,
+            date: date,
+            shift_1: shift1,
+            shift_2: shift2
+        });
+    });
 
-            const idx = state.users.findIndex(u => u.username === state.currentUser.username);
-            if(idx !== -1) state.users[idx].requests = reqs;
-
-            syncAttendanceToCloud(ledger);
-            syncScheduleToCloud(scheduleData);
-            if(navigator.onLine) {
-                await supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
-            }
-            
-            renderCalendarGrid(calMonth, calYear); 
-            const btn = document.getElementById('btnSubmitSchedule');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Gửi Đăng Ký';
-            btn.classList.replace('bg-blue-600', 'bg-emerald-500');
-            btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-600');
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.replace('bg-emerald-500', 'bg-blue-600');
-                btn.classList.replace('hover:bg-emerald-600', 'hover:bg-blue-700');
-            }, 2000);
-
-            showNotification("✅ Ghi nhận thành công", `Đã gửi đăng ký. Quản lý đã nhận được thông báo!`);
-        }
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang lưu lịch biểu...';
+    
+    try {
+        // Upsert: Cập nhật nếu đã có, Thêm mới nếu chưa có
+        const { error } = await supabaseClient.from('schedules').upsert(schedulesToSave, { onConflict: 'username, date' });
+        if (error) throw error;
+        
+        showNotification("✅ Đã gửi đăng ký", "Lịch làm việc của bạn đã được cập nhật!");
+    } catch (err) {
+        alert("Lỗi lưu lịch: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
 
 
         // 2. Xử lý Bộ lịch cá nhân & Thống kê theo tháng
