@@ -6381,32 +6381,42 @@ function initSwipeToCloseModals() {
         // JAVASCRIPT: BẢNG ĐĂNG KÝ TUẦN & LỊCH CÁ NHÂN (GIỐNG IPHONE)
         // =========================================================================
 
-        // 1. Xử lý Bảng đăng ký lịch tuần (Giữ nguyên dấu tích)
-        function renderWeeklySchedule() {
-            const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
-            const tbody = document.getElementById('weeklyScheduleBody');
-            
-            // Lấy lại dữ liệu đã lưu (nếu có) để giữ nguyên dấu tích
-            const savedSchedule = JSON.parse(localStorage.getItem('TRAM_WEEKLY_SCHEDULE')) || {};
+      // 2. VẼ VÀ ĐĂNG KÝ LỊCH LÀM VIỆC TUẦN
+function renderWeeklyScheduleUI() {
+    const tbody = document.getElementById('weeklyScheduleBody');
+    if (!tbody) return;
+    
+    let html = '';
+    const today = new Date();
+    
+    // Tìm ngày Thứ 2 của tuần hiện tại
+    const currentDay = today.getDay(); 
+    const distance = currentDay === 0 ? 6 : currentDay - 1; 
+    const monday = new Date(today); 
+    monday.setDate(monday.getDate() - distance);
 
-            if(tbody) {
-                tbody.innerHTML = days.map((day, idx) => {
-                    const isShift1Checked = savedSchedule[`shift1_${idx}`] ? 'checked' : '';
-                    const isShift2Checked = savedSchedule[`shift2_${idx}`] ? 'checked' : '';
-                    
-                    return `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                        <td class="p-2 border-r border-slate-200 font-bold text-slate-700 bg-slate-50">${day}</td>
-                        <td class="p-2 border-r border-slate-200">
-                            <input type="checkbox" id="shift1_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer" ${isShift1Checked}>
-                        </td>
-                        <td class="p-2">
-                            <input type="checkbox" id="shift2_${idx}" class="w-5 h-5 accent-blue-600 rounded cursor-pointer" ${isShift2Checked}>
-                        </td>
-                    </tr>
-                `}).join('');
-            }
-        }
+    // Vẽ đủ 7 ngày từ Thứ 2 đến Chủ nhật
+    for(let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(d.getDate() + i);
+        
+        const dateStr = d.toISOString().split('T')[0];
+        const displayDate = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+
+        html += `
+        <tr class="border-b" data-date="${dateStr}">
+            <td class="p-2.5 border-r border-slate-200 font-bold text-slate-700">${displayDate}</td>
+            <td class="p-2.5 border-r border-slate-200"><input type="checkbox" class="shift1-cb w-4 h-4 cursor-pointer text-sky-600 focus:ring-sky-500 rounded" data-date="${dateStr}"></td>
+            <td class="p-2.5"><input type="checkbox" class="shift2-cb w-4 h-4 cursor-pointer text-sky-600 focus:ring-sky-500 rounded" data-date="${dateStr}"></td>
+        </tr>`;
+    }
+    
+    tbody.innerHTML = html;
+    document.getElementById('currentWeekRangeDisplay').innerText = `Tuần: ${monday.toLocaleDateString('vi-VN')}`;
+    
+    // Gọi hàm load lịch cũ từ DB nếu đã từng đăng ký
+    loadExistingSchedule(monday);
+}
 
         // (Staff) Nộp lịch tuần, lưu chấm vàng và gửi thông báo báo Quản lý duyệt
         async function submitSchedule() {
