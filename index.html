@@ -6474,21 +6474,20 @@ function initSwipeToCloseModals() {
         // JAVASCRIPT: BẢNG ĐĂNG KÝ TUẦN & LỊCH CÁ NHÂN (GIỐNG IPHONE)
         // =========================================================================
 
-      // 2. VẼ VÀ ĐĂNG KÝ LỊCH LÀM VIỆC TUẦN
-function renderWeeklyScheduleUI() {
+      function renderWeeklyScheduleUI() {
     const tbody = document.getElementById('weeklyScheduleBody');
     if (!tbody) return;
     
     let html = '';
     const today = new Date();
     
-    // Tìm ngày Thứ 2 của tuần hiện tại
+    // 1. Tìm ngày Thứ 2 của tuần hiện tại
     const currentDay = today.getDay(); 
     const distance = currentDay === 0 ? 6 : currentDay - 1; 
     const monday = new Date(today); 
     monday.setDate(monday.getDate() - distance);
 
-    // Vẽ đủ 7 ngày từ Thứ 2 đến Chủ nhật
+    // 2. Vẽ đủ 7 ngày từ Thứ 2 đến Chủ nhật vào bảng
     for(let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(d.getDate() + i);
@@ -6505,9 +6504,20 @@ function renderWeeklyScheduleUI() {
     }
     
     tbody.innerHTML = html;
-    document.getElementById('currentWeekRangeDisplay').innerText = `Tuần: ${monday.toLocaleDateString('vi-VN')}`;
     
-    // Gọi hàm load lịch cũ từ DB nếu đã từng đăng ký
+    // 👉 ĐOẠN SỬA LỖI: Tính thêm ngày Chủ Nhật và hiển thị khoảng thời gian (Từ Thứ 2 - CN)
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6); // Cộng thêm 6 ngày từ Thứ 2 sẽ ra Chủ Nhật
+    
+    // Format ngày theo chuẩn Việt Nam (DD/MM/YYYY)
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    const startStr = monday.toLocaleDateString('vi-VN', options);
+    const endStr = sunday.toLocaleDateString('vi-VN', options);
+    
+    // Hiển thị ra màn hình
+    document.getElementById('currentWeekRangeDisplay').innerText = `Tuần: ${startStr} - ${endStr}`;
+    
+    // 3. Gọi hàm load lịch cũ từ DB nếu đã từng đăng ký
     loadExistingSchedule(monday);
 }
         async function loadExistingSchedule(mondayDate) {
