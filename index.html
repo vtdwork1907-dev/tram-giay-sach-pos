@@ -3308,28 +3308,28 @@ function resetPersonalUI() {
     });
 }
 
-        async function handleLogout() {
+       async function handleLogout() {
     if(confirm("Bạn muốn đăng xuất? Vui lòng đảm bảo các đơn hàng đã được đẩy hết lên Cloud trước khi đăng xuất.")) {
         const loading = document.getElementById('globalLoading'); 
         loading.style.display = 'flex'; 
-        loading.querySelector('.text-sm').innerText = 'Đang đăng xuất...';
+        loading.querySelector('.text-sm').innerText = 'Đang dọn dẹp bộ nhớ và đăng xuất...';
         
-        if (navigator.onLine) { await supabaseClient.auth.signOut(); }
+        // 1. Đăng xuất khỏi hệ thống mây Supabase
+        if (navigator.onLine) { 
+            await supabaseClient.auth.signOut(); 
+        }
         
+        // 2. Xóa các biến nhận diện người dùng
         state.currentUser = null; 
         localStorage.removeItem('TRAM_LAST_TAB'); 
-        await idbClear('settings');
+        
+        // 3. Xóa các dữ liệu đang chờ đồng bộ (để không đẩy nhầm dữ liệu của người cũ bằng tài khoản người mới)
         await idbClear('pending_sync'); 
         await idbClear('upload_queue'); 
 
-        // 👉 LỆNH QUAN TRỌNG NHẤT: Xóa sạch giao diện của người cũ
-        if (typeof resetPersonalUI === 'function') {
-            resetPersonalUI();
-        }
-
-        loading.style.display = 'none'; 
-        document.getElementById('authScreen').style.display = 'flex'; 
-        setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
+        // 4. PHƯƠNG PHÁP TỐI THƯỢNG: Tải lại toàn bộ trang web
+        // Lệnh này sẽ quét sạch 100% các biến, mảng, hình ảnh đang lưu trong RAM của điện thoại
+        window.location.reload(); 
     }
 }
 
