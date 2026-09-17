@@ -7826,6 +7826,374 @@ async function submitLeaveRequest() {
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(loadTodayTimekeepingUI, 500);
         });
+        // =========================================================================
+// PHÂN HỆ QUẢN LÝ NHÂN VIÊN (DÀNH CHO CHỦ / QUẢN LÝ)
+// =========================================================================
+
+let mgrData = {
+    staffList: [],
+    pendingSchedules: [],
+    pendingLeaves: [],
+    pendingViolations: []
+};
+
+// 1. KHỞI TẠO TAB QUẢN LÝ (Gọi khi bấm vào tab "Nhân Viên")
+async function initStaffManagement() {
+    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để quản lý nhân sự!");
+    if (state.role !== 'owner' && state.role !== 'manager') return;
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang tải dữ liệu nhân sự & quét vi phạm...';
+
+    try {
+        // A. Tải danh sách nhân viên (Chỉ lấy staff)
+        const { data: usersData } = await supabaseClient.from('users').select('*').eq('role', 'staff');
+        mgrData.staffList = usersData || [];
+
+        // B. Tải các lịch làm việc Đang chờ duyệt (pending)
+        const { data: schedData } = await supabaseClient.from('schedules').select('*').eq('status', 'pending');
+        mgrData.pendingSchedules = schedData || [];
+
+        // C. Tải các đơn xin nghỉ Đang chờ duyệt
+        const { data: leaveData } = await supabaseClient.from('leave_requests').select('*').eq('status', 'pending');
+        mgrData.pendingLeaves = leaveData || [];
+
+        // D. CẢNH SÁT NGẦM: Quét vi phạm chấm công
+        await checkAndGenerateViolations();
+
+        // E. Cập nhật giao diện
+        updateMgrBadgeCount();
+        switchMgrSubTab('list'); // Mặc định mở danh sách
+
+    } catch (err) {
+        console.error("Lỗi tải dữ liệu quản lý:", err);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// 2. THUẬT TOÁN QUÉT VI PHẠM (ĐI MUỘN, QUÊN CHẤM CÔNG)
+async function checkAndGenerateViolations() {
+    mgrData.pendingViolations = [];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Lấy các lịch đã được DUYỆT (approved) trong quá khứ và hôm nay, nhưng trạng thái thực tế vẫn là 'waiting' (chưa xử lý)
+    const { data: pastSchedules } = await supabaseClient.from('schedules')
+        .select('*')
+        .eq('status', 'approved')
+        .eq('daily_status', 'waiting')
+        .lte('date', todayStr);
+
+    if (!pastSchedules || pastSchedules.length === 0) return;
+
+    for (const sched of pastSchedules) {
+        // Kéo dữ liệu chấm công của nhân viên đó trong ngày đó
+        const { data: timesheets } = await supabaseClient.from('timesheets')
+            .select('*')
+            .eq('username', sched.username)
+            .eq('date', sched.date);
+
+        const hasPunchIn = timesheets.some(t => t.type === 'in');
+        const hasPunchOut = timesheets.some(t => t.type === 'out');
+        const isPastDay = sched.date < todayStr;
+
+        // Tình huống 1: Ngày hôm qua (hoặc cũ hơn) mà thiếu In hoặc Out -> Lỗi quên chấm công
+        if (isPastDay && (!hasPunchIn || !hasPunchOut)) {
+            mgrData.pendingViolations.push({
+                id: sched.id,
+                username: sched.username,
+                date: sched.date,
+                type: 'MISSING',
+                desc: `Không thấy dữ liệu chấm công ${(!hasPunchIn && !hasPunchOut) ? 'cả ngày' : (!hasPunchIn ? 'Đến làm (In)' : 'Tan làm (Out)')}`
+            });
+            continue;
+        }
+
+        // Tình huống 2: Hôm nay hoặc quá khứ, CÓ chấm công IN, kiểm tra xem có MUỘN không
+        if (hasPunchIn) {
+            const punchInRecord = timesheets.find(t => t.type === 'in');
+            const punchInTime = new Date(punchInRecord.time_log).getHours();
+            
+            // Giả định: Ca 1 bắt đầu 8h, Ca 2 bắt đầu 13h. Chấm sau 8h (nếu đăng ký ca 1) hoặc sau 13h (nếu chỉ đk ca 2) là muộn.
+            let isLate = false;
+            if (sched.shift_1 && punchInTime >= 9) isLate = true; // Sau 9h sáng tính muộn ca 1
+            if (!sched.shift_1 && sched.shift_2 && punchInTime >= 14) isLate = true; // Sau 14h tính muộn ca 2
+
+            if (isLate) {
+                mgrData.pendingViolations.push({
+                    id: sched.id,
+                    username: sched.username,
+                    date: sched.date,
+                    type: 'LATE',
+                    desc: `Chấm công ĐẾN LÀM lúc ${new Date(punchInRecord.time_log).toLocaleTimeString('vi-VN')} (Bị muộn)`
+                });
+            }
+        }
+    }
+}
+
+// 3. ĐIỀU HƯỚNG TAB QUẢN LÝ
+function switchMgrSubTab(tab) {
+    document.getElementById('mgr-view-list').style.display = tab === 'list' ? 'flex' : 'none';
+    document.getElementById('mgr-view-approve').style.display = tab === 'approve' ? 'flex' : 'none';
+    document.getElementById('mgr-view-detail').style.display = 'none';
+
+    document.getElementById('btn-mgr-list').className = tab === 'list' 
+        ? 'bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold transition active:scale-95 flex-1 flex items-center justify-center gap-1.5' 
+        : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold transition active:scale-95 flex-1 flex items-center justify-center gap-1.5';
+        
+    document.getElementById('btn-mgr-approve').className = tab === 'approve' 
+        ? 'bg-sky-600 text-white shadow-md border border-sky-600 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative' 
+        : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative';
+
+    if (tab === 'list') renderMgrStaffList();
+    if (tab === 'approve') renderMgrApprovals();
+}
+
+// Cập nhật cục đỏ thông báo
+function updateMgrBadgeCount() {
+    const totalPending = mgrData.pendingSchedules.length + mgrData.pendingLeaves.length + mgrData.pendingViolations.length;
+    const badge = document.getElementById('mgrPendingCount');
+    if (badge) {
+        badge.innerText = totalPending;
+        badge.style.display = totalPending > 0 ? 'flex' : 'none';
+    }
+}
+
+// 4. HIỂN THỊ DANH SÁCH NHÂN VIÊN
+function renderMgrStaffList() {
+    const grid = document.getElementById('mgrStaffListGrid');
+    if (!grid) return;
+
+    if (mgrData.staffList.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 italic bg-white rounded-2xl border border-slate-200">Chưa có tài khoản nhân viên nào. Hãy vào Cài đặt để tạo.</div>`;
+        return;
+    }
+
+    grid.innerHTML = mgrData.staffList.map(staff => {
+        const wType = staff.work_type === 'parttime' ? 'Part-time' : 'Full-time';
+        return `
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center font-bold text-xl uppercase shadow-inner">${staff.name.charAt(0)}</div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)}</h3>
+                    <p class="text-[10px] text-slate-500 font-mono">${escapeHtml(staff.username)}</p>
+                </div>
+                <span class="text-[9px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">${wType}</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="alert('Tính năng xem chi tiết hồ sơ sẽ được mở ở bản cập nhật sau!')" class="flex-1 bg-slate-50 hover:bg-sky-50 text-sky-700 font-bold py-2 rounded-xl border border-slate-200 hover:border-sky-200 text-xs transition active:scale-95"><i class="fa-solid fa-calendar-days"></i> Hồ sơ / Lịch</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// =========================================================================
+// 5. GIAO DIỆN & LOGIC PHÊ DUYỆT 3 LỚP
+// =========================================================================
+function renderMgrApprovals() {
+    const container = document.getElementById('mgrApprovalList');
+    if (!container) return;
+
+    let html = '';
+
+    // --- LỚP 1: VI PHẠM CHẤM CÔNG ---
+    if (mgrData.pendingViolations.length > 0) {
+        html += `<h4 class="font-bold text-red-600 text-xs uppercase mb-2 mt-4 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Cần Xử Lý Kỷ Luật (${mgrData.pendingViolations.length})</h4>`;
+        html += mgrData.pendingViolations.map(v => {
+            const staff = mgrData.staffList.find(s => s.username === v.username) || { name: v.username };
+            const dateStr = new Date(v.date).toLocaleDateString('vi-VN');
+            return `
+            <div class="bg-red-50 border border-red-200 p-3 md:p-4 rounded-xl shadow-sm flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)}</span>
+                        <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold ml-2">Ngày: ${dateStr}</span>
+                    </div>
+                    <span class="text-xl text-red-400"><i class="fa-solid ${v.type === 'LATE' ? 'fa-clock' : 'fa-user-ninja'}"></i></span>
+                </div>
+                <p class="text-xs text-red-800 font-medium mb-1">${v.desc}</p>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="handleViolation(${v.id}, 'forgive')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-hand-holding-heart"></i> Duyệt (Châm chước)</button>
+                    <button onclick="handleViolation(${v.id}, 'penalize', '${v.type}')" class="flex-1 bg-slate-800 hover:bg-black text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-gavel"></i> Phạt Tiền</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // --- LỚP 2: ĐƠN XIN NGHỈ PHÉP ---
+    if (mgrData.pendingLeaves.length > 0) {
+        html += `<h4 class="font-bold text-amber-600 text-xs uppercase mb-2 mt-4 flex items-center gap-1.5"><i class="fa-solid fa-bed"></i> Đơn Xin Nghỉ Phép (${mgrData.pendingLeaves.length})</h4>`;
+        html += mgrData.pendingLeaves.map(l => {
+            const staff = mgrData.staffList.find(s => s.username === l.username) || { name: l.username };
+            const sDate = new Date(l.start_date).toLocaleDateString('vi-VN');
+            const eDate = new Date(l.end_date).toLocaleDateString('vi-VN');
+            return `
+            <div class="bg-amber-50 border border-amber-200 p-3 md:p-4 rounded-xl shadow-sm flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)}</span>
+                </div>
+                <div class="text-[11px] md:text-xs text-slate-700 bg-white p-2 rounded border border-amber-100 space-y-1">
+                    <div><strong>Thời gian:</strong> ${sDate} đến ${eDate}</div>
+                    <div><strong>Lý do:</strong> ${escapeHtml(l.reason)}</div>
+                </div>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="handleLeaveApproval(${l.id}, 'approved')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-check"></i> Cho phép nghỉ</button>
+                    <button onclick="handleLeaveApproval(${l.id}, 'rejected')" class="flex-1 bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-times"></i> Không duyệt</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // --- LỚP 3: ĐĂNG KÝ LỊCH TUẦN ---
+    if (mgrData.pendingSchedules.length > 0) {
+        html += `<h4 class="font-bold text-sky-600 text-xs uppercase mb-2 mt-4 flex items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i> Đăng Ký Lịch Làm (${mgrData.pendingSchedules.length})</h4>`;
+        
+        // Gom nhóm lịch theo Username để duyệt 1 lần cho lẹ
+        const groupedSched = {};
+        mgrData.pendingSchedules.forEach(s => {
+            if (!groupedSched[s.username]) groupedSched[s.username] = [];
+            groupedSched[s.username].push(s);
+        });
+
+        for (const [uname, scheds] of Object.entries(groupedSched)) {
+            const staff = mgrData.staffList.find(s => s.username === uname) || { name: uname };
+            
+            let daysHtml = scheds.map(s => {
+                const d = new Date(s.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                return `<div class="bg-white p-1.5 rounded border border-sky-100 flex justify-between text-[10px]">
+                    <span class="font-bold text-slate-700">${d}</span>
+                    <span class="text-sky-700 font-bold">${s.shift_1 ? '[Ca 1]' : ''} ${s.shift_2 ? '[Ca 2]' : ''}</span>
+                </div>`;
+            }).join('');
+
+            html += `
+            <div class="bg-sky-50 border border-sky-200 p-3 md:p-4 rounded-xl shadow-sm flex flex-col gap-2">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-slate-800 text-sm">${escapeHtml(staff.name)} <span class="text-[10px] text-slate-500 font-normal">đã gửi ${scheds.length} ngày</span></span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 mb-2">${daysHtml}</div>
+                <div class="flex gap-2">
+                    <button onclick="handleScheduleApproval('${uname}', 'approved')" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-check"></i> Chốt Lịch</button>
+                    <button onclick="handleScheduleApproval('${uname}', 'rejected')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] md:text-xs font-bold py-2 rounded-lg transition active:scale-95 shadow-sm"><i class="fa-solid fa-trash"></i> Xóa Bỏ</button>
+                </div>
+            </div>`;
+        }
+    }
+
+    if (html === '') {
+        html = `<div class="text-center py-10 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3">
+            <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-3xl"><i class="fa-solid fa-mug-hot"></i></div>
+            <p class="text-sm font-bold text-slate-600">Tuyệt vời! Không có yêu cầu nào cần duyệt.</p>
+        </div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+// =========================================================================
+// 6. CÁC HÀM XỬ LÝ DATABASE KHI BẤM NÚT PHÊ DUYỆT
+// =========================================================================
+
+// A. XỬ LÝ VI PHẠM CHẤM CÔNG
+async function handleViolation(scheduleId, action, type) {
+    let penaltyAmount = 0;
+    let dailyStatus = 'waiting';
+
+    if (action === 'forgive') {
+        if (!confirm("Bạn châm chước cho lỗi này? Hệ thống sẽ ghi nhận nhân viên đi làm đầy đủ 100% công ngày hôm đó.")) return;
+        dailyStatus = 'forgiven';
+    } 
+    else if (action === 'penalize') {
+        if (type === 'MISSING') {
+            if (!confirm("Lỗi quên chấm công: Trừ 50% lương của ca làm việc này?")) return;
+            // Ở đây gán mức phạt tượng trưng là -1 để thuật toán tính lương tự hiểu là trừ 50%
+            penaltyAmount = -1; 
+            dailyStatus = 'penalized';
+        } else {
+            const amountStr = prompt("Nhập SỐ TIỀN muốn phạt đi muộn (VD: 20000):", "20000");
+            if (amountStr === null) return;
+            const amount = parseInt(amountStr);
+            if (isNaN(amount) || amount <= 0) return alert("Số tiền phạt không hợp lệ!");
+            penaltyAmount = amount;
+            dailyStatus = 'penalized';
+        }
+    }
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang lưu quyết định...';
+
+    try {
+        const { error } = await supabaseClient.from('schedules').update({
+            daily_status: dailyStatus,
+            penalty_amount: penaltyAmount
+        }).eq('id', scheduleId);
+
+        if (error) throw error;
+        
+        showNotification("Thành công", "Đã xử lý kỷ luật/châm chước xong!");
+        await initStaffManagement(); // Tải lại dữ liệu
+
+    } catch (err) {
+        alert("Lỗi: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// B. DUYỆT ĐƠN XIN NGHỈ
+async function handleLeaveApproval(leaveId, status) {
+    if (!confirm(status === 'approved' ? "Đồng ý cho nhân viên nghỉ?" : "Từ chối đơn xin nghỉ này?")) return;
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+
+    try {
+        const { error } = await supabaseClient.from('leave_requests').update({ status: status }).eq('id', leaveId);
+        if (error) throw error;
+
+        showNotification("Thành công", status === 'approved' ? "Đã duyệt đơn nghỉ phép!" : "Đã từ chối đơn!");
+        await initStaffManagement();
+
+    } catch (err) {
+        alert("Lỗi: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// C. DUYỆT LỊCH LÀM VIỆC
+async function handleScheduleApproval(username, status) {
+    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ các lịch chờ duyệt của nhân viên này?")) return;
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+
+    try {
+        if (status === 'rejected') {
+            // Xóa bỏ luôn các lịch chưa duyệt
+            const { error } = await supabaseClient.from('schedules').delete().eq('username', username).eq('status', 'pending');
+            if (error) throw error;
+        } else {
+            // Chuyển status thành approved
+            const { error } = await supabaseClient.from('schedules').update({ status: 'approved' }).eq('username', username).eq('status', 'pending');
+            if (error) throw error;
+        }
+
+        showNotification("Thành công", "Đã xử lý lịch làm việc!");
+        await initStaffManagement();
+
+    } catch (err) {
+        alert("Lỗi: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
