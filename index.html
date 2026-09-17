@@ -6962,31 +6962,43 @@ async function handleTimekeepingCam(e, type) {
         e.target.value = ''; // Reset input file
     }
 }
-        // 1. (Nhân viên) Gửi đơn xin nghỉ
-        async function submitLeaveRequest() {
-            const start = document.getElementById('leaveStart').value;
-            const end = document.getElementById('leaveEnd').value;
-            const reason = document.getElementById('leaveReason').value.trim();
-            if(!start || !end || !reason) return alert("Bạn cần nhập đủ Ngày Bắt Đầu, Ngày Kết Thúc và Lý do!");
-            
-            let reqs = state.currentUser.requests;
-            if (typeof reqs === 'string') reqs = JSON.parse(reqs);
-            if (!Array.isArray(reqs)) reqs = [];
+     // 3. XỬ LÝ XIN NGHỈ PHÉP
+async function submitLeaveRequest() {
+    const start = document.getElementById('leaveStart').value;
+    const end = document.getElementById('leaveEnd').value;
+    const reason = document.getElementById('leaveReason').value.trim();
 
-            reqs.push({ id: Date.now().toString(), type: 'leave', startDate: start, endDate: end, reason: reason, status: 'pending', created_at: Date.now() });
-            state.currentUser.requests = reqs;
-            
-            const idx = state.users.findIndex(u => u.username === state.currentUser.username);
-            if(idx !== -1) state.users[idx].requests = reqs;
+    if (!start || !end || !reason) return alert("Vui lòng điền đủ ngày và lý do xin nghỉ!");
+    if (start > end) return alert("Ngày kết thúc phải sau ngày bắt đầu!");
+    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để gửi đơn!");
 
-            if(navigator.onLine) {
-                const { error } = await supabaseClient.from('users').update({ requests: reqs }).eq('username', state.currentUser.username);
-                if (error) return alert("Lỗi khi gửi đơn: " + error.message);
-            }
-            
-            showNotification("✅ Gửi Đơn Thành Công", "Đơn của bạn đang chờ Quản lý duyệt.");
-            document.getElementById('leaveStart').value = ''; document.getElementById('leaveEnd').value = ''; document.getElementById('leaveReason').value = '';
-        }
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang gửi đơn xin nghỉ...';
+
+    try {
+        const { error } = await supabaseClient.from('leave_requests').insert([{
+            username: state.currentUser.username,
+            start_date: start,
+            end_date: end,
+            reason: reason,
+            status: 'pending' // pending: chờ duyệt
+        }]);
+        
+        if (error) throw error;
+        
+        showNotification("✅ Đã gửi thành công", "Đơn xin nghỉ đã được chuyển đến Quản lý phê duyệt.");
+        
+        // Reset form
+        document.getElementById('leaveStart').value = '';
+        document.getElementById('leaveEnd').value = '';
+        document.getElementById('leaveReason').value = '';
+    } catch (err) {
+        alert("Lỗi gửi đơn: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
         // HÀM 1: ĐẨY LỊCH THỰC TẾ LÊN CLOUD (CHẤM CÔNG)
         async function syncAttendanceToCloud(ledger) {
             if (!navigator.onLine || !state.currentUser) return;
