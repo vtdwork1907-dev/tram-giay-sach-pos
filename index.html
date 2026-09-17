@@ -2211,17 +2211,22 @@ function mapOrderDbToJs(db) {
         switchGalleryCategory(currentGalleryCategory); 
     }
     
+   // 👉 TÍNH NĂNG MỚI: Vẽ giao diện Lịch tuần khi nhân viên bấm vào tab "Cá nhân"
     if(id === 'personal') {
-        // 1. Xoá trắng các form nhập chữ (đơn xin nghỉ)
         document.getElementById('leaveStart').value = '';
         document.getElementById('leaveEnd').value = '';
         document.getElementById('leaveReason').value = '';
-        
-        // 2. Vẽ lại lịch tuần rỗng và CHỈ tải lịch của user này về
         renderWeeklyScheduleUI();
-        
-        // 3. Xóa màn hình chấm công cũ và CHỈ tải chấm công của user này
         loadTodayTimekeeping();
+    }
+
+    // 👉 FIX LỖI: Vẽ lại danh sách nhân viên khi bấm vào tab Cài đặt
+    if(id === 'settings') {
+        if (state.role === 'owner' || state.role === 'manager') {
+            if (typeof renderSettingsUsersTable === 'function') renderSettingsUsersTable();
+        }
+        if (typeof renderSettingsBrandsTable === 'function') renderSettingsBrandsTable();
+        if (typeof renderSettingsServicesTable === 'function') renderSettingsServicesTable();
     }
 
     // 👉 ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN (ĐÃ GỘP VÀ TỐI ƯU)
