@@ -3296,7 +3296,7 @@ function mapOrderDbToJs(db) {
             }).join('');
         }
 
-       async function addNewAccount() {
+      async function addNewAccount() {
     const name = document.getElementById('addUserName').value.trim(); 
     const email = document.getElementById('addUserLogin').value.trim();
     const pass = document.getElementById('addUserPass').value.trim(); 
@@ -3312,15 +3312,11 @@ function mapOrderDbToJs(db) {
     loading.querySelector('.text-sm').innerText = 'Đang tạo tài khoản bảo mật...';
     
     try {
-        // 1. Tạo tài khoản trên hệ thống Supabase Auth
         const { data, error: authError } = await supabaseClient.auth.signUp({ email: email, password: pass });
         if (authError) throw authError;
         
         const userId = data.user ? data.user.id : ('U-' + Date.now());
 
-        // 2. CHUẨN HOÁ DỮ LIỆU ĐỂ LƯU VÀO DATABASE
-        // Tuyệt đối không nhồi biến "password" vào đây để tránh CSDL từ chối
-        // Chuyển workType thành work_type để chuẩn hóa theo quy tắc đặt tên của SQL
         const dbUser = { 
             id: userId, 
             username: email, 
@@ -3329,20 +3325,14 @@ function mapOrderDbToJs(db) {
             work_type: workType 
         };
 
-        // 3. Lưu vào Database và BẮT LỖI CHẶT CHẼ
         const { error: dbError } = await supabaseClient.from('users').insert([dbUser]);
         
-        if (dbError) {
-            console.error("Chi tiết lỗi CSDL:", dbError);
-            throw new Error(`Tạo Auth thành công nhưng CSDL từ chối lưu: ${dbError.message}. Hãy kiểm tra xem bảng 'users' đã có cột 'work_type' chưa!`);
-        }
+        if (dbError) throw new Error(`Tạo Auth thành công nhưng CSDL từ chối lưu: ${dbError.message}`);
         
-        // 4. Cập nhật state cục bộ để hiển thị lên bảng giao diện
-        // Khối này vẫn giữ các biến cũ để không làm gãy UI
         const newUserUI = { id: userId, username: email, password: '***', role, name, workType };
         state.users.push(newUserUI); 
         
-        await saveLocalState(); 
+        // Không lưu vào LocalStorage nữa
         renderSettingsUsersTable();
         
         document.getElementById('addUserName').value = ''; 
@@ -3356,13 +3346,16 @@ function mapOrderDbToJs(db) {
         loading.style.display = 'none'; 
     }
 }
-        async function deleteAccount(id) {
-            if(confirm("Xóa quyền quản trị của tài khoản này?")) {
-                if(!navigator.onLine) return alert("Vui lòng kết nối mạng để xóa tài khoản!");
-                state.users = state.users.filter(u => u.id !== id); await saveLocalState(); renderSettingsUsersTable();
-                await supabaseClient.from('users').delete().eq('id', id);
-            }
-        }
+
+async function deleteAccount(id) {
+    if(confirm("Xóa quyền quản trị của tài khoản này?")) {
+        if(!navigator.onLine) return alert("Vui lòng kết nối mạng để xóa tài khoản!");
+        state.users = state.users.filter(u => u.id !== id); 
+        // Không lưu vào LocalStorage nữa
+        renderSettingsUsersTable();
+        await supabaseClient.from('users').delete().eq('id', id);
+    }
+}
 
         // =========================================================================
         // 13.5 CÀI ĐẶT: QUẢN LÝ HÃNG GIÀY (BRANDS)
