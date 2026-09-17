@@ -3323,7 +3323,7 @@ function mapOrderDbToJs(db) {
     const workType = document.getElementById('addUserType').value;
     
     if(!name || !email || !pass) return alert("Vui lòng nhập đủ thông tin tài khoản!");
-    if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong hệ thống!");
+    if(state.users.find(u => u.username === email)) return alert("Email này đã tồn tại trong danh sách!");
     if(!navigator.onLine) return alert("Tính năng tạo tài khoản yêu cầu kết nối mạng!");
     
     const loading = document.getElementById('globalLoading'); 
@@ -3351,7 +3351,6 @@ function mapOrderDbToJs(db) {
         const newUserUI = { id: userId, username: email, password: '***', role, name, workType };
         state.users.push(newUserUI); 
         
-        // Không lưu vào LocalStorage nữa
         renderSettingsUsersTable();
         
         document.getElementById('addUserName').value = ''; 
@@ -3360,7 +3359,15 @@ function mapOrderDbToJs(db) {
         
         showNotification("Thành công", "Tạo tài khoản nhân viên thành công!");
     } catch(error) { 
-        alert("❌ Lỗi tạo tài khoản: \n" + error.message); 
+        // 👇 ĐÃ THÊM BỘ DỊCH LỖI Ở ĐÂY
+        let errorMsg = error.message;
+        if (errorMsg.includes("User already registered")) {
+            errorMsg = "Email này ĐÃ TỒN TẠI trong hệ thống bảo mật! Vui lòng dùng Email khác (hoặc vào Supabase Authentication để xóa email bị kẹt).";
+        } else if (errorMsg.includes("Password should be at least")) {
+            errorMsg = "Mật khẩu quá ngắn! Supabase yêu cầu mật khẩu phải có ít nhất 6 ký tự.";
+        }
+        
+        alert("❌ Lỗi tạo tài khoản: \n" + errorMsg); 
     } finally { 
         loading.style.display = 'none'; 
     }
