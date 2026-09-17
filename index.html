@@ -1781,7 +1781,7 @@
         }
 
         function mapOrderJsToDb(o) {
-    let pmDb = o.paymentMethod || 'NONE'; // Dùng 'NONE' làm mỏ neo nếu chưa biết phương thức
+    let pmDb = o.paymentMethod || 'NONE'; 
     if (o.payment_date) {
         pmDb = `${pmDb}|${o.payment_date}`;
     } else if (pmDb === 'NONE') {
@@ -1795,9 +1795,10 @@
         images: o.images || [], images_after: o.imagesAfter || [],
         subtotal_val: o.subtotalVal || 0, discount_val: o.discountVal || 0, total: o.total || 0,
         status: o.status || 'RECEIVED', 
-        payment_method: pmDb, // Ngày thu tiền giờ đã được an toàn
+        payment_method: pmDb, 
         extra_fee_val: o.extraFeeVal || 0, extra_fee_reason: o.extraFeeReason || '',
-        delay_note: o.delayNote || '' 
+        delay_note: o.delayNote || '',
+        created_by: o.created_by || null // Ghi nhận nhân viên tạo đơn
     };
 }
 
@@ -1824,7 +1825,8 @@ function mapOrderDbToJs(db) {
         paymentMethod: pm, 
         payment_date: pDate,
         extraFeeVal: db.extra_fee_val || 0, extraFeeReason: db.extra_fee_reason || '',
-        delayNote: db.delay_note || '' 
+        delayNote: db.delay_note || '',
+        created_by: db.created_by // Hiển thị nhân viên tạo đơn
     };
 }
 
