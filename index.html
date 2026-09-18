@@ -8737,6 +8737,163 @@ async function saveMgrSettings() {
         loading.style.display = 'none';
     }
 }
+        // =========================================================================
+// HỆ THỐNG KIỂM SOÁT NHÂN VIÊN PART-TIME (BẢN MỚI)
+// =========================================================================
+
+let isEmployeeLocked = false;
+
+// 1. Hàm kiểm tra Lịch và Cập nhật trạng thái
+async function checkEmployeeLockdown() {
+    if (!state.currentUser || state.role !== 'staff' || state.currentUser.work_type === 'fulltime') {
+        isEmployeeLocked = false;
+        return;
+    }
+
+    const today = new Date();
+    const distance = today.getDay() === 0 ? 6 : today.getDay() - 1;
+    const monday = new Date(today); monday.setDate(today.getDate() - distance);
+    const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+    
+    const startStr = monday.toISOString().split('T')[0];
+    const endStr = sunday.toISOString().split('T')[0];
+
+    const { data: weekSchedules } = await supabaseClient.from('schedules')
+        .select('*')
+        .eq('username', state.currentUser.username)
+        .gte('date', startStr)
+        .lte('date', endStr);
+
+    const hasPending = weekSchedules?.some(s => s.status === 'pending');
+    const hasApproved = weekSchedules?.some(s => s.status === 'approved');
+
+    // Cập nhật giao diện thanh Tóm tắt lịch
+    if (hasPending || !hasApproved) {
+        isEmployeeLocked = true; // Bật cờ KHÓA TÀI KHOẢN
+        
+        document.getElementById('empWeeklyStatusBadge').className = "text-[9px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-600";
+        document.getElementById('empWeeklyStatusBadge').innerText = hasPending ? "Đang chờ sếp duyệt..." : "Chưa có lịch!";
+        document.getElementById('empWeeklySummaryBar').innerHTML = `<div class="text-red-600 font-bold italic py-2">Tài khoản đang bị hạn chế. Vui lòng đăng ký lịch bên dưới và chờ duyệt!</div>`;
+    } else {
+        isEmployeeLocked = false; // MỞ KHÓA TÀI KHOẢN
+        
+        document.getElementById('empWeeklyStatusBadge').className = "text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-600";
+        document.getElementById('empWeeklyStatusBadge').innerText = "Đã chốt lịch";
+        
+        const approvedDays = weekSchedules.filter(s => s.status === 'approved');
+        document.getElementById('empWeeklySummaryBar').innerHTML = approvedDays.map(s => {
+            const d = new Date(s.date).toLocaleDateString('vi-VN', { weekday: 'short' });
+            return `<span class="bg-white border border-emerald-200 text-emerald-700 px-2 py-1 rounded shadow-sm font-bold">${d}: ${s.shift_1 ? 'Ca1 ' : ''}${s.shift_2 ? 'Ca2' : ''}</span>`;
+        }).join('');
+    }
+}
+
+// 2. LÍNH GÁC CỔNG: Tự động chặn cú click của nhân viên nếu tài khoản bị khóa
+document.addEventListener('click', function(e) {
+    if (!isEmployeeLocked) return; // Nếu tài khoản không bị khóa thì cho qua bình thường
+
+    // Phát hiện nút mà nhân viên vừa bấm vào
+    const clickedElement = e.target.closest('button, a, div[onclick], li');
+    if (!clickedElement) return;
+
+    const text = clickedElement.innerText || '';
+    
+    // Nếu nhân viên cố tình bấm vào các chức năng làm việc (Tạo đơn, Kho đơn, Chi phí, Trang chủ...)
+    const isRestrictedArea = text.includes('Tạo Đơn') || text.includes('Kho Đơn') || text.includes('Chi Phí') || text.includes('Trang Chủ') || text.includes('Khách VIP');
+    
+    if (isRestrictedArea) {
+        alert("TÀI KHOẢN BỊ HẠN CHẾ!\nBạn chưa có lịch làm việc được duyệt trong tuần này. Vui lòng vào tab 'Nhân Viên', đăng ký lịch và chờ Quản lý duyệt trước khi bắt đầu làm việc.");
+        
+        e.preventDefault(); // Hủy bỏ hành động bấm
+        e.stopPropagation(); // Chặn đứng hàm chuyển tab, không cho nó chạy
+    }
+}, true); // Chế độ 'true' giúp lính gác chặn đứng sự kiện trước khi ứng dụng kịp phản ứng
+        // 2. Mở Modal Lương
+async function openEmployeeSalaryModal() {
+    const today = new Date();
+    document.getElementById('empSalaryMonthFilter').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    
+    document.getElementById('empSalaryModal').classList.remove('hidden');
+    setTimeout(() => { 
+        document.getElementById('empSalaryModal').classList.remove('opacity-0'); 
+        document.getElementById('empSalaryBox').classList.remove('scale-95'); 
+    }, 10);
+
+    await calculateEmployeeSalary();
+    await loadEmployeeSalaryHistory();
+}
+
+function closeEmployeeSalaryModal() {
+    document.getElementById('empSalaryModal').classList.add('opacity-0'); 
+    document.getElementById('empSalaryBox').classList.add('scale-95');
+    setTimeout(() => document.getElementById('empSalaryModal').classList.add('hidden'), 300);
+}
+
+// 3. Tính lương thực tế
+async function calculateEmployeeSalary() {
+    const filter = document.getElementById('empSalaryMonthFilter').value;
+    const year = parseInt(filter.split('-')[0]), month = parseInt(filter.split('-')[1]) - 1;
+    
+    const startStr = new Date(year, month, 1, 12).toISOString().split('T')[0];
+    const endStr = new Date(year, month + 1, 0, 12).toISOString().split('T')[0];
+
+    const { data: settings } = await supabaseClient.from('staff_settings').select('*').eq('username', state.currentUser.username).single();
+    const hourlyRate = settings ? (settings.hourly_rate || 0) : 0;
+    
+    const { data: schedules } = await supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).gte('date', startStr).lte('date', endStr).eq('status', 'approved');
+    const { data: timesheets } = await supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).gte('date', startStr).lte('date', endStr);
+
+    let totalHours = 0, totalPenalty = 0;
+
+    if (schedules) {
+        for (const sched of schedules) {
+            const dayTimes = timesheets?.filter(t => t.date === sched.date) || [];
+            const hasIn = dayTimes.some(t => t.type === 'in'), hasOut = dayTimes.some(t => t.type === 'out');
+
+            if (sched.daily_status === 'penalized') {
+                if (sched.penalty_amount === -1) {
+                    let h = 0; if(sched.shift_1) h+=5; if(sched.shift_2) h+=5;
+                    totalPenalty += (h * hourlyRate) / 2;
+                } else {
+                    totalPenalty += sched.penalty_amount || 0;
+                }
+            } else if (sched.daily_status === 'forgiven' || (hasIn && hasOut)) {
+                if (hasIn && hasOut) {
+                    const tIn = new Date(dayTimes.find(t => t.type === 'in').time_log);
+                    const tOut = new Date(dayTimes.find(t => t.type === 'out').time_log);
+                    let diff = (tOut - tIn) / 3600000;
+                    if (diff > 0 && diff < 24) totalHours += diff;
+                } else if (sched.daily_status === 'forgiven') {
+                    if(sched.shift_1) totalHours+=5; if(sched.shift_2) totalHours+=5;
+                }
+            }
+        }
+    }
+
+    document.getElementById('empTotalHours').innerText = `${totalHours.toFixed(1)}h`;
+    document.getElementById('empTotalPenalty').innerText = `${totalPenalty.toLocaleString('vi-VN')}đ`;
+    let final = (totalHours * hourlyRate) - totalPenalty;
+    document.getElementById('empTotalSalary').innerText = `${Math.max(0, final).toLocaleString('vi-VN')}đ`;
+}
+
+// 4. Tải lịch sử lương
+async function loadEmployeeSalaryHistory() {
+    const list = document.getElementById('empSalaryHistoryList');
+    const { data: history } = await supabaseClient.from('salary_history').select('*').eq('username', state.currentUser.username).order('apply_date', { ascending: false });
+
+    if (!history || history.length === 0) {
+        list.innerHTML = '<div class="italic text-slate-400">Chưa có lịch sử cấu hình lương.</div>'; return;
+    }
+
+    list.innerHTML = history.map(h => `
+        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+            <div>
+                <div class="font-bold text-slate-700">${new Date(h.apply_date).toLocaleDateString('vi-VN')}</div>
+                <div class="text-[10px] text-emerald-500 font-bold">Lương Theo Giờ</div>
+            </div>
+            <div class="font-bold text-slate-800">${h.hourly_rate.toLocaleString('vi-VN')}đ</div>
+        </div>`).join('');
+}
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
