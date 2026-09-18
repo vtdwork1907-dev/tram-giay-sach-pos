@@ -8111,10 +8111,9 @@ async function renderMgrApprovals() {
     }
 
     // --- LỚP 3: ĐĂNG KÝ LỊCH TUẦN (ĐÃ TỐI ƯU HIỂN THỊ GIỜ & XỬ LÝ LỊCH MỒ CÔI) ---
-    if (mgrData.pendingSchedules.length > 0) {
+   if (mgrData.pendingSchedules.length > 0) {
         html += `<h4 class="font-bold text-sky-600 text-xs uppercase mb-2 mt-4 flex items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i> Đăng Ký Lịch Làm (${mgrData.pendingSchedules.length})</h4>`;
         
-        // Gom nhóm lịch theo Username
         const groupedSched = {};
         mgrData.pendingSchedules.forEach(s => {
             if (!groupedSched[s.username]) groupedSched[s.username] = [];
@@ -8124,20 +8123,19 @@ async function renderMgrApprovals() {
         for (const [uname, scheds] of Object.entries(groupedSched)) {
             const staff = mgrData.staffList.find(s => s.username === uname) || { name: uname, work_type: 'parttime' };
             
-            // Lấy khung giờ chuẩn từ cấu hình của nhân viên đó (Mặc định 08:00-13:00 và 13:00-18:00)
             let s1Text = "08:00 - 13:00";
             let s2Text = "13:00 - 18:00";
-
-            // Nếu trong staffList có kèm settings cấu hình riêng thì bóc tách ra
             if (staff.settings) {
                 if (staff.settings.shift1_time) s1Text = staff.settings.shift1_time.replace('-', ' đến ');
                 if (staff.settings.shift2_time) s2Text = staff.settings.shift2_time.replace('-', ' đến ');
             }
             
+            // 👉 THÊM DÒNG NÀY ĐỂ ÉP SẮP XẾP NGÀY TĂNG DẦN (THỨ 2 -> CHỦ NHẬT)
+            scheds.sort((a, b) => new Date(a.date) - new Date(b.date));
+
             let daysHtml = scheds.map(s => {
                 const d = new Date(s.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
                 
-                // Thay vì hiện chữ Ca 1 / Ca 2, hệ thống sẽ bóc ra khung giờ cụ thể
                 let shiftsDetails = [];
                 if (s.shift_1) shiftsDetails.push(`Ca 1: ${s1Text}`);
                 if (s.shift_2) shiftsDetails.push(`Ca 2: ${s2Text}`);
