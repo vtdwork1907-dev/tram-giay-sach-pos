@@ -8793,26 +8793,34 @@ async function checkEmployeeLockdown() {
     }
 }
 
-// 2. LÍNH GÁC CỔNG: Tự động chặn cú click của nhân viên nếu tài khoản bị khóa
+// 2. LÍNH GÁC CỔNG: Tự động chặn cú click nếu tài khoản bị khóa
 document.addEventListener('click', function(e) {
     if (!isEmployeeLocked) return; // Nếu tài khoản không bị khóa thì cho qua bình thường
 
-    // Phát hiện nút mà nhân viên vừa bấm vào
+    // Bắt lấy phần tử mà nhân viên vừa bấm vào
     const clickedElement = e.target.closest('button, a, div[onclick], li');
     if (!clickedElement) return;
 
     const text = clickedElement.innerText || '';
     
-    // Nếu nhân viên cố tình bấm vào các chức năng làm việc (Tạo đơn, Kho đơn, Chi phí, Trang chủ...)
-    const isRestrictedArea = text.includes('Tạo Đơn') || text.includes('Kho Đơn') || text.includes('Chi Phí') || text.includes('Trang Chủ') || text.includes('Khách VIP');
+    // DANH SÁCH CÁC NÚT BỊ CẤM BẤM KHI CHƯA DUYỆT LỊCH:
+    // Bao gồm cả menu dưới đáy VÀ các Sub-tab trong Không gian làm việc
+    const isRestrictedArea = 
+        text.includes('Tạo Đơn') || 
+        text.includes('Kho Đơn') || 
+        text.includes('Chi Phí') || 
+        text.includes('Trang Chủ') || 
+        text.includes('Khách VIP') ||
+        text.includes('Chấm Công') || 
+        text.includes('Xin Nghỉ');
     
     if (isRestrictedArea) {
-        alert("TÀI KHOẢN BỊ HẠN CHẾ!\nBạn chưa có lịch làm việc được duyệt trong tuần này. Vui lòng vào tab 'Nhân Viên', đăng ký lịch và chờ Quản lý duyệt trước khi bắt đầu làm việc.");
+        alert("TÀI KHOẢN BỊ HẠN CHẾ!\nBạn chưa có lịch làm việc được duyệt trong tuần này. Vui lòng đăng ký lịch và chờ Quản lý duyệt để mở khóa chức năng.");
         
         e.preventDefault(); // Hủy bỏ hành động bấm
-        e.stopPropagation(); // Chặn đứng hàm chuyển tab, không cho nó chạy
+        e.stopPropagation(); // Chặn đứng hàm chuyển tab
     }
-}, true); // Chế độ 'true' giúp lính gác chặn đứng sự kiện trước khi ứng dụng kịp phản ứng
+}, true);
         // 2. Mở Modal Lương
 async function openEmployeeSalaryModal() {
     const today = new Date();
