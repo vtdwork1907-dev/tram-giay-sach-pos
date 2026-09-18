@@ -6528,8 +6528,7 @@ function initSwipeToCloseModals() {
     const tbody = document.getElementById('weeklyScheduleBody');
     if (!tbody) return;
 
-    // KIỂM TRA FULL-TIME: KHÔNG CHO ĐĂNG KÝ CA
-    if (state.currentUser && state.currentUser.workType === 'fulltime') {
+    if (state.currentUser && state.currentUser.work_type === 'fulltime') {
         document.getElementById('btnSubmitSchedule').style.display = 'none';
         tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-500 text-xs font-bold bg-slate-50"><i class="fa-solid fa-briefcase text-2xl text-emerald-400 mb-2 block"></i>Bạn là nhân viên Full-time (Lương tháng).<br>Lịch làm việc mặc định là toàn thời gian, không cần đăng ký ca.</td></tr>`;
         document.getElementById('currentWeekRangeDisplay').innerText = `Full-time Mode`;
@@ -6548,7 +6547,13 @@ function initSwipeToCloseModals() {
     for(let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(d.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
+        
+        // CÁCH SỬA LỖI MÚI GIỜ: Tạo chuỗi ngày thủ công chuẩn giờ địa phương (YYYY-MM-DD)
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${dayStr}`;
+
         const displayDate = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
 
         html += `
@@ -6569,7 +6574,9 @@ function initSwipeToCloseModals() {
     
     document.getElementById('currentWeekRangeDisplay').innerText = `Tuần: ${startStr} - ${endStr}`;
     loadExistingSchedule(monday);
-    checkEmployeeLockdown();
+
+    // Kích hoạt lính gác cổng khóa UI
+    if (typeof checkEmployeeLockdown === 'function') checkEmployeeLockdown();
 }
         
         async function loadExistingSchedule(mondayDate) {
