@@ -6606,37 +6606,66 @@ function initSwipeToCloseModals() {
     }
 }
 
-       async function submitSchedule() {
+       // HÀM GỬI/CẬP NHẬT ĐĂNG KÝ LỊCH TUẦN CỦA NHÂN VIÊN
+async function submitWeeklySchedule() {
     if (!navigator.onLine) return alert("Vui lòng kết nối mạng để gửi lịch!");
-
-    const rows = document.querySelectorAll('#weeklyScheduleBody tr');
-    let schedulesToSave = [];
     
-    rows.forEach(tr => {
-        const date = tr.getAttribute('data-date');
-        const shift1 = tr.querySelector('.shift1-cb').checked;
-        const shift2 = tr.querySelector('.shift2-cb').checked;
-        
-        schedulesToSave.push({
-            username: state.currentUser.username,
-            date: date,
-            shift_1: shift1,
-            shift_2: shift2
-        });
-    });
-
     const loading = document.getElementById('globalLoading');
     loading.style.display = 'flex';
-    loading.querySelector('.text-sm').innerText = 'Đang lưu lịch biểu...';
-    
+    loading.querySelector('.text-sm').innerText = 'Đang gửi yêu cầu cập nhật lịch...';
+
     try {
-        // Upsert: Cập nhật nếu đã có, Thêm mới nếu chưa có
-        const { error } = await supabaseClient.from('schedules').upsert(schedulesToSave, { onConflict: 'username, date' });
-        if (error) throw error;
+        const tbody = document.getElementById('weeklyScheduleBody');
+        const rows = tbody.querySelectorAll('tr');
+        let schedulesToInsert = [];
+
+        // Lấy ngày đầu và cuối của bảng đăng ký để xóa dữ liệu cũ
+        const startDate = rows[0].getAttribute('data-date');
+        const endDate = rows[6].getAttribute('data-date');
+
+        rows.forEach(row => {
+            const dateStr = row.getAttribute('data-date');
+            const s1 = row.querySelector('.shift1-cb').checked;
+            const s2 = row.querySelector('.shift2-cb').checked;
+
+            if (s1 || s2) {
+                schedulesToInsert.push({
+                    username: state.currentUser.username,
+                    date: dateStr,
+                    shift_1: s1,
+                    shift_2: s2,
+                    status: 'pending', // BẮT BUỘC ÉP VỀ PENDING ĐỂ SẾP DUYỆT LẠI
+                    daily_status: 'waiting'
+                });
+            }
+        });
+
+        // 1. XÓA BỎ toàn bộ lịch CỦA TUẦN ĐÓ mà chưa đi làm (waiting)
+        // Việc này giúp xóa sạch lịch cũ nếu nhân viên bỏ tick ca đó
+        await supabaseClient.from('schedules').delete()
+            .eq('username', state.currentUser.username)
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .eq('daily_status', 'waiting');
+
+        // 2. THÊM MỚI lịch vừa tick vào (tất cả đều mang trạng thái pending)
+        if (schedulesToInsert.length > 0) {
+            const { error: insertErr } = await supabaseClient.from('schedules').insert(schedulesToInsert);
+            if (insertErr) throw insertErr;
+        }
+
+        showNotification("Thành công", "Đã cập nhật lịch làm việc. Vui lòng chờ Chủ cửa hàng duyệt!");
         
-        showNotification("✅ Đã gửi đăng ký", "Lịch làm việc của bạn đã được cập nhật!");
+        // 3. GỌI LÍNH GÁC CỔNG NGAY LẬP TỨC: Hệ thống sẽ quét thấy 'pending' và lập tức KHÓA màn hình
+        await checkEmployeeLockdown();
+        
+        // 4. CẬP NHẬT LẠI BẢNG LỊCH THỰC TẾ
+        if (typeof renderEmployeeActualCalendar === 'function') {
+            await renderEmployeeActualCalendar();
+        }
+
     } catch (err) {
-        alert("Lỗi lưu lịch: " + err.message);
+        alert("Lỗi cập nhật lịch: " + err.message);
     } finally {
         loading.style.display = 'none';
     }
