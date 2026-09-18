@@ -765,31 +765,31 @@
                         <!-- KHỐI 2: LỊCH CÁ NHÂN, THỐNG KÊ & CHI TIẾT NGÀY -->
                         <div class="flex flex-col gap-4 w-full lg:w-[320px] xl:w-[350px] shrink-0">
                             
-                            <!-- Bộ Lịch -->
-                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
-                                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-regular fa-calendar text-indigo-500"></i> Lịch Thực Tế</h3>
-                                    <!-- Nút chuyển tháng -->
-                                    <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                                        <button onclick="changeCalendarMonth(-1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                                        <span id="calendarMonthYear" class="font-bold text-slate-800 text-[11px] md:text-xs w-[68px] text-center">...</span>
-                                        <button onclick="changeCalendarMonth(1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-200 rounded text-slate-500 transition"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid grid-cols-7 gap-1 text-center text-[10px] md:text-xs font-bold text-slate-400 mb-1">
-                                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
-                                </div>
-                                
-                                <!-- Khung Lịch -->
-                                <div id="calendarGrid" class="grid grid-cols-7 gap-y-1 gap-x-1 text-center text-xs font-semibold">
-                                </div>
-                                
-                                <div class="flex items-center justify-center gap-4 mt-2 text-[9px] md:text-[10px] text-slate-500 font-medium border-t border-slate-100 pt-2">
-                                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Đi làm</span>
-                                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Có lịch</span>
-                                </div>
-                            </div>
+                           <!-- BẢNG LỊCH THỰC TẾ CỦA NHÂN VIÊN -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mt-6 mb-24">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-regular fa-calendar text-sky-600"></i> Lịch Thực Tế</h3>
+        <div class="flex items-center gap-2 bg-slate-100 rounded-xl p-1">
+            <button onclick="changeEmpActualMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <span id="empActualMonthYear" class="font-bold text-xs w-16 text-center text-slate-700">9/2026</span>
+            <button onclick="changeEmpActualMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-7 gap-1 md:gap-2 text-center text-[10px] md:text-xs font-bold text-slate-400 mb-2">
+        <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+    </div>
+    
+    <div id="empActualCalendarGrid" class="grid grid-cols-7 gap-1 md:gap-2">
+        <!-- Javascript sẽ đổ các ngày có chấm Vàng/Xanh vào đây -->
+    </div>
+    
+    <div class="flex justify-center gap-4 mt-4 text-[10px] font-bold text-slate-500">
+        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Đã đi làm</span>
+        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-amber-400"></div> Có lịch</span>
+        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-red-500"></div> Vắng mặt</span>
+    </div>
+</div>
 
                             <!-- Thống Kê Tháng -->
                             <div class="grid grid-cols-3 gap-2 w-full">
