@@ -6564,7 +6564,9 @@ function initSwipeToCloseModals() {
     
     document.getElementById('currentWeekRangeDisplay').innerText = `Tuần: ${startStr} - ${endStr}`;
     loadExistingSchedule(monday);
+    checkEmployeeLockdown();
 }
+        
         async function loadExistingSchedule(mondayDate) {
     if (!state.currentUser || !navigator.onLine) return;
     
