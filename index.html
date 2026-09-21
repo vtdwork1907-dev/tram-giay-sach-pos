@@ -736,9 +736,10 @@
                                 </table>
                             </div>
 
-                            <button onclick="submitSchedule()" id="btnSubmitSchedule" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md mt-1 flex items-center justify-center gap-2 text-xs md:text-sm active:scale-95">
-                                <i class="fa-solid fa-paper-plane"></i> Gửi Đăng Ký Lịch Tuần
-                            </button>
+                            <!-- NÚT GỬI ĐĂNG KÝ (ĐÃ BỌC BẪY LỖI BẢO VỆ) -->
+<button type="button" id="btnSubmitSchedule" onclick="try { submitWeeklySchedule(); } catch(e) { alert('❌ LỖI NGHIÊM TRỌNG: Mã nguồn bị hỏng hoặc bạn copy thiếu dấu ngoặc } ở đâu đó. Vui lòng kiểm tra lại code!'); }" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 transition active:scale-95 shadow-md flex items-center justify-center gap-2 text-sm">
+    <i class="fa-solid fa-paper-plane"></i> Gửi Đăng Ký Lịch Tuần
+</button>
                         </div>
                         <div class="mt-4 border-t border-slate-100 pt-4 flex flex-col gap-4">
         
