@@ -6609,47 +6609,48 @@ function initSwipeToCloseModals() {
 
        // HÀM GỬI/CẬP NHẬT ĐĂNG KÝ LỊCH TUẦN CỦA NHÂN VIÊN
 async function submitWeeklySchedule() {
-    // 1. Kiểm tra mạng
+    // Nếu nút chạy được vào đây, thông báo này sẽ hiện lên ĐẦU TIÊN
+    console.log("Hệ thống đã nhận lệnh bấm nút!");
+    
     if (!navigator.onLine) {
         alert("Vui lòng kết nối mạng để gửi lịch!");
         return;
     }
 
-    // 2. Bật màn hình loading (Có kiểm tra an toàn tránh lỗi đơ nút)
     const loading = document.getElementById('globalLoading');
     if (loading) {
         loading.style.display = 'flex';
         const loadingText = loading.querySelector('.text-sm');
-        if (loadingText) loadingText.innerText = 'Đang gửi yêu cầu cập nhật lịch...';
+        if (loadingText) loadingText.innerText = 'Đang xử lý...';
     }
 
     try {
-        // 3. Tìm bảng lịch và kiểm tra an toàn
         const tbody = document.getElementById('weeklyScheduleBody');
-        if (!tbody) throw new Error("Không tìm thấy bảng đăng ký lịch trên màn hình!");
+        if (!tbody) {
+            alert("LỖI: Không tìm thấy bảng lịch trên màn hình!");
+            return;
+        }
 
         const rows = tbody.querySelectorAll('tr');
-        if (rows.length === 0) throw new Error("Bảng lịch chưa được tải dữ liệu!");
+        if (rows.length === 0) {
+            alert("LỖI: Bảng lịch chưa có dữ liệu!");
+            return;
+        }
 
         let schedulesToInsert = [];
-
-        // Lấy ngày đầu tuần và cuối tuần an toàn
         const startDate = rows[0].getAttribute('data-date');
         const endDate = rows[rows.length - 1].getAttribute('data-date');
 
-        if (!startDate || !endDate) throw new Error("Bị lỗi định dạng ngày trong bảng lịch!");
-
-        // 4. Quét từng dòng xem nhân viên tick vào ca nào
         rows.forEach(row => {
             const dateStr = row.getAttribute('data-date');
+            if (!dateStr) return; // Bỏ qua nếu lỗi HTML
+            
             const cb1 = row.querySelector('.shift1-cb');
             const cb2 = row.querySelector('.shift2-cb');
-
-            // Bỏ qua nếu dòng bị lỗi HTML
-            if (!dateStr || !cb1 || !cb2) return; 
-
-            const s1 = cb1.checked;
-            const s2 = cb2.checked;
+            
+            // Check an toàn đề phòng bị null
+            const s1 = cb1 ? cb1.checked : false;
+            const s2 = cb2 ? cb2.checked : false;
 
             if (s1 || s2) {
                 schedulesToInsert.push({
@@ -6657,40 +6658,38 @@ async function submitWeeklySchedule() {
                     date: dateStr,
                     shift_1: s1,
                     shift_2: s2,
-                    status: 'pending', // Trạng thái chờ sếp duyệt
+                    status: 'pending', 
                     daily_status: 'waiting'
                 });
             }
         });
 
-        // 5. XÓA SẠCH các lịch cũ trong tuần này (chỉ xóa những ngày chưa đi làm - waiting)
-        const { error: deleteErr } = await supabaseClient.from('schedules')
-            .delete()
-            .eq('username', state.currentUser.username)
-            .gte('date', startDate)
-            .lte('date', endDate)
-            .eq('daily_status', 'waiting');
+        // Xóa sạch lịch chưa đi làm của tuần đó trước khi ghi đè lịch mới
+        if (startDate && endDate) {
+            await supabaseClient.from('schedules')
+                .delete()
+                .eq('username', state.currentUser.username)
+                .gte('date', startDate)
+                .lte('date', endDate)
+                .eq('daily_status', 'waiting');
+        }
 
-        if (deleteErr) throw deleteErr;
-
-        // 6. THÊM MỚI lịch vừa đăng ký (Nếu nhân viên có chọn ca)
+        // Ghi lịch mới vào Database
         if (schedulesToInsert.length > 0) {
             const { error: insertErr } = await supabaseClient.from('schedules').insert(schedulesToInsert);
             if (insertErr) throw insertErr;
         }
 
-        // Báo thành công bằng Alert mặc định của trình duyệt cho chắc chắn
+        // Hiện thông báo bằng Alert mặc định (không thể bị đơ)
         alert("✅ Đã gửi đăng ký lịch thành công! Vui lòng chờ Quản lý phê duyệt.");
 
-        // 7. Khóa màn hình lại và cập nhật lịch thực tế
+        // Khóa màn hình & Tải lại lịch thực tế
         if (typeof checkEmployeeLockdown === 'function') await checkEmployeeLockdown();
         if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
 
     } catch (err) {
-        console.error("Lỗi submit lịch:", err);
-        alert("❌ Đã xảy ra lỗi: " + err.message);
+        alert("❌ Đã xảy ra lỗi hệ thống: " + err.message);
     } finally {
-        // Luôn luôn tắt loading dù thành công hay thất bại
         if (loading) loading.style.display = 'none';
     }
 }
