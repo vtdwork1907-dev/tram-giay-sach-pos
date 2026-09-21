@@ -8337,8 +8337,11 @@ async function handleLeaveApproval(leaveId, status) {
 }
 
 // C. DUYỆT LỊCH LÀM VIỆC
+// ==========================================================
+// HÀM CHỐT LỊCH / KHÔNG DUYỆT LỊCH CỦA CHỦ CỬA HÀNG
+// ==========================================================
 async function handleScheduleApproval(username, status) {
-    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ (Từ chối) các lịch chờ duyệt này?")) return;
+    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Không duyệt và xóa bỏ các ca làm này?")) return;
 
     const loading = document.getElementById('globalLoading');
     if(loading) {
@@ -8349,28 +8352,31 @@ async function handleScheduleApproval(username, status) {
     try {
         if (status === 'rejected') {
             // XÓA BỎ: Quét sạch các ca đang pending của nhân viên này
-            const { error } = await supabaseClient.from('schedules')
+            const { data, error } = await supabaseClient.from('schedules')
                 .delete()
                 .eq('username', username)
                 .eq('status', 'pending');
-            if (error) throw error;
+            
+            if (error) throw new Error("Lỗi từ CSDL khi xóa: " + error.message);
         } else {
             // CHỐT LỊCH: Chuyển thành approved
             const { error } = await supabaseClient.from('schedules')
                 .update({ status: 'approved' })
                 .eq('username', username)
                 .eq('status', 'pending');
-            if (error) throw error;
+                
+            if (error) throw new Error("Lỗi từ CSDL khi chốt: " + error.message);
         }
 
-        alert(status === 'approved' ? "✅ Đã duyệt lịch thành công!" : "🗑️ Đã từ chối và xóa bỏ lịch chờ duyệt!");
-        
-        // BẮT BUỘC TẢI LẠI DỮ LIỆU ĐỂ LÀM SẠCH GIAO DIỆN
-        await forceRefreshPendingApprovals();
+        // Hiện thông báo và ép tải lại danh sách
+        alert(status === 'approved' ? "✅ Đã duyệt lịch thành công!" : "🗑️ Đã từ chối và xóa bỏ lịch!");
+        if (typeof forceRefreshPendingApprovals === 'function') {
+            await forceRefreshPendingApprovals();
+        }
 
     } catch (err) {
         console.error("Lỗi duyệt lịch:", err);
-        alert("❌ Lỗi hệ thống: " + err.message);
+        alert("❌ Thao tác thất bại: " + err.message);
     } finally {
         if(loading) loading.style.display = 'none';
     }
