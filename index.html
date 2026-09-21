@@ -2191,120 +2191,122 @@ function mapOrderDbToJs(db) {
         // =========================================================================
         function restoreLastTab() {
             const lastTab = localStorage.getItem('TRAM_LAST_TAB');
+            // Dọn dẹp lại điều kiện chuyển tab khởi tạo để đảm bảo staff không kẹt
             if (lastTab && document.getElementById('nav-' + lastTab)) {
-                if (state.role === 'staff' && ['expenses', 'reports', 'settings'].includes(lastTab)) { switchTab('pos'); } 
-                else { switchTab(lastTab); }
+                if (state.role === 'staff' && ['expenses', 'reports', 'settings', 'gallery', 'customers', 'staff'].includes(lastTab)) { 
+                    switchTab('pos'); 
+                } else { 
+                    switchTab(lastTab); 
+                }
             } else {
                 if (state.role === 'staff') switchTab('pos'); else switchTab('dashboard');
             }
         }
         
-      function switchTab(id) {
-    // CHỐT CHẶN PHÂN QUYỀN: Ngăn nhân viên chuyển tab qua console
-    if (state.role === 'staff' && ['gallery', 'customers', 'reports', 'expenses', 'settings', 'staff'].includes(id)) {
-        showNotification("Bảo mật", "Tài khoản nhân viên không có quyền truy cập khu vực này.");
-        return;
-    }
+     function switchTab(id) {
+            // CHỐT CHẶN BẢO VỆ: Nếu staff cố tình mở tab cấm, tự động đá về tab POS
+            if (state.role === 'staff' && ['gallery', 'customers', 'reports', 'expenses', 'settings', 'staff'].includes(id)) {
+                showNotification("Bảo mật", "Tài khoản nhân viên không có quyền truy cập khu vực này.");
+                id = 'pos'; // Đổi hướng tab thay vì dùng lệnh return; làm sập hàm
+            }
 
-    // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
-    document.querySelectorAll('.tab-content').forEach(el => {
-    // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
-    document.querySelectorAll('.tab-content').forEach(el => {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-    });
-    
-    // 2. Hiển thị tab được chọn (Dùng cả flex để hiển thị chuẩn khung giao diện)
-    const targetTab = document.getElementById('tab-' + id);
-    if (targetTab) {
-        targetTab.classList.remove('hidden');
-        targetTab.classList.add('flex');
-    }
-    
-    // 3. Xử lý đổi màu active cho các nút ở menu điều hướng
-    document.querySelectorAll('.nav-btn').forEach(b => {
-        b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
-        if(b.id === 'nav-payment') {
-            b.classList.add('text-emerald-500'); b.classList.remove('text-slate-400');
-        } else {
-            b.classList.add('text-slate-400'); b.classList.remove('text-emerald-500');
+            // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            });
+            
+            // 2. Hiển thị tab được chọn (Dùng cả flex để hiển thị chuẩn khung giao diện)
+            const targetTab = document.getElementById('tab-' + id);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('flex');
+            }
+            
+            // 3. Xử lý đổi màu active cho các nút ở menu điều hướng
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-sky-600', 'text-white', 'md:shadow-md');
+                if(b.id === 'nav-payment') {
+                    b.classList.add('text-emerald-500'); b.classList.remove('text-slate-400');
+                } else {
+                    b.classList.add('text-slate-400'); b.classList.remove('text-emerald-500');
+                }
+            });
+            
+            const activeBtn = document.getElementById('nav-' + id);
+            if(activeBtn) { 
+                activeBtn.classList.remove('text-slate-400', 'text-emerald-500'); 
+                activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
+            }
+
+            // 4. Đồng bộ dữ liệu mây nếu cần
+            if (id === 'reports' || id === 'orders' || id === 'dashboard') {
+                if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
+            }
+
+            // 5. Kích hoạt vẽ giao diện cho từng tab riêng biệt
+            if(id === 'reports') { 
+                updateReportMetrics(true); 
+                setTimeout(() => { 
+                    if(barChartInst) barChartInst.resize(); 
+                    if(pieChartInst) pieChartInst.resize(); 
+                    if(expReportPieInst) expReportPieInst.resize(); 
+                }, 100); 
+            }
+            if(id === 'expenses') { 
+                renderExpensesTable(); 
+                updateExpenseCharts(); 
+                setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); 
+            }
+            if(id === 'customers') {
+                renderCustomersTable(); 
+            }
+            if(id === 'payment') {
+                updateQRView(); 
+            }
+            if(id === 'dashboard') {
+                renderDashboard();
+            }
+            if(id === 'gallery') { 
+                renderGalleryCategoryTabs(); 
+                switchGalleryCategory(currentGalleryCategory); 
+            }
+            
+            // TÍNH NĂNG MỚI: Vẽ giao diện Lịch tuần khi nhân viên bấm vào tab "Cá nhân"
+            if(id === 'personal') {
+                document.getElementById('leaveStart').value = '';
+                document.getElementById('leaveEnd').value = '';
+                document.getElementById('leaveReason').value = '';
+                
+                // Gọi các hàm vẽ giao diện
+                if (typeof renderWeeklyScheduleUI === 'function') renderWeeklyScheduleUI();
+                if (typeof loadTodayTimekeeping === 'function') loadTodayTimekeeping();
+                
+                // FIX LỖI CO LỊCH: Đảm bảo lịch thực tế cũng được vẽ lại
+                if (typeof renderEmpActualCalendar === 'function') renderEmpActualCalendar();
+            }
+
+            // FIX LỖI: Vẽ lại danh sách nhân viên khi bấm vào tab Cài đặt
+            if(id === 'settings') {
+                if (state.role === 'owner' || state.role === 'manager') {
+                    if (typeof renderSettingsUsersTable === 'function') renderSettingsUsersTable();
+                }
+                if (typeof renderSettingsBrandsTable === 'function') renderSettingsBrandsTable();
+                if (typeof renderSettingsServicesTable === 'function') renderSettingsServicesTable();
+            }
+
+            // ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN
+            if(id === 'staff') {
+                if (typeof initStaffManagement === 'function') {
+                    initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
+                } else if (typeof renderMgrStaffList === 'function') {
+                    renderMgrStaffList();
+                }
+            }
+            
+            // 6. Lưu lại lịch sử tab để khi load lại trang không bị văng ra ngoài
+            localStorage.setItem('TRAM_LAST_TAB', id);
         }
-    });
-    
-    const activeBtn = document.getElementById('nav-' + id);
-    if(activeBtn) { 
-        activeBtn.classList.remove('text-slate-400', 'text-emerald-500'); 
-        activeBtn.classList.add('bg-sky-600', 'text-white', 'md:shadow-md'); 
-    }
-
-    // 4. Đồng bộ dữ liệu mây nếu cần
-    if (id === 'reports' || id === 'orders' || id === 'dashboard') {
-        if (state.currentUser && navigator.onLine && !isUploadingQueue && !isSyncingData) fetchLatestDataFromCloud(false); 
-    }
-
-    // 5. Kích hoạt vẽ giao diện cho từng tab riêng biệt
-    if(id === 'reports') { 
-        updateReportMetrics(true); 
-        setTimeout(() => { 
-            if(barChartInst) barChartInst.resize(); 
-            if(pieChartInst) pieChartInst.resize(); 
-            if(expReportPieInst) expReportPieInst.resize(); 
-        }, 100); 
-    }
-    if(id === 'expenses') { 
-        renderExpensesTable(); 
-        updateExpenseCharts(); 
-        setTimeout(() => { if(expTabPieInst) expTabPieInst.resize(); }, 100); 
-    }
-    if(id === 'customers') {
-        renderCustomersTable(); 
-    }
-    if(id === 'payment') {
-        updateQRView(); 
-    }
-    if(id === 'dashboard') {
-        renderDashboard();
-    }
-    if(id === 'gallery') { 
-        renderGalleryCategoryTabs(); 
-        switchGalleryCategory(currentGalleryCategory); 
-    }
-    
-   // 👉 TÍNH NĂNG MỚI: Vẽ giao diện Lịch tuần khi nhân viên bấm vào tab "Cá nhân"
-    if(id === 'personal') {
-        document.getElementById('leaveStart').value = '';
-        document.getElementById('leaveEnd').value = '';
-        document.getElementById('leaveReason').value = '';
-        
-        // Gọi các hàm vẽ giao diện
-        if (typeof renderWeeklyScheduleUI === 'function') renderWeeklyScheduleUI();
-        if (typeof loadTodayTimekeeping === 'function') loadTodayTimekeeping();
-        
-        // 🔥 FIX LỖI CO LỊCH: Đảm bảo lịch thực tế cũng được vẽ lại 🔥
-        if (typeof renderEmpActualCalendar === 'function') renderEmpActualCalendar();
-    }
-
-    // 👉 FIX LỖI: Vẽ lại danh sách nhân viên khi bấm vào tab Cài đặt
-    if(id === 'settings') {
-        if (state.role === 'owner' || state.role === 'manager') {
-            if (typeof renderSettingsUsersTable === 'function') renderSettingsUsersTable();
-        }
-        if (typeof renderSettingsBrandsTable === 'function') renderSettingsBrandsTable();
-        if (typeof renderSettingsServicesTable === 'function') renderSettingsServicesTable();
-    }
-
-    // 👉 ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN (ĐÃ GỘP VÀ TỐI ƯU)
-    if(id === 'staff') {
-        if (typeof initStaffManagement === 'function') {
-            initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
-        } else if (typeof renderMgrStaffList === 'function') {
-            renderMgrStaffList();
-        }
-    }
-    
-    // 6. Lưu lại lịch sử tab để khi load lại trang không bị văng ra ngoài
-    localStorage.setItem('TRAM_LAST_TAB', id);
-}
 
         // =========================================================================
         // 11.5. QUẢN LÝ KHO ẢNH (GALLERY) & GHÉP ẢNH TỰ ĐỘNG
