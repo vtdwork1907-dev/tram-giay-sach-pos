@@ -7170,19 +7170,19 @@ async function handleTimekeepingCam(e, type) {
         const { error } = await supabaseClient.from('timesheets').insert([record]);
         if (error) throw error;
 
-        // D. Hiển thị thông tin ra giao diện
+        // D. Hiển thị thông tin ra giao diện (Đã bỏ dấu ? ở innerText)
         if (type === 'in') {
             document.getElementById('tkInResult').classList.remove('hidden');
             document.getElementById('tkInResult').classList.add('flex');
             document.getElementById('tkInPhoto').src = r2Url;
-            document.getElementById('tkInLocation')?.innerText = locString;
-            document.getElementById('tkInTime')?.innerText = timeStr;
+            document.getElementById('tkInLocation').innerText = locString;
+            document.getElementById('tkInTime').innerText = timeStr;
         } else {
             document.getElementById('tkOutResult').classList.remove('hidden');
             document.getElementById('tkOutResult').classList.add('flex');
             document.getElementById('tkOutPhoto').src = r2Url;
-            document.getElementById('tkOutLocation')?.innerText = locString;
-            document.getElementById('tkOutTime')?.innerText = timeStr;
+            document.getElementById('tkOutLocation').innerText = locString;
+            document.getElementById('tkOutTime').innerText = timeStr;
             
             // Hiện thông báo hoàn thành ca
             document.getElementById('tkSuccessMsg').classList.remove('hidden');
@@ -7226,18 +7226,19 @@ async function loadTodayTimekeeping() {
             const timeObj = new Date(record.time_log || record.created_at || vnTime);
             const timeStr = timeObj.toLocaleTimeString('vi-VN');
 
+            // Đã bỏ dấu ? ở innerText
             if (record.type === 'in') {
                 document.getElementById('tkInResult').classList.remove('hidden');
                 document.getElementById('tkInResult').classList.add('flex');
                 document.getElementById('tkInPhoto').src = record.image_url;
-                document.getElementById('tkInLocation')?.innerText = record.location;
-                document.getElementById('tkInTime')?.innerText = timeStr;
+                document.getElementById('tkInLocation').innerText = record.location;
+                document.getElementById('tkInTime').innerText = timeStr;
             } else if (record.type === 'out') {
                 document.getElementById('tkOutResult').classList.remove('hidden');
                 document.getElementById('tkOutResult').classList.add('flex');
                 document.getElementById('tkOutPhoto').src = record.image_url;
-                document.getElementById('tkOutLocation')?.innerText = record.location;
-                document.getElementById('tkOutTime')?.innerText = timeStr;
+                document.getElementById('tkOutLocation').innerText = record.location;
+                document.getElementById('tkOutTime').innerText = timeStr;
                 
                 document.getElementById('tkSuccessMsg').classList.remove('hidden');
                 document.getElementById('tkSuccessMsg').classList.add('flex');
