@@ -9430,6 +9430,208 @@ async function handleRealtimeUpdate(payload) {
 
     }, 800); 
 }
+        // 1. Lưu mức lương mới vào Database
+window.saveNewSalaryRate = async function() {
+    // Lấy email của nhân viên đang được mở trong bảng cấu hình
+    const targetUsername = document.getElementById('mgrDetailUsername').innerText.trim();
+    const amountStr = document.getElementById('cfgNewSalary').value;
+    const dateStr = document.getElementById('cfgSalaryDate').value;
+
+    if (!targetUsername || targetUsername === 'email@...') return alert("Không xác định được nhân viên!");
+    if (!amountStr || !dateStr) return alert("Vui lòng nhập đủ Mức lương và Ngày áp dụng!");
+    
+    const amount = parseInt(amountStr);
+    if (amount <= 0) return alert("Mức lương phải lớn hơn 0!");
+
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang lưu cấu hình lương...';
+
+    try {
+        const record = {
+            username: targetUsername, // Lưu theo email nhân viên
+            hourly_rate: amount,
+            effective_date: dateStr
+        };
+        
+        // Đẩy lên bảng salary_history
+        const { error } = await supabaseClient.from('salary_history').insert([record]);
+        if (error) throw error;
+
+        showNotification("✅ Thành công", "Đã cập nhật mốc lương mới!");
+        document.getElementById('cfgNewSalary').value = '';
+        
+        // Tải lại danh sách lịch sử lương ngay lập tức
+        loadMgrSalaryHistory(targetUsername);
+    } catch (err) {
+        alert("Lỗi lưu lương: " + err.message);
+    } finally {
+        loading.style.display = 'none';
+    }
+};
+
+// 2. Tải và hiển thị lịch sử cấu hình lương cho Quản lý xem
+window.loadMgrSalaryHistory = async function(targetUsername) {
+    const historyBox = document.getElementById('mgrSalaryHistory');
+    if (!historyBox) return;
+    
+    historyBox.innerHTML = '<div class="text-center py-2"><i class="fa-solid fa-spinner fa-spin text-slate-400"></i></div>';
+    
+    try {
+        const { data, error } = await supabaseClient.from('salary_history')
+            .select('*')
+            .eq('username', targetUsername)
+            .order('effective_date', { ascending: false });
+
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            historyBox.innerHTML = '<div class="text-slate-400 italic text-center py-2 text-[10px]">Chưa có lịch sử cấu hình lương.</div>';
+            return;
+        }
+        
+        historyBox.innerHTML = data.map(r => `
+            <div class="flex justify-between items-center bg-white p-2 border border-slate-100 rounded-lg shadow-sm mb-1.5">
+                <div>
+                    <span class="font-bold text-emerald-600 text-xs">${r.hourly_rate.toLocaleString('vi-VN')} đ/h</span><br>
+                    <span class="text-[9px] text-slate-500 font-medium">Áp dụng từ: ${r.effective_date}</span>
+                </div>
+                <button onclick="deleteSalaryRecord('${r.id}', '${targetUsername}')" class="text-red-400 hover:text-red-600 p-1.5 bg-red-50 rounded-md transition active:scale-95"><i class="fa-solid fa-trash text-[10px]"></i></button>
+            </div>
+        `).join('');
+    } catch (e) {
+        historyBox.innerHTML = '<div class="text-red-500 text-center py-2 text-[10px]">Lỗi tải lịch sử</div>';
+    }
+};
+
+// 3. Xóa mốc lương cấu hình sai
+window.deleteSalaryRecord = async function(recordId, targetUsername) {
+    if(!confirm("Bạn chắc chắn muốn xóa mốc lương này?")) return;
+    await supabaseClient.from('salary_history').delete().eq('id', recordId);
+    loadMgrSalaryHistory(targetUsername); 
+};
+
+// Bổ sung: Gọi hàm loadMgrSalaryHistory khi Quản lý bấm mở Cấu hình
+const originalOpenMgrSettings = window.openMgrSettings;
+window.openMgrSettings = function() {
+    if (typeof originalOpenMgrSettings === 'function') originalOpenMgrSettings();
+    else {
+        document.getElementById('mgrSettingsModal')?.classList.remove('hidden');
+        setTimeout(() => document.getElementById('mgrSettingsBox')?.classList.remove('scale-95'), 10);
+    }
+    const targetUsername = document.getElementById('mgrDetailUsername').innerText.trim();
+    loadMgrSalaryHistory(targetUsername);
+};
+        // 4. Nhân viên mở Modal xem lương
+window.openEmployeeSalaryModal = function() {
+    const modal = document.getElementById('empSalaryModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => document.getElementById('empSalaryBox').classList.remove('scale-95'), 10);
+        
+        const vnTime = new Date();
+        vnTime.setMinutes(vnTime.getMinutes() - vnTime.getTimezoneOffset());
+        document.getElementById('empSalaryMonthFilter').value = vnTime.toISOString().substring(0, 7); 
+        
+        calculateEmployeeSalary(); 
+    }
+};
+
+window.closeEmployeeSalaryModal = function() {
+    document.getElementById('empSalaryBox').classList.add('scale-95');
+    setTimeout(() => {
+        document.getElementById('empSalaryModal').classList.add('hidden');
+        document.getElementById('empSalaryModal').classList.remove('flex');
+    }, 200);
+};
+
+// 5. THUẬT TOÁN TÍNH LƯƠNG CHUẨN XÁC THEO CẤU HÌNH TỪ QUẢN LÝ
+window.calculateEmployeeSalary = async function() {
+    const monthFilter = document.getElementById('empSalaryMonthFilter').value;
+    if (!monthFilter || !state.currentUser || !navigator.onLine) return;
+    
+    document.getElementById('empTotalHours').innerText = 'Đang tính...';
+    document.getElementById('empTotalSalary').innerText = 'Đang tính...';
+    document.getElementById('empSalaryHistoryList').innerHTML = '<div class="text-center py-2"><i class="fa-solid fa-spinner fa-spin text-slate-400"></i></div>';
+
+    try {
+        const [year, month] = monthFilter.split('-');
+        const startDate = `${year}-${month}-01`;
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+        // BƯỚC A: KÉO CẤU HÌNH LƯƠNG TỪ BẢNG salary_history DO CHỦ ĐÃ CÀI ĐẶT
+        const { data: salaryData } = await supabaseClient.from('salary_history')
+            .select('*')
+            .eq('username', state.currentUser.username)
+            .lte('effective_date', endDate) // Lấy các mốc có hiệu lực tính đến cuối tháng này
+            .order('effective_date', { ascending: false });
+
+        let currentRate = 0;
+        const historyListEl = document.getElementById('empSalaryHistoryList');
+
+        if (!salaryData || salaryData.length === 0) {
+            historyListEl.innerHTML = '<div class="text-amber-600 font-medium text-center py-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">Chưa được cấu hình lương.<br>Vui lòng liên hệ Quản lý để cài đặt.</div>';
+            document.getElementById('empTotalHours').innerText = '0h';
+            document.getElementById('empTotalSalary').innerText = '0 đ';
+            return; // Dừng lại vì chưa có lương cơ bản
+        } else {
+            currentRate = salaryData[0].hourly_rate; // Lấy mốc cấu hình mới nhất (ở trên cùng)
+            historyListEl.innerHTML = salaryData.map(r => `
+                <div class="flex justify-between items-center bg-slate-50 p-2.5 border border-slate-200 rounded-xl shadow-inner mb-1.5">
+                    <span class="text-slate-600 font-bold text-[10px] md:text-xs"><i class="fa-solid fa-clock-rotate-left mr-1 text-sky-500"></i> Từ ngày ${r.effective_date}</span>
+                    <span class="font-extrabold text-emerald-600 text-xs md:text-sm">${r.hourly_rate.toLocaleString('vi-VN')} đ/h</span>
+                </div>
+            `).join('');
+        }
+
+        // BƯỚC B: TÍNH TỔNG GIỜ LÀM VIỆC TỪ BẢNG CHẤM CÔNG
+        const { data: timesheets } = await supabaseClient.from('timesheets')
+            .select('*')
+            .eq('username', state.currentUser.username)
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('created_at', { ascending: true });
+            
+        let totalHours = 0;
+        let recordsByDate = {};
+        
+        if (timesheets) {
+            timesheets.forEach(r => {
+                if (!recordsByDate[r.date]) recordsByDate[r.date] = [];
+                recordsByDate[r.date].push(r);
+            });
+        }
+        
+        for (let d in recordsByDate) {
+            const dayRecords = recordsByDate[d];
+            const inRecord = dayRecords.find(r => r.type === 'in');
+            const outRecord = dayRecords.find(r => r.type === 'out');
+            
+            // Ép buộc phải có đủ Giờ Đến và Giờ Về mới được tính tiền
+            if (inRecord && outRecord) {
+                const timeIn = new Date(inRecord.time_log || inRecord.created_at);
+                const timeOut = new Date(outRecord.time_log || outRecord.created_at);
+                const diffMs = timeOut - timeIn;
+                
+                if (diffMs > 0) {
+                    totalHours += diffMs / (1000 * 60 * 60); // Đổi từ mili-giây sang giờ thập phân
+                }
+            }
+        }
+        
+        // BƯỚC C: HIỂN THỊ KẾT QUẢ THÀNH TIỀN LÊN GIAO DIỆN
+        document.getElementById('empTotalHours').innerText = totalHours.toFixed(2) + 'h';
+        const finalSalary = Math.round(totalHours * currentRate);
+        document.getElementById('empTotalSalary').innerText = finalSalary.toLocaleString('vi-VN') + ' đ';
+        
+    } catch (e) {
+        console.error("Lỗi tính lương:", e);
+        document.getElementById('empTotalHours').innerText = 'Lỗi';
+        document.getElementById('empTotalSalary').innerText = 'Lỗi';
+        showNotification("❌ Lỗi", "Không thể lấy dữ liệu tính lương lúc này.");
+    }
+};
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
