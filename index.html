@@ -4864,18 +4864,24 @@ actionColumn += `</div>`; // Đóng thẻ div actionColumn
             await dbUpdateOrder(orderId); 
         }
         
-        async function deleteOrder(id) { 
-            if(confirm("Xóa vĩnh viễn đơn hàng này?")) { 
-                const orderToDelete = state.orders.find(x => x.id === id); 
-                if (orderToDelete) { 
-                    const allImages = [...(orderToDelete.images || []), ...(orderToDelete.imagesAfter || [])]; 
-                    allImages.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); }); 
-                } 
-                state.orders = state.orders.filter(x => x.id !== id); 
-                await dbDeleteOrder(id); 
-                renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); 
-            } 
-        }
+       async function deleteOrder(id) { 
+    // Khóa cấp 1: Chặn ngay trên giao diện
+    if (state.role === 'staff') {
+        showNotification("Tài khoản nhân viên không có quyền xóa đơn hàng!");
+        return;
+    }
+
+    if(confirm("Xóa vĩnh viễn đơn hàng này?")) { 
+        const orderToDelete = state.orders.find(x => x.id === id); 
+        if (orderToDelete) { 
+            const allImages = [...(orderToDelete.images || []), ...(orderToDelete.imagesAfter || [])]; 
+            allImages.forEach(imgUrl => { if (imgUrl && imgUrl.startsWith('http')) deleteFileFromR2(imgUrl); }); 
+        } 
+        state.orders = state.orders.filter(x => x.id !== id); 
+        await dbDeleteOrder(id); 
+        renderOrdersTable(); renderCustomersTable(); updateReportMetrics(); renderDashboard(); 
+    } 
+}
         
         async function moveAfterImage(orderId, slotIdx, dir) { 
             const o = state.orders.find(x => x.id === orderId); 
