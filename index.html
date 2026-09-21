@@ -6529,22 +6529,53 @@ function initSwipeToCloseModals() {
         // =========================================================================
 
         // 1. Chuyển đổi giữa các Sub-tab trong mục Cá Nhân
-        function switchPersonalSubTab(tabId) {
-            // Đặt lại nút
-            const btns = ['timekeep', 'schedule', 'leave'];
-            btns.forEach(id => {
-                const btn = document.getElementById('btn-sub-' + id);
-                btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
-                document.getElementById('sub-' + id).classList.add('hidden');
-                document.getElementById('sub-' + id).classList.remove('flex');
-            });
-            
-            // Active nút hiện tại
-            const activeBtn = document.getElementById('btn-sub-' + tabId);
-            activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
-            document.getElementById('sub-' + tabId).classList.remove('hidden');
-            document.getElementById('sub-' + tabId).classList.add('flex');
+       function switchPersonalSubTab(tabId) {
+    // 1. CHỐT CHẶN BẢO VỆ: Bấm vào tab chấm công mà không có lịch -> Đá văng ra
+    if (tabId === 'timekeep' && !isScheduledToday) {
+        showNotification("🔒 Chức năng bị khóa", "Bạn không có lịch làm việc đăng ký vào ngày hôm nay nên không thể chấm công.");
+        return; 
+    }
+
+    // Đặt lại tất cả các nút
+    const btns = ['timekeep', 'schedule', 'leave'];
+    btns.forEach(id => {
+        const btn = document.getElementById('btn-sub-' + id);
+        if (btn) {
+            btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
         }
+        
+        const content = document.getElementById('sub-' + id);
+        if (content) {
+            content.classList.add('hidden');
+            content.classList.remove('flex');
+            // Gỡ class chia 2 cột của PC khi ẩn tab lịch
+            if (id === 'schedule') content.classList.remove('lg:flex-row');
+        }
+    });
+    
+    // Kích hoạt (Active) nút được chọn
+    const activeBtn = document.getElementById('btn-sub-' + tabId);
+    if (activeBtn) {
+        activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
+    }
+    
+    const activeContent = document.getElementById('sub-' + tabId);
+    if (activeContent) {
+        activeContent.classList.remove('hidden');
+        activeContent.classList.add('flex');
+        // Phục hồi class chia 2 cột của PC khi bật tab lịch
+        if (tabId === 'schedule') activeContent.classList.add('lg:flex-row');
+    }
+
+    // 2. ÉP LẠI MÀU GIAO DIỆN KHÓA NẾU KHÔNG CÓ LỊCH
+    // (Vì vòng lặp ở trên đã lỡ reset lại class của nút timekeep)
+    if (!isScheduledToday) {
+        const timekeepBtn = document.getElementById('btn-sub-timekeep');
+        if (timekeepBtn) {
+            timekeepBtn.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+        }
+    }
+}
         // =========================================================================
         // JAVASCRIPT: BẢNG ĐĂNG KÝ TUẦN & LỊCH CÁ NHÂN (GIỐNG IPHONE)
         // =========================================================================
