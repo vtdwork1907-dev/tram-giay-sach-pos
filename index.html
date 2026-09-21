@@ -6528,50 +6528,46 @@ function initSwipeToCloseModals() {
         // =========================================================================
 
         // 1. Chuyển đổi giữa các Sub-tab trong mục Cá Nhân
-       function switchPersonalSubTab(tabId) {
-    // 1. CHỐT CHẶN BẢO VỆ: Bấm vào tab chấm công mà không có lịch -> Đá văng ra
+      function switchPersonalSubTab(tabId) {
+    // 1. Chốt chặn: Bấm vào chấm công mà không có lịch -> Đá văng
     if (tabId === 'timekeep' && !isScheduledToday) {
         showNotification("🔒 Chức năng bị khóa", "Bạn không có lịch làm việc đăng ký vào ngày hôm nay nên không thể chấm công.");
         return; 
     }
 
-    // Đặt lại tất cả các nút
+    // 2. Đặt lại tất cả các nút và ẩn các tab
     const btns = ['timekeep', 'schedule', 'leave'];
     btns.forEach(id => {
         const btn = document.getElementById('btn-sub-' + id);
-        if (btn) {
-            btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
-        }
+        if (btn) btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
         
         const content = document.getElementById('sub-' + id);
         if (content) {
             content.classList.add('hidden');
-            content.classList.remove('flex');
-            // Gỡ class chia 2 cột của PC khi ẩn tab lịch
-            if (id === 'schedule') content.classList.remove('lg:flex-row');
+            content.classList.remove('flex', 'lg:flex-row');
         }
     });
     
-    // Kích hoạt (Active) nút được chọn
+    // 3. Kích hoạt nút và tab được chọn
     const activeBtn = document.getElementById('btn-sub-' + tabId);
-    if (activeBtn) {
-        activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
-    }
+    if (activeBtn) activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5";
     
     const activeContent = document.getElementById('sub-' + tabId);
     if (activeContent) {
         activeContent.classList.remove('hidden');
         activeContent.classList.add('flex');
-        // Phục hồi class chia 2 cột của PC khi bật tab lịch
         if (tabId === 'schedule') activeContent.classList.add('lg:flex-row');
     }
 
-    // 2. ÉP LẠI MÀU GIAO DIỆN KHÓA NẾU KHÔNG CÓ LỊCH
-    // (Vì vòng lặp ở trên đã lỡ reset lại class của nút timekeep)
+    // 4. Ép lại màu nút chấm công nếu bị khóa
     if (!isScheduledToday) {
-        const timekeepBtn = document.getElementById('btn-sub-timekeep');
-        if (timekeepBtn) {
-            timekeepBtn.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+        document.getElementById('btn-sub-timekeep')?.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+    }
+
+    // 🔥 FIX LỖI CO LỊCH: GỌI HÀM VẼ LỊCH NGAY KHI MỞ TAB NÀY 🔥
+    if (tabId === 'schedule') {
+        if (typeof renderEmpActualCalendar === 'function') {
+            renderEmpActualCalendar();
         }
     }
 }
