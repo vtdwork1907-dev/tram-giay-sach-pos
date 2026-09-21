@@ -9115,26 +9115,47 @@ function initRealtimeSync() {
 }
 
 let realtimeDebounceTimer = null;
+let accumulatedEvents = []; // MẢNG LƯU TRỮ CÁC SỰ KIỆN TRONG 0.8s ĐỂ KHÔNG BỊ "NUỐT"
 
 async function handleRealtimeUpdate(payload) {
     if (!payload) return;
+
+    // Gom loại sự kiện vào mảng để kiểm tra (INSERT, UPDATE, DELETE)
+    if (payload.eventType) accumulatedEvents.push(payload.eventType);
 
     // Kỹ thuật Debounce: Chờ 0.8s để gom nhóm các tín hiệu gửi lên cùng lúc
     clearTimeout(realtimeDebounceTimer);
     
     realtimeDebounceTimer = setTimeout(async () => {
+        // Kiểm tra xem trong 0.8s qua có bất kỳ hành động THÊM hoặc SỬA nào không
+        const hasInsertOrUpdate = accumulatedEvents.includes('INSERT') || accumulatedEvents.includes('UPDATE');
+        
+        // Reset mảng để dùng cho lần sau
+        accumulatedEvents = []; 
         
         // 1. DÀNH CHO CHỦ / QUẢN LÝ
         if (state.role === 'manager' || state.role === 'owner') {
-            // Chỉ cần bảng schedules có bất kỳ rung động nào (nhân viên gửi lịch, bỏ lịch), ép UI tải lại
-            if (payload.table === 'schedules') {
+            if (payload.table === 'schedules' || payload.table === 'timesheets') {
+                
+                // Gọi hàm làm mới danh sách chờ duyệt ngầm
                 if (typeof forceRefreshPendingApprovals === 'function') {
                     await forceRefreshPendingApprovals();
                 }
                 
-                // Nếu là hành động INSERT (Thêm mới) hoặc UPDATE, nảy thông báo (Bỏ qua hành động DELETE để đỡ phiền)
-                if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                    showNotification("🔔 LỊCH ĐÃ THAY ĐỔI", "Nhân viên vừa cập nhật đăng ký lịch. Dữ liệu đã tự động đồng bộ!");
+                // Chỉ thông báo nếu có đơn mới hoặc sửa (bỏ qua lúc nhân viên xóa lịch)
+                if (hasInsertOrUpdate && payload.table === 'schedules') {
+                    showNotification("🔔 CÓ YÊU CẦU MỚI", "Nhân viên vừa gửi / cập nhật đăng ký lịch tuần!");
+                    
+                    // BẬT CHẤM ĐỎ VÀ TẠO HIỆU ỨNG NẢY (BOUNCE) TỨC THÌ TRÊN MENU
+                    const badge = document.getElementById('mgrPendingCount');
+                    if (badge) {
+                        badge.classList.remove('hidden');
+                        
+                        // Nếu forceRefreshPendingApprovals đã cập nhật số rồi thì bỏ qua cộng dồn, 
+                        // chỉ cần làm cho nó nhảy lên để gây chú ý
+                        badge.classList.add('animate-bounce');
+                        setTimeout(() => badge.classList.remove('animate-bounce'), 3000);
+                    }
                 }
             }
         } 
@@ -9142,15 +9163,20 @@ async function handleRealtimeUpdate(payload) {
         // 2. DÀNH CHO NHÂN VIÊN
         else if (state.role === 'staff') {
             if (payload.table === 'schedules') {
-                const wasLockedBefore = isEmployeeLocked; 
-                await checkEmployeeLockdown();
+                const wasLockedBefore = typeof isEmployeeLocked !== 'undefined' ? isEmployeeLocked : false; 
                 
-                // Phát hiện trạng thái MỞ KHÓA
-                if (wasLockedBefore && !isEmployeeLocked) {
-                    showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được Quản lý duyệt. Các chức năng đã MỞ KHÓA!");
+                if (typeof checkEmployeeLockdown === 'function') {
+                    await checkEmployeeLockdown();
                 }
                 
-                if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
+                // Phát hiện trạng thái MỞ KHÓA (Quản lý vừa duyệt lịch xong)
+                if (wasLockedBefore && (typeof isEmployeeLocked !== 'undefined' && !isEmployeeLocked)) {
+                    showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được duyệt. Các chức năng đã MỞ KHÓA!");
+                }
+                
+                if (typeof renderEmployeeActualCalendar === 'function') {
+                    await renderEmployeeActualCalendar();
+                }
             }
         }
 
