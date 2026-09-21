@@ -8337,29 +8337,41 @@ async function handleLeaveApproval(leaveId, status) {
 
 // C. DUYỆT LỊCH LÀM VIỆC
 async function handleScheduleApproval(username, status) {
-    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ các lịch chờ duyệt này?")) return;
+    if (!confirm(status === 'approved' ? "Chốt toàn bộ lịch tuần của nhân viên này?" : "Xóa bỏ (Từ chối) các lịch chờ duyệt này?")) return;
 
     const loading = document.getElementById('globalLoading');
-    loading.style.display = 'flex';
+    if(loading) {
+        loading.style.display = 'flex';
+        loading.querySelector('.text-sm').innerText = 'Đang xử lý...';
+    }
 
     try {
         if (status === 'rejected') {
-            // Xóa bỏ tất cả các dòng lịch đang ở trạng thái pending CỦA USERNAME NÀY (Bất kể tài khoản còn tồn tại hay đã bị xóa khỏi bảng users)
-            const { error } = await supabaseClient.from('schedules').delete().eq('username', username).eq('status', 'pending');
+            // XÓA BỎ: Quét sạch các ca đang pending của nhân viên này
+            const { error } = await supabaseClient.from('schedules')
+                .delete()
+                .eq('username', username)
+                .eq('status', 'pending');
             if (error) throw error;
         } else {
-            // Chuyển status thành approved
-            const { error } = await supabaseClient.from('schedules').update({ status: 'approved' }).eq('username', username).eq('status', 'pending');
+            // CHỐT LỊCH: Chuyển thành approved
+            const { error } = await supabaseClient.from('schedules')
+                .update({ status: 'approved' })
+                .eq('username', username)
+                .eq('status', 'pending');
             if (error) throw error;
         }
 
-        showNotification("Thành công", "Đã xử lý lịch làm việc!");
-        await initStaffManagement();
+        alert(status === 'approved' ? "✅ Đã duyệt lịch thành công!" : "🗑️ Đã từ chối và xóa bỏ lịch chờ duyệt!");
+        
+        // BẮT BUỘC TẢI LẠI DỮ LIỆU ĐỂ LÀM SẠCH GIAO DIỆN
+        await forceRefreshPendingApprovals();
 
     } catch (err) {
-        alert("Lỗi: " + err.message);
+        console.error("Lỗi duyệt lịch:", err);
+        alert("❌ Lỗi hệ thống: " + err.message);
     } finally {
-        loading.style.display = 'none';
+        if(loading) loading.style.display = 'none';
     }
 }
         // =========================================================================
