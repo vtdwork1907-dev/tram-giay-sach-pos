@@ -6609,9 +6609,6 @@ function initSwipeToCloseModals() {
 
        // HÀM GỬI/CẬP NHẬT ĐĂNG KÝ LỊCH TUẦN CỦA NHÂN VIÊN
 async function submitWeeklySchedule() {
-    // Nếu nút chạy được vào đây, thông báo này sẽ hiện lên ĐẦU TIÊN
-    console.log("Hệ thống đã nhận lệnh bấm nút!");
-    
     if (!navigator.onLine) {
         alert("Vui lòng kết nối mạng để gửi lịch!");
         return;
@@ -6621,74 +6618,70 @@ async function submitWeeklySchedule() {
     if (loading) {
         loading.style.display = 'flex';
         const loadingText = loading.querySelector('.text-sm');
-        if (loadingText) loadingText.innerText = 'Đang xử lý...';
+        if (loadingText) loadingText.innerText = 'Đang xử lý lịch...';
     }
 
     try {
         const tbody = document.getElementById('weeklyScheduleBody');
-        if (!tbody) {
-            alert("LỖI: Không tìm thấy bảng lịch trên màn hình!");
-            return;
-        }
+        if (!tbody) throw new Error("Không tìm thấy bảng lịch trên màn hình!");
 
         const rows = tbody.querySelectorAll('tr');
-        if (rows.length === 0) {
-            alert("LỖI: Bảng lịch chưa có dữ liệu!");
-            return;
-        }
+        if (rows.length === 0) throw new Error("Bảng lịch chưa có dữ liệu!");
 
-        let schedulesToInsert = [];
-        const startDate = rows[0].getAttribute('data-date');
-        const endDate = rows[rows.length - 1].getAttribute('data-date');
+        let schedulesToUpsert = [];
+        let datesToDelete = []; // Danh sách các ngày bị bỏ tick để xóa
 
         rows.forEach(row => {
             const dateStr = row.getAttribute('data-date');
-            if (!dateStr) return; // Bỏ qua nếu lỗi HTML
+            if (!dateStr) return; 
             
             const cb1 = row.querySelector('.shift1-cb');
             const cb2 = row.querySelector('.shift2-cb');
             
-            // Check an toàn đề phòng bị null
             const s1 = cb1 ? cb1.checked : false;
             const s2 = cb2 ? cb2.checked : false;
 
             if (s1 || s2) {
-                schedulesToInsert.push({
+                // Nếu có tick ít nhất 1 ca -> Đưa vào danh sách Thêm/Sửa
+                schedulesToUpsert.push({
                     username: state.currentUser.username,
                     date: dateStr,
                     shift_1: s1,
                     shift_2: s2,
-                    status: 'pending', 
+                    status: 'pending', // Sửa lịch thì phải về pending cho sếp duyệt lại
                     daily_status: 'waiting'
                 });
+            } else {
+                // Nếu không tick ca nào -> Đưa vào danh sách Xóa
+                datesToDelete.push(dateStr);
             }
         });
 
-        // Xóa sạch lịch chưa đi làm của tuần đó trước khi ghi đè lịch mới
-        if (startDate && endDate) {
-            await supabaseClient.from('schedules')
+        // 1. XÓA các ngày nhân viên bỏ tick (Không đi làm nữa)
+        if (datesToDelete.length > 0) {
+            const { error: deleteErr } = await supabaseClient.from('schedules')
                 .delete()
                 .eq('username', state.currentUser.username)
-                .gte('date', startDate)
-                .lte('date', endDate)
-                .eq('daily_status', 'waiting');
+                .in('date', datesToDelete);
+            if (deleteErr) throw deleteErr;
         }
 
-        // Ghi lịch mới vào Database
-        if (schedulesToInsert.length > 0) {
-            const { error: insertErr } = await supabaseClient.from('schedules').insert(schedulesToInsert);
-            if (insertErr) throw insertErr;
+        // 2. UPSERT (Thêm mới hoặc Cập nhật) các ngày có tick ca
+        if (schedulesToUpsert.length > 0) {
+            // onConflict: Nếu trùng username và date thì tự động Update thay vì báo lỗi
+            const { error: upsertErr } = await supabaseClient.from('schedules')
+                .upsert(schedulesToUpsert, { onConflict: 'username,date' });
+            if (upsertErr) throw upsertErr;
         }
 
-        // Hiện thông báo bằng Alert mặc định (không thể bị đơ)
-        alert("✅ Đã gửi đăng ký lịch thành công! Vui lòng chờ Quản lý phê duyệt.");
+        alert("✅ Đã gửi đăng ký lịch thành công! Hệ thống đang chờ Quản lý phê duyệt.");
 
-        // Khóa màn hình & Tải lại lịch thực tế
+        // Khóa màn hình & Tải lại lịch
         if (typeof checkEmployeeLockdown === 'function') await checkEmployeeLockdown();
         if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
 
     } catch (err) {
-        alert("❌ Đã xảy ra lỗi hệ thống: " + err.message);
+        alert("❌ Lỗi hệ thống: " + err.message);
     } finally {
         if (loading) loading.style.display = 'none';
     }
