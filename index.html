@@ -9522,13 +9522,18 @@ window.openMgrSettings = function() {
     const targetUsername = document.getElementById('mgrDetailUsername').innerText.trim();
     loadMgrSalaryHistory(targetUsername);
 };
-        // 4. Nhân viên mở Modal xem lương
+       // 4. Nhân viên mở Modal xem lương
 window.openEmployeeSalaryModal = function() {
     const modal = document.getElementById('empSalaryModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        setTimeout(() => document.getElementById('empSalaryBox').classList.remove('scale-95'), 10);
+        
+        // SỬA LỖI ĐƠ APP: Gỡ lớp tàng hình (opacity-0) để Modal hiện rõ ra
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('empSalaryBox')?.classList.remove('scale-95');
+        }, 10);
         
         const vnTime = new Date();
         vnTime.setMinutes(vnTime.getMinutes() - vnTime.getTimezoneOffset());
@@ -9538,12 +9543,19 @@ window.openEmployeeSalaryModal = function() {
     }
 };
 
+// Hàm đóng Modal
 window.closeEmployeeSalaryModal = function() {
-    document.getElementById('empSalaryBox').classList.add('scale-95');
-    setTimeout(() => {
-        document.getElementById('empSalaryModal').classList.add('hidden');
-        document.getElementById('empSalaryModal').classList.remove('flex');
-    }, 200);
+    const modal = document.getElementById('empSalaryModal');
+    document.getElementById('empSalaryBox')?.classList.add('scale-95');
+    
+    if (modal) {
+        // Làm mờ đi trước khi ẩn hẳn
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 200);
+    }
 };
 
 // 5. THUẬT TOÁN TÍNH LƯƠNG CHUẨN XÁC THEO CẤU HÌNH TỪ QUẢN LÝ
