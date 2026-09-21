@@ -1591,7 +1591,7 @@ async function fetchLatestDataFromCloud(isLogin = false) {
 
         function updateSyncBadgeUI() {
             const badge = document.getElementById('syncBadge'); if(!badge) return;
-            const text = document.getElementById('syncBadgeText');
+          document.getElementById('syncBadgeText')?.innerText = `Đang tải ${pendingUploads} ảnh...`;
             const spinner = document.getElementById('syncBadgeSpinner');
             const icon = document.getElementById('syncBadgeIcon');
             
