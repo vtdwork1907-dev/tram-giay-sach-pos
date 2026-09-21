@@ -9105,32 +9105,34 @@ async function renderEmployeeActualCalendar() {
    // ==========================================================
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
+let myPosChannel = null; // Biến giữ kênh kết nối
+
 function initRealtimeSync() {
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
-    supabaseClient.removeAllChannels();
-    const posChannel = supabaseClient.channel('pos-realtime');
+    // Nếu đã có kênh rồi thì hủy kênh cũ an toàn trước khi tạo mới
+    if (myPosChannel) {
+        supabaseClient.removeChannel(myPosChannel);
+    }
+
+    myPosChannel = supabaseClient.channel('pos-room-v1'); // Đổi tên kênh mới
     
-    posChannel
+    myPosChannel
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
             console.log("🔥 [REALTIME] Đơn hàng thay đổi:", payload);
             if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            console.log("🔥 [REALTIME] Lịch làm thay đổi:", payload);
-            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
-            console.log("🔥 [REALTIME] Chấm công thay đổi:", payload);
-            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
-        })
+        // Tạm thời chỉ test 1 bảng orders cho an toàn
         .subscribe((status, err) => {
             console.log("📡 [REALTIME] Trạng thái kênh:", status);
+            
             if (status === 'SUBSCRIBED') {
-                console.log("✅ [REALTIME] Kết nối thành công! Đã thông ống với Supabase.");
+                console.log("✅ [REALTIME] KẾT NỐI THÀNH CÔNG!");
             }
+            
             if (status === 'CHANNEL_ERROR') {
-                console.error("❌ [REALTIME] Vẫn bị từ chối kết nối. Nguyên nhân 99% do RLS chặn.", err);
+                console.error("❌ [REALTIME] Bị từ chối kết nối. Thử lại sau 5s...");
+                myPosChannel = null;
                 setTimeout(initRealtimeSync, 5000);
             }
         });
