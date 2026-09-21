@@ -9104,18 +9104,27 @@ async function renderEmployeeActualCalendar() {
 function initRealtimeSync() {
     if (!supabaseClient || !state.currentUser) return;
     
+    // Đóng các kênh cũ để tránh trùng lặp nếu gọi nhiều lần
     supabaseClient.removeAllChannels();
     const posChannel = supabaseClient.channel('pos-realtime');
     
-    // Bắt sóng MỌI THAY ĐỔI (Thêm, Sửa, Xóa) trên bảng schedules
+    // Bắt sóng thay đổi
     posChannel
         .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+            console.log("🔥 [REALTIME] Có dữ liệu mới từ bảng schedules:", payload); // Log ra để kiểm tra
             handleRealtimeUpdate(payload);
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
+            console.log("🔥 [REALTIME] Có dữ liệu mới từ bảng timesheets:", payload);
             handleRealtimeUpdate(payload);
         })
-        .subscribe();
+        .subscribe((status) => {
+            // Kiểm tra xem trình duyệt đã thực sự cắm được ống nghe vào Supabase chưa
+            console.log("📡 [REALTIME] Trạng thái kênh:", status);
+            if (status === 'SUBSCRIBED') {
+                console.log("✅ [REALTIME] Sẵn sàng nhận thông báo!");
+            }
+        });
 }
 
 let realtimeDebounceTimer = null;
