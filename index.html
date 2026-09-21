@@ -3271,9 +3271,13 @@ function mapOrderDbToJs(db) {
             document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name); 
             changeRole(activeUser.role);
             
-            // 👉 LỆNH THÊM MỚI: Ép tải toàn bộ dữ liệu (Đơn, Chi phí, User) khi F5 tải lại trang
-            fetchLatestDataFromCloud(true);
+            // 👇 THÊM ĐOẠN CODE NÀY VÀO ĐÂY ĐỂ BẬT REALTIME KHI TỰ ĐỘNG ĐĂNG NHẬP 👇
+            if (typeof initRealtimeSync === 'function') {
+                initRealtimeSync();
+            }
+            // 👆 KẾT THÚC ĐOẠN THÊM MỚI 👆
 
+            fetchLatestDataFromCloud(true);
         } else {
             document.getElementById('authScreen').style.display = 'flex';
             setTimeout(() => document.getElementById('authScreen').classList.remove('opacity-0'), 10);
