@@ -9119,43 +9119,40 @@ let lastRealtimeAction = '';
 async function handleRealtimeUpdate(payload) {
     if (!payload) return;
 
-    // Bắt lấy trạng thái mới nhất từ Database đẩy về
     if (payload.new && payload.new.status) {
         lastRealtimeAction = payload.new.status; 
     }
 
-    // Xóa bộ đếm cũ nếu có tín hiệu mới tràn về liên tục
     clearTimeout(realtimeDebounceTimer);
     
-    // Đợi 0.8 giây sau khi tín hiệu cuối cùng kết thúc mới thực thi
     realtimeDebounceTimer = setTimeout(async () => {
         
         // 1. DÀNH CHO CHỦ / QUẢN LÝ
         if (state.role === 'manager' || state.role === 'owner') {
-            // Nếu có nhân viên đẩy lịch lên ở trạng thái 'pending'
-            if (payload.table === 'schedules' && lastRealtimeAction === 'pending') {
-                showNotification("🔔 CÓ LỊCH LÀM MỚI", "Nhân viên vừa cập nhật đăng ký lịch tuần. Vui lòng kiểm tra tab Nhân Viên!");
+            
+            // DÙ NHÂN VIÊN THÊM, SỬA HAY XÓA BỚT CA, ĐỀU ÉP GIAO DIỆN TẢI LẠI REALTIME
+            if (payload.table === 'schedules') {
+                await forceRefreshPendingApprovals(); // Gọi tuyệt chiêu làm mới
+                
+                // Chỉ nảy thông báo nếu là hành động tạo mới/sửa thành pending
+                if (lastRealtimeAction === 'pending') {
+                    showNotification("🔔 LỊCH ĐÃ THAY ĐỔI", "Nhân viên vừa cập nhật đăng ký lịch. Dữ liệu đã được tự động làm mới!");
+                }
+            } else {
+                if (typeof initStaffManagement === 'function') await initStaffManagement();
             }
-            // Tự động tải lại danh sách phê duyệt ngầm
-            if (typeof initStaffManagement === 'function') await initStaffManagement();
         } 
         
         // 2. DÀNH CHO NHÂN VIÊN
         else if (state.role === 'staff') {
             if (payload.table === 'schedules') {
-                // Lưu lại trạng thái khóa màn hình TRƯỚC KHI cập nhật
                 const wasLockedBefore = isEmployeeLocked; 
-                
-                // Chạy hàm kiểm tra xem Sếp đã duyệt chưa
                 await checkEmployeeLockdown();
                 
-                // Nếu TRƯỚC ĐÓ đang bị khóa, và BÂY GIỜ đã được mở khóa (Nghĩa là Sếp vừa bấm duyệt)
                 if (wasLockedBefore && !isEmployeeLocked) {
                     showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được Quản lý duyệt. Các tính năng làm việc đã MỞ KHÓA ngay lập tức!");
                 }
-                // Nếu bị Sếp xóa lịch (từ chối) -> App vẫn sẽ bị khóa và báo đỏ theo logic hàm checkEmployeeLockdown()
                 
-                // Cập nhật lại lịch thực tế (Màu chấm vàng / Xanh lá)
                 if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
             }
         }
