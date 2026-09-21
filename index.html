@@ -9432,54 +9432,50 @@ async function handleRealtimeUpdate(payload) {
 }
         // 1. Lưu mức lương mới vào Database
 window.saveNewSalaryRate = async function() {
-    // Dùng textContent để lấy chữ an toàn hơn kể cả khi thẻ bị ẩn
     const targetUsername = document.getElementById('mgrDetailUsername').textContent.trim();
     const amountStr = document.getElementById('cfgNewSalary').value;
     const dateStr = document.getElementById('cfgSalaryDate').value;
 
-    if (!targetUsername || targetUsername === 'email@...') {
-        return alert("Vui lòng bấm chọn một nhân viên cụ thể ở màn hình trước khi thiết lập cấu hình!");
-    }
-    if (!amountStr || !dateStr) {
-        return alert("Vui lòng nhập đầy đủ Mức lương và Ngày áp dụng!");
-    }
+    if (!targetUsername || targetUsername === 'email@...') return alert("Vui lòng chọn nhân viên!");
+    if (!amountStr || !dateStr) return alert("Vui lòng nhập đủ Mức lương và Ngày áp dụng!");
     
     const amount = parseInt(amountStr);
     if (amount <= 0) return alert("Mức lương phải lớn hơn 0!");
 
     const loading = document.getElementById('globalLoading');
-    if(loading) {
+    if (loading) {
         loading.style.display = 'flex';
         loading.querySelector('.text-sm').innerText = 'Đang lưu cấu hình lương...';
     }
 
     try {
         const record = {
-            id: Date.now(), // Bổ sung ID thủ công phòng trường hợp bảng Supabase không tự tăng ID
+            id: Math.floor(Math.random() * 2000000000), 
             username: targetUsername,
             hourly_rate: amount,
-            effective_date: dateStr
+            effective_date: dateStr,
+            apply_date: dateStr, // <-- Đã thêm dòng này để trị dứt điểm lỗi của cột cũ
+            work_type: 'hourly'
         };
         
         // Đẩy lên Supabase
         const { error } = await supabaseClient.from('salary_history').insert([record]);
         
         if (error) {
-            console.error("Lỗi Supabase:", error);
-            throw new Error(error.message || "Bị từ chối (Kiểm tra lại tên cột hoặc RLS).");
+            throw new Error(error.message);
         }
 
         showNotification("✅ Thành công", "Đã cập nhật mốc lương mới!");
         document.getElementById('cfgNewSalary').value = '';
         
-        // Tải lại danh sách lịch sử lương ngay lập tức
+        // Tải lại danh sách lịch sử
         if (typeof loadMgrSalaryHistory === 'function') {
             loadMgrSalaryHistory(targetUsername);
         }
     } catch (err) {
         alert("❌ Lỗi không thể lưu: " + err.message);
     } finally {
-        if(loading) loading.style.display = 'none';
+        if (loading) loading.style.display = 'none';
     }
 };
 
