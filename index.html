@@ -9106,29 +9106,56 @@ async function renderEmployeeActualCalendar() {
    // ==========================================================
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
-let myPosChannel = null; // Biến giữ kênh kết nối
+let myPosChannel = null; // Biến toàn cục giữ kênh kết nối
 
 function initRealtimeSync() {
+    // Chặn kết nối nếu mất mạng hoặc chưa đăng nhập
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
-    // Nếu đã có kênh rồi thì hủy kênh cũ an toàn trước khi tạo mới
+    // Dọn dẹp kênh cũ để chống gọi đè (chống lỗi WebSocket is closed...)
     if (myPosChannel) {
         supabaseClient.removeChannel(myPosChannel);
     }
 
-    myPosChannel = supabaseClient.channel('pos-room-v1'); // Đổi tên kênh mới
+    myPosChannel = supabaseClient.channel('pos-master-channel'); // Đặt 1 tên kênh duy nhất
     
     myPosChannel
+        // 1. Lắng nghe Đơn hàng
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-            console.log("🔥 [REALTIME] Đơn hàng thay đổi:", payload);
+            console.log("🔥 [REALTIME] Đơn hàng:", payload);
             if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
         })
-        // Tạm thời chỉ test 1 bảng orders cho an toàn
+        // 2. Lắng nghe Chi phí
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, payload => {
+            console.log("🔥 [REALTIME] Chi phí:", payload);
+            if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
+        })
+        // 3. Lắng nghe Nhân sự (Users)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+            console.log("🔥 [REALTIME] Nhân viên:", payload);
+            if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
+        })
+        // 4. Lắng nghe Bảng giá dịch vụ
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, payload => {
+            console.log("🔥 [REALTIME] Cập nhật bảng giá:", payload);
+            // Có thể bạn cần viết thêm 1 hàm fetchServices riêng, hoặc dùng tạm fetchLatestData
+        })
+        // 5. Lắng nghe Lịch làm việc
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+            console.log("🔥 [REALTIME] Lịch làm:", payload);
+            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
+        })
+        // 6. Lắng nghe Chấm công
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
+            console.log("🔥 [REALTIME] Chấm công:", payload);
+            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
+        })
+        // Bắt đầu cắm ống nghe
         .subscribe((status, err) => {
-            console.log("📡 [REALTIME] Trạng thái kênh:", status);
+            console.log("📡 [REALTIME] Trạng thái:", status);
             
             if (status === 'SUBSCRIBED') {
-                console.log("✅ [REALTIME] KẾT NỐI THÀNH CÔNG!");
+                console.log("✅ [REALTIME] Đã đồng bộ toàn hệ thống!");
             }
             
             if (status === 'CHANNEL_ERROR') {
