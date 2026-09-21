@@ -9325,18 +9325,18 @@ window.hideDayDetail = function() {
    // ==========================================================
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
-let myPosChannel = null; // Biến toàn cục giữ kênh kết nối
 
-function initRealtimeSync() {
+
+async function initRealtimeSync() {
     // Chặn kết nối nếu mất mạng hoặc chưa đăng nhập
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
     // Dọn dẹp kênh cũ để chống gọi đè (chống lỗi WebSocket is closed...)
-    if (myPosChannel) {
-        supabaseClient.removeChannel(myPosChannel);
+    if (window.myPosChannel) {
+        supabaseClient.removeChannel(window.myPosChannel);
     }
 
-    myPosChannel = supabaseClient.channel('pos-master-channel'); // Đặt 1 tên kênh duy nhất
+   window.myPosChannel = supabaseClient.channel('pos_realtime_channel')
     
     myPosChannel
         // 1. Lắng nghe Đơn hàng
