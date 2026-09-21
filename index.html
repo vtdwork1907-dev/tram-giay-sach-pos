@@ -9112,20 +9112,25 @@ function initRealtimeSync() {
     const posChannel = supabaseClient.channel('pos-realtime');
     
     posChannel
-        // CHỈ LẮNG NGHE DUY NHẤT BẢNG 'orders'
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
             console.log("🔥 [REALTIME] Đơn hàng thay đổi:", payload);
             if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+            console.log("🔥 [REALTIME] Lịch làm thay đổi:", payload);
+            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
+            console.log("🔥 [REALTIME] Chấm công thay đổi:", payload);
+            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
+        })
         .subscribe((status, err) => {
             console.log("📡 [REALTIME] Trạng thái kênh:", status);
-            
             if (status === 'SUBSCRIBED') {
-                console.log("✅ [REALTIME] Kết nối thành công!");
+                console.log("✅ [REALTIME] Kết nối thành công! Đã thông ống với Supabase.");
             }
-            
             if (status === 'CHANNEL_ERROR') {
-                console.error("❌ [REALTIME] Bị từ chối kết nối", err);
+                console.error("❌ [REALTIME] Vẫn bị từ chối kết nối. Nguyên nhân 99% do RLS chặn.", err);
                 setTimeout(initRealtimeSync, 5000);
             }
         });
