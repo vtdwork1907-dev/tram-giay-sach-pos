@@ -3273,7 +3273,7 @@ function mapOrderDbToJs(db) {
             state.currentUser = activeUser;
             const authScreen = document.getElementById('authScreen'); 
             if (authScreen) { authScreen.style.display = 'none'; authScreen.classList.add('opacity-0'); }
-            document.getElementById('currentUserDisplay').innerText = escapeHtml(activeUser.name); 
+            document.getElementById('currentUserDisplay')?.innerText = escapeHtml(activeUser.name);
             changeRole(activeUser.role);
             
             // 👇 THÊM ĐOẠN CODE NÀY VÀO ĐÂY ĐỂ BẬT REALTIME KHI TỰ ĐỘNG ĐĂNG NHẬP 👇
