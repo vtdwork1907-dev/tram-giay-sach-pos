@@ -4601,7 +4601,11 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
                 if (o.customer.phone && o.customer.phone.trim() !== '') actionColumn += `<button onclick="sendZaloTracking('${o.id}', '${o.customer.phone}', '${escapeHtml(o.customer.name)}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-2 py-1.5 md:py-2 rounded-full transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-comment-sms"></i> Zalo</button>`; 
                 actionColumn += `<button onclick="copyTrackingLink('${o.id}')" class="bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-2 py-1.5 md:py-2 rounded-full transition active:scale-95 text-[10px] md:text-xs flex items-center justify-center gap-1 w-[80px] md:w-[90px]"><i class="fa-solid fa-link"></i> Link KH</button>`; 
                 // XÓA KHUNG BỌC NGOÀI NÚT XOÁ, CHỈ GIỮ LẠI ICON SẠCH SẼ
-                actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs md:text-sm p-1 mt-1 transition w-full text-right bg-transparent border-none shadow-none"><i class="fa-solid fa-trash"></i></button></div>`;
+               // Chỉ vẽ nút xóa nếu tài khoản đang đăng nhập là Chủ hoặc Quản lý
+if (state.role === 'owner' || state.role === 'manager') {
+    actionColumn += `<button onclick="deleteOrder('${o.id}')" class="text-slate-300 hover:text-red-500 text-xs md:text-sm p-1 mt-1 transition w-full text-right bg-transparent border-none shadow-none" title="Xóa đơn hàng"><i class="fa-solid fa-trash"></i></button>`;
+}
+actionColumn += `</div>`; // Đóng thẻ div actionColumn
                 
                 const displayItems = serviceFilter === 'ALL' ? o.items : o.items.filter(item => { const svcInfo = state.services.find(s => s.id === item.id); return svcInfo && svcInfo.category === serviceFilter; }); 
                 const isPaidOrDeliveredFilter = (statusFilter === 'DELIVERED' || statusFilter === 'PAID');
