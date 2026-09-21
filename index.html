@@ -9963,18 +9963,6 @@ window.calculateEmployeeSalary = async function() {
     }
 };
 
-        // D. In kết quả cuối cùng
-        document.getElementById('empTotalHours').innerText = totalHours.toFixed(2) + 'h';
-        document.getElementById('empTotalPenalty').innerText = '-' + totalPenalty.toLocaleString('vi-VN') + ' đ';
-        
-        const finalSalary = Math.round((totalHours * currentRate) - totalPenalty);
-        document.getElementById('empTotalSalary').innerText = Math.max(0, finalSalary).toLocaleString('vi-VN') + ' đ';
-        
-    } catch (e) {
-        console.error("Lỗi tính lương:", e);
-        document.getElementById('empTotalSalary').innerText = 'Lỗi';
-    }
-};
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
