@@ -9041,43 +9041,39 @@ async function renderEmployeeActualCalendar() {
         console.error("Lỗi vẽ lịch thực tế:", err);
     }
 }
-        // HÀM KHỞI TẠO KẾT NỐI REALTIME (THỜI GIAN THỰC)
+       // ==========================================================
+// HỆ THỐNG ĐỒNG BỘ REALTIME (KHÔNG CẦN F5 TRANG)
+// ==========================================================
 function initRealtimeSync() {
-    if (!supabaseClient) return;
+    if (!supabaseClient || !state.currentUser) return;
     
-    // Xóa các kênh cũ để tránh bị trùng lặp kết nối
+    // Xóa kết nối cũ nếu có để tránh bị lặp
     supabaseClient.removeAllChannels();
     
-    const posChannel = supabaseClient.channel('pos-realtime-channel');
+    const posChannel = supabaseClient.channel('pos-realtime');
     
-    // Lắng nghe sự thay đổi (Thêm, Sửa, Xóa) trên 3 bảng nhân sự
-    posChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-        handleRealtimeEvent();
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
-        handleRealtimeEvent();
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' }, payload => {
-        handleRealtimeEvent();
-    })
-    .subscribe();
+    posChannel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+            console.log("🔥 Đã có thay đổi lịch từ người khác!");
+            handleRealtimeUpdate();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
+            handleRealtimeUpdate();
+        })
+        .subscribe();
 }
 
-// HÀM XỬ LÝ KHI CÓ SỰ THAY ĐỔI TỪ MÁY NGƯỜI KHÁC
-async function handleRealtimeEvent() {
-    // 1. Nếu là Sếp/Quản lý: Tự động tải lại danh sách phê duyệt và Đếm lại thông báo đỏ
+async function handleRealtimeUpdate() {
+    // Nếu Chủ/Quản lý đang mở màn hình thì tự động tải lại danh sách duyệt
     if (state.role === 'manager' || state.role === 'owner') {
-        const mgrTab = document.getElementById('tab-staff');
-        if (mgrTab && !mgrTab.classList.contains('hidden')) {
-            await initStaffManagement(); 
+        if (typeof initStaffManagement === 'function') {
+            await initStaffManagement();
         }
     } 
-    // 2. Nếu là Nhân viên: Tự động tải lại Lịch thực tế và Kiểm tra xem Sếp đã duyệt chưa để Mở Khóa UI
+    // Nếu là Nhân viên thì tự động cập nhật khóa màn hình và chấm vàng/xanh
     else if (state.role === 'staff') {
-        await checkEmployeeLockdown();
-        if (typeof renderEmployeeActualCalendar === 'function') {
-            await renderEmployeeActualCalendar();
-        }
+        if (typeof checkEmployeeLockdown === 'function') await checkEmployeeLockdown();
+        if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
     }
 }
     </script>
