@@ -9106,37 +9106,26 @@ async function renderEmployeeActualCalendar() {
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
 function initRealtimeSync() {
-    // 1. Chặn việc cố kết nối khi không có mạng hoặc chưa đăng nhập
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
-    // 2. Dọn dẹp kênh cũ để tránh bị nhân bản kết nối
     supabaseClient.removeAllChannels();
     const posChannel = supabaseClient.channel('pos-realtime');
     
-    // 3. Đăng ký lắng nghe các bảng
     posChannel
+        // CHỈ LẮNG NGHE DUY NHẤT BẢNG 'orders'
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
             console.log("🔥 [REALTIME] Đơn hàng thay đổi:", payload);
             if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            console.log("🔥 [REALTIME] Lịch làm thay đổi:", payload);
-            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
-            console.log("🔥 [REALTIME] Chấm công thay đổi:", payload);
-            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
         })
         .subscribe((status, err) => {
             console.log("📡 [REALTIME] Trạng thái kênh:", status);
             
             if (status === 'SUBSCRIBED') {
-                console.log("✅ [REALTIME] Kết nối thành công! Sẵn sàng nhận dữ liệu.");
+                console.log("✅ [REALTIME] Kết nối thành công!");
             }
             
             if (status === 'CHANNEL_ERROR') {
-                console.error("❌ [REALTIME] Bị từ chối kết nối (Transport failure). Hãy chắc chắn bạn đã bật Replication trên Supabase!", err);
-                // Tự động thử kết nối lại sau 5 giây để ứng dụng không bị chết Realtime
+                console.error("❌ [REALTIME] Bị từ chối kết nối", err);
                 setTimeout(initRealtimeSync, 5000);
             }
         });
