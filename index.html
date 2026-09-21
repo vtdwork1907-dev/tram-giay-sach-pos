@@ -9722,6 +9722,220 @@ window.calculateEmployeeSalary = async function() {
         if (loading) loading.style.display = 'none';
     }
 };
+        // ==========================================
+// 1. LOGIC QUẢN LÝ DUYỆT YÊU CẦU
+// ==========================================
+
+// Hàm kiểm tra có yêu cầu mới không (Chạy ẩn)
+window.checkPendingRequests = async function() {
+    if (!state.currentUser || (state.role !== 'owner' && state.role !== 'manager')) return;
+    
+    const { data } = await supabaseClient.from('schedules')
+        .select('id')
+        .in('daily_status', ['pending_forgot', 'pending_late']);
+
+    const btn = document.getElementById('floatingRequestBtn');
+    if (btn) {
+        if (data && data.length > 0) {
+            btn.classList.remove('hidden');
+            document.getElementById('pendingReqCount').innerText = data.length;
+        } else {
+            btn.classList.add('hidden');
+        }
+    }
+};
+
+// Đặt lịch tự động kiểm tra yêu cầu mới mỗi 15 giây
+setInterval(checkPendingRequests, 15000);
+setTimeout(checkPendingRequests, 3000);
+
+// Mở bảng duyệt
+window.openMgrApprovalModal = async function() {
+    const modal = document.getElementById('mgrApprovalModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('mgrApprovalBox').classList.remove('scale-95');
+    }, 10);
+    
+    await loadPendingRequests();
+};
+
+window.closeMgrApprovalModal = function() {
+    const modal = document.getElementById('mgrApprovalModal');
+    modal.classList.add('opacity-0');
+    document.getElementById('mgrApprovalBox').classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+    checkPendingRequests();
+};
+
+// Tải danh sách đơn xin
+window.loadPendingRequests = async function() {
+    const listEl = document.getElementById('pendingRequestsList');
+    listEl.innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-sky-500 text-2xl"></i></div>';
+    
+    const { data } = await supabaseClient.from('schedules')
+        .select('*')
+        .in('daily_status', ['pending_forgot', 'pending_late'])
+        .order('date', { ascending: false });
+
+    if (!data || data.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-10 text-slate-400 font-medium">Không có yêu cầu nào chờ duyệt.</div>';
+        return;
+    }
+
+    listEl.innerHTML = data.map(req => {
+        const isForgot = req.daily_status === 'pending_forgot';
+        const typeHtml = isForgot 
+            ? `<span class="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold"><i class="fa-solid fa-camera-rotate"></i> Báo Quên Chấm Công</span>`
+            : `<span class="bg-amber-100 text-amber-600 px-2 py-1 rounded text-[10px] font-bold"><i class="fa-solid fa-person-running"></i> Xin Đi Muộn</span>`;
+            
+        return `
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-3 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <h4 class="font-bold text-slate-700 text-xs md:text-sm">${req.username}</h4>
+                    <p class="text-[10px] md:text-xs text-slate-500">Ngày: <span class="font-bold text-slate-700">${req.date}</span></p>
+                </div>
+                ${typeHtml}
+            </div>
+            <div class="bg-slate-50 p-2 rounded-lg text-[10px] md:text-xs text-slate-600 mb-3 border border-slate-100">
+                Ca đăng ký: <span class="font-bold">${req.shift_1 ? 'Ca 1 (8h-13h) ' : ''}${req.shift_2 ? '| Ca 2 (13h-18h)' : ''}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="processReq('${req.id}', 'approve')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 font-bold py-2.5 rounded-lg text-xs transition active:scale-95"><i class="fa-solid fa-check"></i> DUYỆT (Full Công)</button>
+                <button onclick="processReq('${req.id}', 'reject', '${req.daily_status}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-lg text-xs transition active:scale-95"><i class="fa-solid fa-xmark"></i> KHÔNG DUYỆT</button>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+// Xử lý lệnh Duyệt/Từ chối
+window.processReq = async function(id, action, typeStatus = '') {
+    let updateData = {};
+
+    if (action === 'approve') {
+        if(!confirm("Duyệt yêu cầu này? Nhân viên sẽ được tính tròn 1 công như đã đăng ký.")) return;
+        updateData = { daily_status: 'forgiven', penalty_amount: 0 };
+    } 
+    else if (action === 'reject') {
+        if (typeStatus === 'pending_forgot') {
+            if(!confirm("KHÔNG DUYỆT QUÊN CHẤM CÔNG:\nNhân viên sẽ bị trừ 50% lương của ngày hôm đó. Đồng ý?")) return;
+            updateData = { daily_status: 'penalized', penalty_amount: 0 }; // Thuật toán lương tự động chia đôi giờ nếu penalty=0
+        } else {
+            const amount = prompt("KHÔNG DUYỆT XIN ĐI MUỘN:\nVui lòng nhập số TIỀN PHẠT (VNĐ) muốn trừ vào lương tháng của nhân viên:", "20000");
+            if (amount === null) return; // Hủy
+            const penaltyNum = parseInt(amount);
+            if (isNaN(penaltyNum) || penaltyNum < 0) return alert("Số tiền không hợp lệ!");
+            updateData = { daily_status: 'penalized', penalty_amount: penaltyNum };
+        }
+    }
+
+    const { error } = await supabaseClient.from('schedules').update(updateData).eq('id', id);
+    if (!error) {
+        showNotification("Thành công", "Đã xử lý yêu cầu chấm công.");
+        loadPendingRequests();
+    }
+};
+
+// ==========================================
+// 2. NÂNG CẤP THUẬT TOÁN TÍNH LƯƠNG NHÂN VIÊN
+// (Tự động tính Full công, Trừ 50%, Trừ tiền phạt)
+// ==========================================
+window.calculateEmployeeSalary = async function() {
+    const monthFilter = document.getElementById('empSalaryMonthFilter').value;
+    if (!monthFilter || !state.currentUser || !navigator.onLine) return;
+    
+    document.getElementById('empTotalHours').innerText = 'Đang tính...';
+    document.getElementById('empTotalPenalty').innerText = 'Đang tính...';
+    document.getElementById('empTotalSalary').innerText = 'Đang tính...';
+
+    try {
+        const [year, month] = monthFilter.split('-');
+        const startDate = `${year}-${month}-01`;
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+        // A. Lấy mức lương
+        const { data: salaryData } = await supabaseClient.from('salary_history')
+            .select('*').eq('username', state.currentUser.username).lte('effective_date', endDate).order('effective_date', { ascending: false });
+
+        if (!salaryData || salaryData.length === 0) {
+            document.getElementById('empTotalHours').innerText = '0h';
+            document.getElementById('empTotalPenalty').innerText = '0 đ';
+            document.getElementById('empTotalSalary').innerText = '0 đ';
+            document.getElementById('empSalaryHistoryList').innerHTML = '<div class="text-amber-600 text-center py-2 text-xs">Chưa cài đặt mức lương cơ bản.</div>';
+            return;
+        }
+        const currentRate = salaryData[0].hourly_rate;
+
+        // B. Kéo dữ liệu Chấm công và Lịch
+        const [timesRes, schedRes] = await Promise.all([
+            supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).gte('date', startDate).lte('date', endDate),
+            supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).gte('date', startDate).lte('date', endDate)
+        ]);
+
+        let timesByDate = {};
+        if (timesRes.data) timesRes.data.forEach(t => { if(!timesByDate[t.date]) timesByDate[t.date] = []; timesByDate[t.date].push(t); });
+        
+        let schedByDate = {};
+        if (schedRes.data) schedRes.data.forEach(s => schedByDate[s.date] = s);
+
+        let totalHours = 0;
+        let totalPenalty = 0;
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        // C. Vòng lặp tính toán thông minh từng ngày
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
+            const sched = schedByDate[dateStr];
+            const tLogs = timesByDate[dateStr] || [];
+            const inRec = tLogs.find(r => r.type === 'in');
+            const outRec = tLogs.find(r => r.type === 'out');
+
+            let dayHours = 0;
+            // Giả định mỗi ca (Sáng/Chiều) dài 5 tiếng. Tổng 2 ca = 10 tiếng
+            let registeredHours = sched ? ((sched.shift_1 ? 5 : 0) + (sched.shift_2 ? 5 : 0)) : 0;
+
+            if (sched && sched.daily_status === 'forgiven') {
+                // 1. CHỦ ĐÃ DUYỆT: Thưởng full công như đã đăng ký (Bất chấp có chấm thiếu)
+                dayHours = registeredHours;
+            } 
+            else if (sched && sched.daily_status === 'penalized') {
+                // 2. CHỦ KHÔNG DUYỆT
+                if (sched.penalty_amount > 0) {
+                    // Từ chối XIN ĐI MUỘN (Bị trừ tiền mặt cứng) -> Giờ làm tính thực tế từ cam
+                    if (inRec && outRec) {
+                        dayHours = (new Date(outRec.time_log || outRec.created_at) - new Date(inRec.time_log || inRec.created_at)) / 3600000;
+                    }
+                    totalPenalty += sched.penalty_amount; // Cộng dồn tiền phạt
+                } else {
+                    // Từ chối QUÊN CHẤM CÔNG (Bị trừ 50% lương ngày) -> Chỉ cộng 50% số giờ đăng ký
+                    dayHours = registeredHours / 2; 
+                }
+            } 
+            else {
+                // 3. NGÀY BÌNH THƯỜNG: Đi làm bình thường hoặc Trốn việc
+                if (inRec && outRec) {
+                    dayHours = (new Date(outRec.time_log || outRec.created_at) - new Date(inRec.time_log || inRec.created_at)) / 3600000;
+                }
+            }
+
+            if (dayHours > 0) totalHours += dayHours;
+        }
+
+        // D. In kết quả cuối cùng
+        document.getElementById('empTotalHours').innerText = totalHours.toFixed(2) + 'h';
+        document.getElementById('empTotalPenalty').innerText = '-' + totalPenalty.toLocaleString('vi-VN') + ' đ';
+        
+        const finalSalary = Math.round((totalHours * currentRate) - totalPenalty);
+        document.getElementById('empTotalSalary').innerText = Math.max(0, finalSalary).toLocaleString('vi-VN') + ' đ';
+        
+    } catch (e) {
+        console.error("Lỗi tính lương:", e);
+        document.getElementById('empTotalSalary').innerText = 'Lỗi';
+    }
+};
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
@@ -9746,6 +9960,29 @@ window.calculateEmployeeSalary = async function() {
             <button type="button" onclick="captureCameraPhoto()" class="w-16 h-16 bg-white/90 rounded-full border-[5px] border-slate-300 shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-90 active:bg-slate-200 transition-all flex items-center justify-center">
                 <div class="w-12 h-12 rounded-full border border-slate-400"></div>
             </button>
+        </div>
+    </div>
+    <!-- NÚT CHUÔNG THÔNG BÁO NỔI DÀNH CHO QUẢN LÝ -->
+    <div id="floatingRequestBtn" class="hidden fixed bottom-24 right-4 z-40 transition-all hover:scale-105">
+        <button onclick="openMgrApprovalModal()" class="bg-red-500 text-white font-bold py-3 px-5 rounded-full shadow-lg shadow-red-500/40 border-2 border-white flex items-center gap-2 animate-bounce">
+            <i class="fa-solid fa-bell fa-shake text-lg"></i>
+            <span class="text-xs">Yêu cầu chờ duyệt (<span id="pendingReqCount">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- MODAL DUYỆT YÊU CẦU CHẤM CÔNG CỦA QUẢN LÝ -->
+    <div id="mgrApprovalModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 justify-center items-end md:items-center backdrop-blur-sm transition-opacity opacity-0">
+        <div id="mgrApprovalBox" class="bg-slate-50 w-full md:w-[600px] max-h-[85vh] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col transform transition-transform scale-95 overflow-hidden">
+            <div class="bg-white px-5 py-4 flex justify-between items-center border-b border-slate-100 shadow-sm z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <h3 class="font-extrabold text-slate-700 text-sm md:text-base">DUYỆT YÊU CẦU CHẤM CÔNG</h3>
+                </div>
+                <button onclick="closeMgrApprovalModal()" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition active:scale-95"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto" id="pendingRequestsList">
+                <!-- Danh sách yêu cầu sẽ được Javascript đổ vào đây -->
+            </div>
         </div>
     </div>
 </body>
