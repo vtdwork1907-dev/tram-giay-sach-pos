@@ -7292,7 +7292,8 @@ async function submitLeaveRequest() {
         async function fetchPersonalDataFromCloud() {
             if (!navigator.onLine || !state.currentUser) return;
             try {
-                const { data } = await supabaseClient.from('users').select('attendance, schedule').eq('username', state.currentUser.username).single();
+                // ✅ SỬA LỖI 1: Đổi .single() thành .maybeSingle() để triệt tiêu lỗi 406
+                const { data } = await supabaseClient.from('users').select('attendance, schedule').eq('username', state.currentUser.username).maybeSingle();
                 
                 if (data) {
                     if (data.attendance) {
@@ -7305,7 +7306,10 @@ async function submitLeaveRequest() {
                     
                     if (typeof renderCalendarGrid === 'function' && !document.getElementById('tab-personal').classList.contains('hidden')) {
                         renderCalendarGrid(calMonth, calYear);
-                        renderWeeklySchedule(); // Tự động nảy dấu tích lên bảng
+                        // ✅ SỬA LỖI 2: Đổi tên hàm thành renderWeeklyScheduleUI() để tránh lỗi sập web
+                        if (typeof renderWeeklyScheduleUI === 'function') {
+                            renderWeeklyScheduleUI(); // Tự động nảy dấu tích lên bảng
+                        }
                     }
                 }
             } catch (e) { console.error(e); }
