@@ -2199,7 +2199,15 @@ function mapOrderDbToJs(db) {
             }
         }
         
-       function switchTab(id) {
+      function switchTab(id) {
+    // CHỐT CHẶN PHÂN QUYỀN: Ngăn nhân viên chuyển tab qua console
+    if (state.role === 'staff' && ['gallery', 'customers', 'reports', 'expenses', 'settings', 'staff'].includes(id)) {
+        showNotification("Bảo mật", "Tài khoản nhân viên không có quyền truy cập khu vực này.");
+        return;
+    }
+
+    // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
+    document.querySelectorAll('.tab-content').forEach(el => {
     // 1. Ẩn tất cả các tab content và làm sạch flex/hidden
     document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.add('hidden');
