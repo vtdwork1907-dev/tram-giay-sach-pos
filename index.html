@@ -7123,7 +7123,92 @@ async function submitWeeklySchedule() {
 // PHÂN HỆ NHÂN SỰ: CHẤM CÔNG, ĐĂNG KÝ LỊCH, XIN NGHỈ
 // =========================================================================
 
-// 1. XỬ LÝ CHẤM CÔNG (CAMERA & GPS)
+// Biến toàn cục để nhớ xem hôm nay nhân viên có lịch không
+let isScheduledToday = true; 
+
+// HÀM 1: CẬP NHẬT TẢI DỮ LIỆU & KIỂM TRA LỊCH LÀM VIỆC HÔM NAY
+async function loadTodayTimekeeping() {
+    // 1. Dọn dẹp giao diện cũ
+    document.getElementById('tkInResult').classList.add('hidden');
+    document.getElementById('tkInResult').classList.remove('flex');
+    document.getElementById('tkOutResult').classList.add('hidden');
+    document.getElementById('tkOutResult').classList.remove('flex');
+    document.getElementById('tkSuccessMsg').classList.add('hidden');
+    document.getElementById('tkSuccessMsg').classList.remove('flex');
+    
+    // Bật lại 2 nút chụp ảnh (Đề phòng trước đó bị khóa)
+    document.getElementById('btnCameraIn')?.classList.remove('hidden');
+    document.getElementById('btnCameraIn')?.classList.add('flex');
+    document.getElementById('btnCameraOut')?.classList.remove('hidden');
+    document.getElementById('btnCameraOut')?.classList.add('flex');
+
+    if (!state.currentUser || !navigator.onLine) return;
+
+    const vnTime = new Date();
+    vnTime.setMinutes(vnTime.getMinutes() - vnTime.getTimezoneOffset());
+    const dateStr = vnTime.toISOString().split('T')[0];
+
+    // --- LOGIC KIỂM TRA CÓ LỊCH LÀM HÔM NAY KHÔNG ---
+    try {
+        const { data: scheduleData } = await supabaseClient.from('schedules')
+            .select('*')
+            .eq('username', state.currentUser.username)
+            .eq('date', dateStr);
+
+        const btnTabTimekeep = document.getElementById('btn-sub-timekeep');
+        
+        if (scheduleData && scheduleData.length > 0) {
+            isScheduledToday = true;
+            if(btnTabTimekeep) btnTabTimekeep.classList.remove('opacity-50', 'cursor-not-allowed', 'grayscale');
+        } else {
+            isScheduledToday = false; // KHÔNG CÓ LỊCH!
+            if(btnTabTimekeep) btnTabTimekeep.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+            
+            // Nếu đang mở tab Chấm công thì tự động đá văng sang tab Đăng ký lịch
+            if (!document.getElementById('sub-timekeep').classList.contains('hidden')) {
+                switchPersonalSubTab('schedule');
+            }
+        }
+    } catch (e) { console.error("Lỗi check lịch:", e); }
+
+    // --- LOGIC KÉO ẢNH CHẤM CÔNG CŨ & KHÓA NÚT CHỤP CAMERA ---
+    const { data, error } = await supabaseClient.from('timesheets')
+        .select('*')
+        .eq('username', state.currentUser.username)
+        .eq('date', dateStr);
+
+    if (data && data.length > 0) {
+        data.forEach(record => {
+            const timeObj = new Date(record.time_log || record.created_at || vnTime);
+            const timeStr = timeObj.toLocaleTimeString('vi-VN');
+
+            if (record.type === 'in') {
+                document.getElementById('btnCameraIn')?.classList.add('hidden'); // ẨN KHÓA NÚT CAMERA IN
+                document.getElementById('btnCameraIn')?.classList.remove('flex');
+                
+                document.getElementById('tkInResult').classList.remove('hidden');
+                document.getElementById('tkInResult').classList.add('flex');
+                document.getElementById('tkInPhoto').src = record.image_url;
+                document.getElementById('tkInLocation').innerText = record.location;
+                document.getElementById('tkInTime').innerText = timeStr;
+            } else if (record.type === 'out') {
+                document.getElementById('btnCameraOut')?.classList.add('hidden'); // ẨN KHÓA NÚT CAMERA OUT
+                document.getElementById('btnCameraOut')?.classList.remove('flex');
+                
+                document.getElementById('tkOutResult').classList.remove('hidden');
+                document.getElementById('tkOutResult').classList.add('flex');
+                document.getElementById('tkOutPhoto').src = record.image_url;
+                document.getElementById('tkOutLocation').innerText = record.location;
+                document.getElementById('tkOutTime').innerText = timeStr;
+                
+                document.getElementById('tkSuccessMsg').classList.remove('hidden');
+                document.getElementById('tkSuccessMsg').classList.add('flex');
+            }
+        });
+    }
+}
+
+// HÀM 2: CẬP NHẬT HÀM XỬ LÝ CHỤP ẢNH (ẨN NÚT SAU KHI CHỤP THÀNH CÔNG)
 async function handleTimekeepingCam(e, type) {
     const file = e.target.files[0];
     if (!file) return;
@@ -7137,7 +7222,6 @@ async function handleTimekeepingCam(e, type) {
     loading.querySelector('.text-sm').innerText = 'Đang xác định vị trí và lưu chấm công...';
 
     try {
-        // A. Lấy định vị GPS
         const pos = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
         }).catch(() => ({ coords: { latitude: 0, longitude: 0 } }));
@@ -7146,22 +7230,19 @@ async function handleTimekeepingCam(e, type) {
             ? `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` 
             : 'Không lấy được định vị';
 
-        // B. Nén và đẩy ảnh chụp lên Cloudflare R2
         const base64 = await compressImage(file);
         const r2Url = await uploadFileToR2(base64, 'timekeep');
 
-        // C. Lưu dữ liệu vào Supabase (ĐÃ FIX LỖI MÚI GIỜ)
         const realNow = new Date();
-        const timeStr = realNow.toLocaleTimeString('vi-VN'); // Giờ phút giữ nguyên theo máy
+        const timeStr = realNow.toLocaleTimeString('vi-VN'); 
         
-        // Ép bù trừ múi giờ (+7) để hàm toISOString() lấy đúng ngày hiện tại ở Việt Nam
         const vnTime = new Date();
         vnTime.setMinutes(vnTime.getMinutes() - vnTime.getTimezoneOffset());
         const dateStr = vnTime.toISOString().split('T')[0];
 
         const record = {
             username: state.currentUser.username,
-            type: type, // 'in' hoặc 'out'
+            type: type,
             image_url: r2Url,
             location: locString,
             date: dateStr
@@ -7170,21 +7251,26 @@ async function handleTimekeepingCam(e, type) {
         const { error } = await supabaseClient.from('timesheets').insert([record]);
         if (error) throw error;
 
-        // D. Hiển thị thông tin ra giao diện (Đã bỏ dấu ? ở innerText)
+        // VẼ KẾT QUẢ VÀ ẨN KHÓA NÚT CHỤP ẢNH
         if (type === 'in') {
+            document.getElementById('btnCameraIn')?.classList.add('hidden'); // Khóa nút In
+            document.getElementById('btnCameraIn')?.classList.remove('flex');
+            
             document.getElementById('tkInResult').classList.remove('hidden');
             document.getElementById('tkInResult').classList.add('flex');
             document.getElementById('tkInPhoto').src = r2Url;
             document.getElementById('tkInLocation').innerText = locString;
             document.getElementById('tkInTime').innerText = timeStr;
         } else {
+            document.getElementById('btnCameraOut')?.classList.add('hidden'); // Khóa nút Out
+            document.getElementById('btnCameraOut')?.classList.remove('flex');
+            
             document.getElementById('tkOutResult').classList.remove('hidden');
             document.getElementById('tkOutResult').classList.add('flex');
             document.getElementById('tkOutPhoto').src = r2Url;
             document.getElementById('tkOutLocation').innerText = locString;
             document.getElementById('tkOutTime').innerText = timeStr;
             
-            // Hiện thông báo hoàn thành ca
             document.getElementById('tkSuccessMsg').classList.remove('hidden');
             document.getElementById('tkSuccessMsg').classList.add('flex');
         }
@@ -7194,56 +7280,7 @@ async function handleTimekeepingCam(e, type) {
         alert("Lỗi chấm công: " + err.message);
     } finally {
         loading.style.display = 'none';
-        e.target.value = ''; // Reset input file
-    }
-}
-
-async function loadTodayTimekeeping() {
-    // 1. QUAN TRỌNG NHẤT: Dọn dẹp sạch sẽ giao diện cũ của người đăng nhập trước đó
-    document.getElementById('tkInResult').classList.add('hidden');
-    document.getElementById('tkInResult').classList.remove('flex');
-    document.getElementById('tkOutResult').classList.add('hidden');
-    document.getElementById('tkOutResult').classList.remove('flex');
-    document.getElementById('tkSuccessMsg').classList.add('hidden');
-    document.getElementById('tkSuccessMsg').classList.remove('flex');
-
-    if (!state.currentUser || !navigator.onLine) return;
-
-    // 2. Ép bù trừ múi giờ để gọi API kéo đúng dữ liệu của ngày hôm nay
-    const vnTime = new Date();
-    vnTime.setMinutes(vnTime.getMinutes() - vnTime.getTimezoneOffset());
-    const dateStr = vnTime.toISOString().split('T')[0];
-
-    const { data, error } = await supabaseClient.from('timesheets')
-        .select('*')
-        .eq('username', state.currentUser.username) // Chỉ lấy đúng dữ liệu của user này
-        .eq('date', dateStr);
-
-    if (data && data.length > 0) {
-        // 3. Nếu user này đã chấm công, vẽ lại ảnh và giờ ra màn hình
-        data.forEach(record => {
-            // Lấy thời gian từ CSDL, fallback sang created_at nếu time_log trống
-            const timeObj = new Date(record.time_log || record.created_at || vnTime);
-            const timeStr = timeObj.toLocaleTimeString('vi-VN');
-
-            // Đã bỏ dấu ? ở innerText
-            if (record.type === 'in') {
-                document.getElementById('tkInResult').classList.remove('hidden');
-                document.getElementById('tkInResult').classList.add('flex');
-                document.getElementById('tkInPhoto').src = record.image_url;
-                document.getElementById('tkInLocation').innerText = record.location;
-                document.getElementById('tkInTime').innerText = timeStr;
-            } else if (record.type === 'out') {
-                document.getElementById('tkOutResult').classList.remove('hidden');
-                document.getElementById('tkOutResult').classList.add('flex');
-                document.getElementById('tkOutPhoto').src = record.image_url;
-                document.getElementById('tkOutLocation').innerText = record.location;
-                document.getElementById('tkOutTime').innerText = timeStr;
-                
-                document.getElementById('tkSuccessMsg').classList.remove('hidden');
-                document.getElementById('tkSuccessMsg').classList.add('flex');
-            }
-        });
+        e.target.value = ''; 
     }
 }
      // 3. XỬ LÝ XIN NGHỈ PHÉP
