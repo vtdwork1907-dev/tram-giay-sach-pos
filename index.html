@@ -9094,59 +9094,48 @@ async function renderEmployeeActualCalendar() {
         console.error("Lỗi vẽ lịch thực tế:", err);
     }
 }
-       // ==========================================================
-// HỆ THỐNG ĐỒNG BỘ REALTIME (ĐÃ TỐI ƯU CHỐNG SPAM THÔNG BÁO)
+   // ==========================================================
+// HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
 function initRealtimeSync() {
     if (!supabaseClient || !state.currentUser) return;
     
-    // Xóa kết nối cũ nếu có để tránh bị lặp (nghe 2 lần)
     supabaseClient.removeAllChannels();
-    
     const posChannel = supabaseClient.channel('pos-realtime');
     
+    // Bắt sóng MỌI THAY ĐỔI (Thêm, Sửa, Xóa) trên bảng schedules
     posChannel
         .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            // Truyền payload mang theo dữ liệu gửi xuống hàm xử lý
             handleRealtimeUpdate(payload);
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
             handleRealtimeUpdate(payload);
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' }, payload => {
-            handleRealtimeUpdate(payload);
-        })
         .subscribe();
 }
 
-// BỘ ĐẾM THỜI GIAN GOM NHÓM (DEBOUNCER)
 let realtimeDebounceTimer = null;
-let lastRealtimeAction = ''; 
 
 async function handleRealtimeUpdate(payload) {
     if (!payload) return;
 
-    if (payload.new && payload.new.status) {
-        lastRealtimeAction = payload.new.status; 
-    }
-
+    // Kỹ thuật Debounce: Chờ 0.8s để gom nhóm các tín hiệu gửi lên cùng lúc
     clearTimeout(realtimeDebounceTimer);
     
     realtimeDebounceTimer = setTimeout(async () => {
         
         // 1. DÀNH CHO CHỦ / QUẢN LÝ
         if (state.role === 'manager' || state.role === 'owner') {
-            
-            // DÙ NHÂN VIÊN THÊM, SỬA HAY XÓA BỚT CA, ĐỀU ÉP GIAO DIỆN TẢI LẠI REALTIME
+            // Chỉ cần bảng schedules có bất kỳ rung động nào (nhân viên gửi lịch, bỏ lịch), ép UI tải lại
             if (payload.table === 'schedules') {
-                await forceRefreshPendingApprovals(); // Gọi tuyệt chiêu làm mới
-                
-                // Chỉ nảy thông báo nếu là hành động tạo mới/sửa thành pending
-                if (lastRealtimeAction === 'pending') {
-                    showNotification("🔔 LỊCH ĐÃ THAY ĐỔI", "Nhân viên vừa cập nhật đăng ký lịch. Dữ liệu đã được tự động làm mới!");
+                if (typeof forceRefreshPendingApprovals === 'function') {
+                    await forceRefreshPendingApprovals();
                 }
-            } else {
-                if (typeof initStaffManagement === 'function') await initStaffManagement();
+                
+                // Nếu là hành động INSERT (Thêm mới) hoặc UPDATE, nảy thông báo (Bỏ qua hành động DELETE để đỡ phiền)
+                if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                    showNotification("🔔 LỊCH ĐÃ THAY ĐỔI", "Nhân viên vừa cập nhật đăng ký lịch. Dữ liệu đã tự động đồng bộ!");
+                }
             }
         } 
         
@@ -9156,8 +9145,9 @@ async function handleRealtimeUpdate(payload) {
                 const wasLockedBefore = isEmployeeLocked; 
                 await checkEmployeeLockdown();
                 
+                // Phát hiện trạng thái MỞ KHÓA
                 if (wasLockedBefore && !isEmployeeLocked) {
-                    showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được Quản lý duyệt. Các tính năng làm việc đã MỞ KHÓA ngay lập tức!");
+                    showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được Quản lý duyệt. Các chức năng đã MỞ KHÓA!");
                 }
                 
                 if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
