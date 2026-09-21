@@ -9131,16 +9131,14 @@ window.renderEmpActualCalendar = async function() {
 
     if (!state.currentUser || !navigator.onLine) return;
 
-    // Tính toán ngày để tạo lưới
     const firstDay = new Date(empCalYear, empCalMonth, 1).getDay();
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Quy đổi T2=0 ... CN=6
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
     const daysInMonth = new Date(empCalYear, empCalMonth + 1, 0).getDate();
 
     const startDateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-01`;
     const endDateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
     try {
-        // Lấy lịch và chấm công từ Supabase
         const [schedRes, timeRes] = await Promise.all([
             supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).gte('date', startDateStr).lte('date', endDateStr),
             supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).gte('date', startDateStr).lte('date', endDateStr)
@@ -9149,10 +9147,9 @@ window.renderEmpActualCalendar = async function() {
         const scheds = schedRes.data || [];
         const times = timeRes.data || [];
 
-        let worked = 0, leave = 0, late = 0;
+        let worked = 0;
         let html = '';
 
-        // Đệm các ô trống đầu tháng để lịch chuẩn hàng T2, T3...
         for (let i = 0; i < startOffset; i++) {
             html += `<div class="aspect-square"></div>`;
         }
@@ -9161,7 +9158,6 @@ window.renderEmpActualCalendar = async function() {
         today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
         const todayStr = today.toISOString().split('T')[0];
 
-        // Vẽ các ngày trong tháng
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             
@@ -9175,32 +9171,32 @@ window.renderEmpActualCalendar = async function() {
             let textClass = 'text-slate-600';
             let borderClass = 'border border-slate-100';
 
-            // Xử lý logic hiển thị Trạng thái (Xanh/Vàng/Đỏ) theo code cũ của bạn
+            // LOGIC MÀU SẮC MỚI: 
             if (sched) {
                 if (sched.daily_status === 'forgiven' || (hasIn && hasOut)) {
+                    // ĐÃ FULL CÔNG (Xanh lá)
                     dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 mt-1"></div>`;
                     bgClass = 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100';
-                    worked++; // Tăng số công
-                } else if (sched.daily_status === 'penalized' || (dateStr < todayStr && (!hasIn || !hasOut))) {
+                    worked++;
+                } else if (sched.daily_status === 'penalized') {
+                    // QUẢN LÝ TỪ CHỐI / PHẠT (Đỏ)
                     dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 mt-1"></div>`;
                     bgClass = 'bg-red-50 border-red-200 hover:bg-red-100';
                 } else {
+                    // CÒN LẠI: Chờ duyệt, hoặc Thiếu chấm công (Vàng)
                     dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-400 mt-1"></div>`;
                     bgClass = 'bg-amber-50 border-amber-200 hover:bg-amber-100';
                 }
             } else if (hasIn || hasOut) {
-                // Đi làm không có lịch
                 dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 mt-1"></div>`;
                 worked++;
             }
 
-            // Đánh dấu ngày hôm nay
             if (dateStr === todayStr) {
                 borderClass = 'border-2 border-sky-400 shadow-sm';
                 textClass = 'text-sky-700 font-extrabold';
             }
 
-            // GẮN SỰ KIỆN ONCLICK ĐỂ XEM CHI TIẾT
             html += `
             <div onclick="showEmpDayDetail('${dateStr}')" class="aspect-square rounded-full flex flex-col items-center justify-center cursor-pointer transition active:scale-95 ${bgClass} ${borderClass}">
                 <span class="text-[11px] md:text-sm ${textClass} leading-none">${d}</span>
@@ -9209,13 +9205,10 @@ window.renderEmpActualCalendar = async function() {
         }
 
         grid.innerHTML = html;
-        
-        // Cập nhật thống kê
         const statWorkedEl = document.getElementById('statWorked');
         if (statWorkedEl) statWorkedEl.innerText = worked; 
 
     } catch (e) {
-        console.error("Lỗi vẽ lịch:", e);
         grid.innerHTML = '<div class="col-span-7 text-center text-xs text-red-500 py-4">Lỗi kết nối máy chủ</div>';
     }
 };
