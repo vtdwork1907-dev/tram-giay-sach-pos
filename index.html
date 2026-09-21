@@ -9051,39 +9051,79 @@ async function renderEmployeeActualCalendar() {
     }
 }
        // ==========================================================
-// HỆ THỐNG ĐỒNG BỘ REALTIME (KHÔNG CẦN F5 TRANG)
+// HỆ THỐNG ĐỒNG BỘ REALTIME (ĐÃ TỐI ƯU CHỐNG SPAM THÔNG BÁO)
 // ==========================================================
 function initRealtimeSync() {
     if (!supabaseClient || !state.currentUser) return;
     
-    // Xóa kết nối cũ nếu có để tránh bị lặp
+    // Xóa kết nối cũ nếu có để tránh bị lặp (nghe 2 lần)
     supabaseClient.removeAllChannels();
     
     const posChannel = supabaseClient.channel('pos-realtime');
     
     posChannel
         .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            console.log("🔥 Đã có thay đổi lịch từ người khác!");
-            handleRealtimeUpdate();
+            // Truyền payload mang theo dữ liệu gửi xuống hàm xử lý
+            handleRealtimeUpdate(payload);
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
-            handleRealtimeUpdate();
+            handleRealtimeUpdate(payload);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' }, payload => {
+            handleRealtimeUpdate(payload);
         })
         .subscribe();
 }
 
-async function handleRealtimeUpdate() {
-    // Nếu Chủ/Quản lý đang mở màn hình thì tự động tải lại danh sách duyệt
-    if (state.role === 'manager' || state.role === 'owner') {
-        if (typeof initStaffManagement === 'function') {
-            await initStaffManagement();
-        }
-    } 
-    // Nếu là Nhân viên thì tự động cập nhật khóa màn hình và chấm vàng/xanh
-    else if (state.role === 'staff') {
-        if (typeof checkEmployeeLockdown === 'function') await checkEmployeeLockdown();
-        if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
+// BỘ ĐẾM THỜI GIAN GOM NHÓM (DEBOUNCER)
+let realtimeDebounceTimer = null;
+let lastRealtimeAction = ''; 
+
+async function handleRealtimeUpdate(payload) {
+    if (!payload) return;
+
+    // Bắt lấy trạng thái mới nhất từ Database đẩy về
+    if (payload.new && payload.new.status) {
+        lastRealtimeAction = payload.new.status; 
     }
+
+    // Xóa bộ đếm cũ nếu có tín hiệu mới tràn về liên tục
+    clearTimeout(realtimeDebounceTimer);
+    
+    // Đợi 0.8 giây sau khi tín hiệu cuối cùng kết thúc mới thực thi
+    realtimeDebounceTimer = setTimeout(async () => {
+        
+        // 1. DÀNH CHO CHỦ / QUẢN LÝ
+        if (state.role === 'manager' || state.role === 'owner') {
+            // Nếu có nhân viên đẩy lịch lên ở trạng thái 'pending'
+            if (payload.table === 'schedules' && lastRealtimeAction === 'pending') {
+                showNotification("🔔 CÓ LỊCH LÀM MỚI", "Nhân viên vừa cập nhật đăng ký lịch tuần. Vui lòng kiểm tra tab Nhân Viên!");
+            }
+            // Tự động tải lại danh sách phê duyệt ngầm
+            if (typeof initStaffManagement === 'function') await initStaffManagement();
+        } 
+        
+        // 2. DÀNH CHO NHÂN VIÊN
+        else if (state.role === 'staff') {
+            if (payload.table === 'schedules') {
+                // Lưu lại trạng thái khóa màn hình TRƯỚC KHI cập nhật
+                const wasLockedBefore = isEmployeeLocked; 
+                
+                // Chạy hàm kiểm tra xem Sếp đã duyệt chưa
+                await checkEmployeeLockdown();
+                
+                // Nếu TRƯỚC ĐÓ đang bị khóa, và BÂY GIỜ đã được mở khóa (Nghĩa là Sếp vừa bấm duyệt)
+                if (wasLockedBefore && !isEmployeeLocked) {
+                    showNotification("✅ LỊCH ĐÃ ĐƯỢC DUYỆT!", "Lịch làm tuần của bạn đã được Quản lý duyệt. Các tính năng làm việc đã MỞ KHÓA ngay lập tức!");
+                }
+                // Nếu bị Sếp xóa lịch (từ chối) -> App vẫn sẽ bị khóa và báo đỏ theo logic hàm checkEmployeeLockdown()
+                
+                // Cập nhật lại lịch thực tế (Màu chấm vàng / Xanh lá)
+                if (typeof renderEmployeeActualCalendar === 'function') await renderEmployeeActualCalendar();
+            }
+        }
+
+    }, 800); 
 }
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
