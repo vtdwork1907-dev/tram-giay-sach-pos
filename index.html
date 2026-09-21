@@ -9106,45 +9106,38 @@ async function renderEmployeeActualCalendar() {
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
 function initRealtimeSync() {
-    // Thêm điều kiện check navigator.onLine để không cố kết nối khi đang mất mạng
+    // 1. Chặn việc cố kết nối khi không có mạng hoặc chưa đăng nhập
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
-    // Đóng các kênh cũ để tránh trùng lặp nếu gọi nhiều lần (ví dụ khi user đăng xuất rồi đăng nhập lại)
+    // 2. Dọn dẹp kênh cũ để tránh bị nhân bản kết nối
     supabaseClient.removeAllChannels();
     const posChannel = supabaseClient.channel('pos-realtime');
     
-    // Bắt sóng thay đổi
+    // 3. Đăng ký lắng nghe các bảng
     posChannel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+            console.log("🔥 [REALTIME] Đơn hàng thay đổi:", payload);
+            if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            console.log("🔥 [REALTIME] Dữ liệu lịch làm (schedules):", payload);
-            // Thêm check typeof để app không văng lỗi đỏ nếu bạn chưa kịp viết hàm này
+            console.log("🔥 [REALTIME] Lịch làm thay đổi:", payload);
             if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
-            console.log("🔥 [REALTIME] Dữ liệu chấm công (timesheets):", payload);
+            console.log("🔥 [REALTIME] Chấm công thay đổi:", payload);
             if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
-        })
-        // KHUYÊN DÙNG: Bắt thêm bảng 'orders' vì đây là trái tim của POS
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-            console.log("🔥 [REALTIME] Có đơn hàng thay đổi:", payload);
-            if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
         })
         .subscribe((status, err) => {
             console.log("📡 [REALTIME] Trạng thái kênh:", status);
             
             if (status === 'SUBSCRIBED') {
-                console.log("✅ [REALTIME] Sẵn sàng nhận thông báo!");
+                console.log("✅ [REALTIME] Kết nối thành công! Sẵn sàng nhận dữ liệu.");
             }
             
-            // XỬ LÝ LỖI CHANNEL_ERROR (Nguyên nhân gây ra dòng chữ đỏ trong ảnh trước của bạn)
             if (status === 'CHANNEL_ERROR') {
-                console.error("❌ [REALTIME] Bị từ chối kết nối WebSocket:", err);
-                // Tự động thử kết nối lại sau 5 giây để hệ thống luôn sống
+                console.error("❌ [REALTIME] Bị từ chối kết nối (Transport failure). Hãy chắc chắn bạn đã bật Replication trên Supabase!", err);
+                // Tự động thử kết nối lại sau 5 giây để ứng dụng không bị chết Realtime
                 setTimeout(initRealtimeSync, 5000);
-            }
-
-            if (status === 'CLOSED') {
-                console.warn("⚠️ [REALTIME] Kênh đã bị đóng.");
             }
         });
 }
