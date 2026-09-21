@@ -9369,10 +9369,32 @@ function initRealtimeSync() {
             console.log("🔥 [REALTIME] Cập nhật bảng giá:", payload);
             // Có thể bạn cần viết thêm 1 hàm fetchServices riêng, hoặc dùng tạm fetchLatestData
         })
-        // 5. Lắng nghe Lịch làm việc
+        // 5. Lắng nghe Lịch làm việc & Yêu cầu xin đi muộn/chấm bù
         .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-            console.log("🔥 [REALTIME] Lịch làm:", payload);
-            if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
+            console.log("🔥 [REALTIME] Lịch làm & Phê duyệt:", payload);
+            
+            // A. TÁC ĐỘNG BÊN MÁY CHỦ CỬA HÀNG:
+            // 1. Cập nhật số lượng trên chuông báo ngay lập tức
+            if (typeof checkPendingRequests === 'function') checkPendingRequests();
+            
+            // 2. Nếu Quản lý đang mở bảng Duyệt -> Tự động load thêm đơn mới hoặc làm biến mất đơn đã duyệt
+            const approvalModal = document.getElementById('mgrApprovalModal');
+            if (approvalModal && !approvalModal.classList.contains('hidden')) {
+                if (typeof loadPendingRequests === 'function') loadPendingRequests();
+            }
+
+            // B. TÁC ĐỘNG BÊN MÁY NHÂN VIÊN:
+            // 3. Nếu Nhân viên đang xem tab Cá nhân -> Tự động đổi màu ô lịch (từ Vàng chờ duyệt sang Xanh/Đỏ)
+            if (state.role === 'staff' && typeof renderEmpActualCalendar === 'function') {
+                renderEmpActualCalendar();
+            }
+            
+            // C. TÁC ĐỘNG CHUNG:
+            // 4. Nhảy số tiền lương ngay lập tức nếu ai đó đang mở bảng lương
+            const salaryModal = document.getElementById('empSalaryModal');
+            if (salaryModal && !salaryModal.classList.contains('hidden')) {
+                if (typeof calculateEmployeeSalary === 'function') calculateEmployeeSalary();
+            }
         })
         // 6. Lắng nghe Chấm công
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
