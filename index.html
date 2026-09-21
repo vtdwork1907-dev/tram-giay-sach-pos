@@ -9686,6 +9686,42 @@ window.calculateEmployeeSalary = async function() {
         showNotification("❌ Lỗi", "Không thể lấy dữ liệu tính lương lúc này.");
     }
 };
+        window.submitTimekeepRequest = async function(dateStr, type) {
+    const title = type === 'forgot' ? 'Báo Quên Chấm Công' : 'Xin Đi Muộn';
+    
+    // Hỏi xác nhận để tránh bấm nhầm
+    if (!confirm(`Bạn muốn gửi yêu cầu: ${title}?`)) return;
+
+    const loading = document.getElementById('globalLoading');
+    if (loading) {
+        loading.style.display = 'flex';
+        loading.querySelector('.text-sm').innerText = 'Đang gửi yêu cầu...';
+    }
+
+    try {
+        // Gán trạng thái tương ứng để Chủ cửa hàng phân biệt được
+        const statusToSave = type === 'forgot' ? 'pending_forgot' : 'pending_late';
+
+        // Cập nhật dữ liệu vào bảng schedules
+        const { error } = await supabaseClient.from('schedules')
+            .update({ daily_status: statusToSave })
+            .eq('username', state.currentUser.username)
+            .eq('date', dateStr);
+
+        if (error) throw new Error(error.message);
+
+        showNotification("✅ Đã gửi", `Yêu cầu "${title}" đã được gửi tới Quản lý.`);
+
+        // Tải lại khung chi tiết và tải lại màu của lịch
+        showEmpDayDetail(dateStr);
+        renderEmpActualCalendar();
+
+    } catch (err) {
+        alert("❌ Lỗi gửi yêu cầu: " + err.message);
+    } finally {
+        if (loading) loading.style.display = 'none';
+    }
+};
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
     <div id="customCameraModal" class="fixed inset-0 bg-black z-[99999] hidden flex-col select-none">
