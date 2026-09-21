@@ -3307,7 +3307,7 @@ function mapOrderDbToJs(db) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pass });
         if (error) throw error;
 
-        const { data: userData } = await supabaseClient.from('users').select('*').eq('username', email).single();
+       const { data: userData } = await supabaseClient.from('users').select('*').eq('username', email).maybeSingle();
         let activeUser = userData || (email === 'admin@tramgiaysach.com' ? { id: data.user.id, name: 'Chủ Cửa Hàng', role: 'owner' } : null);
         
         if (!activeUser) { 
