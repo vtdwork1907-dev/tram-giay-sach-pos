@@ -5735,19 +5735,21 @@ window.editDelayNote = async function(orderId) {
 
     // --- KHỐI 1: TỔNG QUAN ---
     document.getElementById('dash-block-1').innerHTML = `
-        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 ml-1"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
-        <div class="grid grid-cols-2 gap-3 md:gap-4 px-1">
-            <div class="bg-white/80 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgba(11,25,44,0.04)] flex flex-col justify-center transform transition hover:-translate-y-1">
-                <span class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center justify-between tracking-wide">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
-                <div class="text-[17px] md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
-                <div class="text-[8px] md:text-[10px] mt-2 md:mt-3 bg-slate-50 p-1 md:p-1.5 rounded-lg inline-block w-fit border border-slate-100 shadow-sm">${revTrendHtml}</div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(8,58,156,0.25)] flex flex-col justify-center relative overflow-hidden text-white transform transition hover:-translate-y-1">
-                <div class="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-7xl"><i class="fa-solid fa-chart-line"></i></div>
-                <span class="text-[9px] md:text-[10px] font-bold text-sky-200 uppercase mb-1 flex items-center justify-between relative z-10 tracking-wide">Doanh số hôm nay</span>
-                <div class="text-[17px] md:text-3xl font-extrabold text-white leading-tight relative z-10">${grossToday.toLocaleString()} đ</div>
-                <div class="text-[9px] md:text-xs mt-2 md:mt-3 font-semibold text-sky-100 relative z-10 bg-white/10 w-fit px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10 shadow-sm"><i class="fa-solid fa-box mr-1"></i> Đã nhận ${ordersTodayCount} đơn</div>
+        <div class="staff-restricted">
+            <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2 ml-1"><i class="fa-solid fa-bolt text-amber-500"></i> Năng lượng hôm nay</h2>
+            <div class="grid grid-cols-2 gap-3 md:gap-4 px-1">
+                <div class="bg-white/80 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgba(11,25,44,0.04)] flex flex-col justify-center transform transition hover:-translate-y-1">
+                    <span class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center justify-between tracking-wide">Đã thu thực tế <i class="fa-solid fa-money-bill-wave text-emerald-400 text-lg md:text-2xl drop-shadow-sm"></i></span>
+                    <div class="text-[17px] md:text-3xl font-extrabold text-slate-800 leading-tight">${revToday.toLocaleString()} đ</div>
+                    <div class="text-[8px] md:text-[10px] mt-2 md:mt-3 bg-slate-50 p-1 md:p-1.5 rounded-lg inline-block w-fit border border-slate-100 shadow-sm">${revTrendHtml}</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-navy-800 to-[#083A9C] p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(8,58,156,0.25)] flex flex-col justify-center relative overflow-hidden text-white transform transition hover:-translate-y-1">
+                    <div class="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-7xl"><i class="fa-solid fa-chart-line"></i></div>
+                    <span class="text-[9px] md:text-[10px] font-bold text-sky-200 uppercase mb-1 flex items-center justify-between relative z-10 tracking-wide">Doanh số hôm nay</span>
+                    <div class="text-[17px] md:text-3xl font-extrabold text-white leading-tight relative z-10">${grossToday.toLocaleString()} đ</div>
+                    <div class="text-[9px] md:text-xs mt-2 md:mt-3 font-semibold text-sky-100 relative z-10 bg-white/10 w-fit px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10 shadow-sm"><i class="fa-solid fa-box mr-1"></i> Đã nhận ${ordersTodayCount} đơn</div>
+                </div>
             </div>
         </div>
     `;
