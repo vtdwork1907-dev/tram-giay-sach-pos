@@ -3258,7 +3258,7 @@ function mapOrderDbToJs(db) {
     try {
         const { data: { session }, error } = await supabaseClient.auth.getSession();
         if (session) {
-            const { data: userData } = await supabaseClient.from('users').select('*').eq('username', session.user.email).single();
+            const { data: userData } = await supabaseClient.from('users').select('*').eq('username', session.user.email).maybeSingle();
             let activeUser = userData || { id: session.user.id, name: 'Quản Trị Viên', role: 'owner' };
             
             if (activeUser && activeUser.work_type) {
