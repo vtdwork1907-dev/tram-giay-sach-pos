@@ -8374,6 +8374,31 @@ async function handleScheduleApproval(username, status) {
         if(loading) loading.style.display = 'none';
     }
 }
+        // ==========================================================
+// HÀM ÉP TẢI LẠI DANH SÁCH DUYỆT (CHO REALTIME & SAU KHI XÓA)
+// ==========================================================
+async function forceRefreshPendingApprovals() {
+    // Chỉ chạy nếu đang dùng tài khoản Chủ hoặc Quản lý
+    if (state.role !== 'manager' && state.role !== 'owner') return;
+    
+    try {
+        const { data: pSchedules, error } = await supabaseClient
+            .from('schedules')
+            .select('*')
+            .eq('status', 'pending')
+            .order('date', { ascending: true });
+            
+        if (error) throw error;
+
+        // Ghi đè dữ liệu mới nhất vào biến mgrData và vẽ lại giao diện
+        if (typeof mgrData !== 'undefined') {
+            mgrData.pendingSchedules = pSchedules || [];
+            if (typeof renderMgrApprovals === 'function') renderMgrApprovals();
+        }
+    } catch (err) {
+        console.error("Lỗi ép tải lại danh sách duyệt:", err);
+    }
+}
         // =========================================================================
 // 7. XEM CHI TIẾT HỒ SƠ NHÂN VIÊN (LỊCH, CHẤM CÔNG, LƯƠNG)
 // =========================================================================
