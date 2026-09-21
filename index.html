@@ -2267,8 +2267,13 @@ function mapOrderDbToJs(db) {
         document.getElementById('leaveStart').value = '';
         document.getElementById('leaveEnd').value = '';
         document.getElementById('leaveReason').value = '';
-        renderWeeklyScheduleUI();
-        loadTodayTimekeeping();
+        
+        // Gọi các hàm vẽ giao diện
+        if (typeof renderWeeklyScheduleUI === 'function') renderWeeklyScheduleUI();
+        if (typeof loadTodayTimekeeping === 'function') loadTodayTimekeeping();
+        
+        // 🔥 FIX LỖI CO LỊCH: Đảm bảo lịch thực tế cũng được vẽ lại 🔥
+        if (typeof renderEmpActualCalendar === 'function') renderEmpActualCalendar();
     }
 
     // 👉 FIX LỖI: Vẽ lại danh sách nhân viên khi bấm vào tab Cài đặt
