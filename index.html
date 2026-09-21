@@ -9114,88 +9114,197 @@ async function loadEmployeeSalaryHistory() {
             <div class="font-bold text-slate-800">${h.hourly_rate.toLocaleString('vi-VN')}đ</div>
         </div>`).join('');
 }
-    // HÀM VẼ LỊCH THỰC TẾ CHO NHÂN VIÊN
-let empActualCalendarDate = new Date();
+    // 1. Biến toàn cục quản lý tháng/năm của lịch
+let empCalMonth = new Date().getMonth();
+let empCalYear = new Date().getFullYear();
 
-function changeEmpActualMonth(delta) {
-    empActualCalendarDate.setMonth(empActualCalendarDate.getMonth() + delta);
-    renderEmployeeActualCalendar();
-}
+// Hàm chuyển tháng
+window.changeEmpActualMonth = function(delta) {
+    empCalMonth += delta;
+    if (empCalMonth > 11) { empCalMonth = 0; empCalYear++; }
+    else if (empCalMonth < 0) { empCalMonth = 11; empCalYear--; }
+    renderEmpActualCalendar();
+};
 
-async function renderEmployeeActualCalendar() {
-    if (!state.currentUser || state.role !== 'staff') return;
-
+// 2. HÀM VẼ LỊCH (ĐÃ SỬA LỖI CÁCH ĐỀU & CHO PHÉP BẤM VÀO)
+window.renderEmpActualCalendar = async function() {
     const grid = document.getElementById('empActualCalendarGrid');
-    if (!grid) return;
+    const title = document.getElementById('empActualMonthYear');
+    if (!grid || !title) return;
 
-    const year = empActualCalendarDate.getFullYear();
-    const month = empActualCalendarDate.getMonth();
-    document.getElementById('empActualMonthYear').innerText = `${month + 1}/${year}`;
+    title.innerText = `${empCalMonth + 1}/${empCalYear}`;
+    grid.innerHTML = '<div class="col-span-7 text-center py-6"><i class="fa-solid fa-spinner fa-spin text-sky-500"></i></div>';
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    if (!state.currentUser || !navigator.onLine) return;
 
-    const offsetFirstDay = new Date(firstDay.getTime() - (firstDay.getTimezoneOffset() * 60000));
-    const offsetLastDay = new Date(lastDay.getTime() - (lastDay.getTimezoneOffset() * 60000));
-    const startStr = offsetFirstDay.toISOString().split('T')[0];
-    const endStr = offsetLastDay.toISOString().split('T')[0];
+    // Tính toán ngày để tạo lưới
+    const firstDay = new Date(empCalYear, empCalMonth, 1).getDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Quy đổi T2=0 ... CN=6
+    const daysInMonth = new Date(empCalYear, empCalMonth + 1, 0).getDate();
+
+    const startDateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-01`;
+    const endDateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
     try {
-        const { data: schedules } = await supabaseClient.from('schedules')
-            .select('*').eq('username', state.currentUser.username).gte('date', startStr).lte('date', endStr);
-        
-        const { data: timesheets } = await supabaseClient.from('timesheets')
-            .select('*').eq('username', state.currentUser.username).gte('date', startStr).lte('date', endStr);
+        // Lấy lịch và chấm công từ Supabase
+        const [schedRes, timeRes] = await Promise.all([
+            supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).gte('date', startDateStr).lte('date', endDateStr),
+            supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).gte('date', startDateStr).lte('date', endDateStr)
+        ]);
 
+        const scheds = schedRes.data || [];
+        const times = timeRes.data || [];
+
+        let worked = 0, leave = 0, late = 0;
         let html = '';
-        let startingDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; 
-        
-        for (let i = 0; i < startingDay; i++) { 
-            html += `<div></div>`; // Ô trống
+
+        // Đệm các ô trống đầu tháng để lịch chuẩn hàng T2, T3...
+        for (let i = 0; i < startOffset; i++) {
+            html += `<div class="aspect-square"></div>`;
         }
 
-        const offsetToday = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
-        const todayStr = offsetToday.toISOString().split('T')[0];
+        const today = new Date();
+        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+        const todayStr = today.toISOString().split('T')[0];
 
-        for (let i = 1; i <= lastDay.getDate(); i++) {
-            const currentDate = new Date(year, month, i);
-            const offsetCurrent = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000));
-            const dateStr = offsetCurrent.toISOString().split('T')[0];
+        // Vẽ các ngày trong tháng
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${empCalYear}-${String(empCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             
-            const sched = schedules?.find(s => s.date === dateStr);
-            const dayTimesheets = timesheets?.filter(t => t.date === dateStr) || [];
-            
+            const sched = scheds.find(s => s.date === dateStr);
+            const dayTimes = times.filter(t => t.date === dateStr);
+            const hasIn = dayTimes.some(t => t.type === 'in');
+            const hasOut = dayTimes.some(t => t.type === 'out');
+
             let dotHtml = '';
-            let bgClass = 'bg-slate-50';
+            let bgClass = 'bg-slate-50 hover:bg-slate-100';
+            let textClass = 'text-slate-600';
+            let borderClass = 'border border-slate-100';
 
+            // Xử lý logic hiển thị Trạng thái (Xanh/Vàng/Đỏ) theo code cũ của bạn
             if (sched) {
-                const hasIn = dayTimesheets.some(t => t.type === 'in');
-                const hasOut = dayTimesheets.some(t => t.type === 'out');
-
                 if (sched.daily_status === 'forgiven' || (hasIn && hasOut)) {
-                    // XANH LÁ: Đã đi làm đủ hoặc được sếp duyệt công
-                    dotHtml = `<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1"></div>`;
-                    bgClass = 'bg-emerald-50 border-emerald-200';
+                    dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 mt-1"></div>`;
+                    bgClass = 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100';
+                    worked++; // Tăng số công
                 } else if (sched.daily_status === 'penalized' || (dateStr < todayStr && (!hasIn || !hasOut))) {
-                    // ĐỎ: Bị phạt hoặc quá khứ trốn ca
-                    dotHtml = `<div class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1"></div>`;
-                    bgClass = 'bg-red-50 border-red-200';
+                    dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 mt-1"></div>`;
+                    bgClass = 'bg-red-50 border-red-200 hover:bg-red-100';
                 } else {
-                    // VÀNG: Có lịch đăng ký (pending hoặc approved) nhưng chưa làm
-                    dotHtml = `<div class="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1"></div>`;
-                    bgClass = 'bg-amber-50 border-amber-200';
+                    dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-400 mt-1"></div>`;
+                    bgClass = 'bg-amber-50 border-amber-200 hover:bg-amber-100';
                 }
+            } else if (hasIn || hasOut) {
+                // Đi làm không có lịch
+                dotHtml = `<div class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 mt-1"></div>`;
+                worked++;
             }
 
-            html += `<div class="${bgClass} border flex flex-col items-center justify-center p-2 rounded-full aspect-square text-[11px] font-bold text-slate-700 shadow-sm">${i}${dotHtml}</div>`;
-        }
-        
-        grid.innerHTML = html;
+            // Đánh dấu ngày hôm nay
+            if (dateStr === todayStr) {
+                borderClass = 'border-2 border-sky-400 shadow-sm';
+                textClass = 'text-sky-700 font-extrabold';
+            }
 
-    } catch (err) {
-        console.error("Lỗi vẽ lịch thực tế:", err);
+            // GẮN SỰ KIỆN ONCLICK ĐỂ XEM CHI TIẾT
+            html += `
+            <div onclick="showEmpDayDetail('${dateStr}')" class="aspect-square rounded-full flex flex-col items-center justify-center cursor-pointer transition active:scale-95 ${bgClass} ${borderClass}">
+                <span class="text-[11px] md:text-sm ${textClass} leading-none">${d}</span>
+                ${dotHtml}
+            </div>`;
+        }
+
+        grid.innerHTML = html;
+        
+        // Cập nhật thống kê
+        const statWorkedEl = document.getElementById('statWorked');
+        if (statWorkedEl) statWorkedEl.innerText = worked; 
+
+    } catch (e) {
+        console.error("Lỗi vẽ lịch:", e);
+        grid.innerHTML = '<div class="col-span-7 text-center text-xs text-red-500 py-4">Lỗi kết nối máy chủ</div>';
     }
-}
+};
+
+// 3. HÀM XỬ LÝ KHI BẤM VÀO NGÀY (HIỆN ẢNH VÀ GIỜ IN/OUT)
+window.showEmpDayDetail = async function(dateStr) {
+    const detailBox = document.getElementById('inlineDayDetail');
+    const contentBox = document.getElementById('dayDetailContent');
+    const titleSpan = document.getElementById('dayDetailTitle');
+    const expSection = document.getElementById('dayExplanationSection');
+
+    if (!detailBox || !contentBox) return;
+
+    // Bật giao diện loading
+    detailBox.classList.remove('hidden');
+    detailBox.classList.add('flex');
+    contentBox.innerHTML = '<div class="text-center py-6"><i class="fa-solid fa-spinner fa-spin text-sky-500 text-xl"></i></div>';
+    if(expSection) expSection.classList.add('hidden'); 
+    
+    const [y, m, d] = dateStr.split('-');
+    if(titleSpan) titleSpan.innerText = `Chi tiết ngày ${d}/${m}/${y}`;
+
+    try {
+        const [schedRes, timeRes] = await Promise.all([
+            supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).eq('date', dateStr).maybeSingle(),
+            supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).eq('date', dateStr)
+        ]);
+
+        const sched = schedRes.data;
+        const times = timeRes.data || [];
+
+        let html = '';
+
+        // Dòng trạng thái Ca đăng ký
+        if (sched) {
+            html += `<div class="bg-indigo-50 text-indigo-800 p-2.5 rounded-xl mb-3 text-[11px] md:text-xs font-bold border border-indigo-200 flex items-center gap-2 shadow-sm"><i class="fa-solid fa-clipboard-list text-indigo-500"></i> Lịch đã đăng ký: ${sched.shift_1 ? 'Ca 1 (8h-13h) ' : ''}${sched.shift_2 ? '| Ca 2 (13h-18h)' : ''}</div>`;
+        } else {
+            html += `<div class="bg-slate-50 text-slate-500 p-2.5 rounded-xl mb-3 text-[11px] md:text-xs font-bold border border-slate-200 shadow-inner">Không có lịch đăng ký ca làm.</div>`;
+        }
+
+        const timeIn = times.find(t => t.type === 'in');
+        const timeOut = times.find(t => t.type === 'out');
+
+        html += `<div class="grid grid-cols-2 gap-3">`;
+        
+        // Khối ảnh Đến (In)
+        html += `<div class="bg-white border ${timeIn ? 'border-emerald-300 shadow-md' : 'border-slate-200 shadow-sm'} rounded-xl p-3 flex flex-col items-center text-center">
+            <span class="text-[10px] md:text-xs font-bold ${timeIn ? 'text-emerald-700' : 'text-slate-400'} mb-2 uppercase tracking-wide"><i class="fa-solid fa-right-to-bracket"></i> Chấm Vào</span>
+            ${timeIn ? `
+                <img src="${timeIn.image_url}" onclick="openImageViewer('${timeIn.image_url}')" class="w-20 h-28 md:w-24 md:h-32 object-cover rounded-lg shadow border border-emerald-100 cursor-pointer mb-2 hover:opacity-80 transition">
+                <span class="text-sm md:text-base font-extrabold text-emerald-600">${new Date(timeIn.time_log || timeIn.created_at).toLocaleTimeString('vi-VN')}</span>
+            ` : `<div class="w-20 h-28 md:w-24 md:h-32 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300 mb-2"><i class="fa-solid fa-camera-slash text-2xl"></i></div><span class="text-[10px] md:text-xs text-slate-400 font-medium">Chưa có dữ liệu</span>`}
+        </div>`;
+
+        // Khối ảnh Về (Out)
+        html += `<div class="bg-white border ${timeOut ? 'border-amber-300 shadow-md' : 'border-slate-200 shadow-sm'} rounded-xl p-3 flex flex-col items-center text-center">
+            <span class="text-[10px] md:text-xs font-bold ${timeOut ? 'text-amber-700' : 'text-slate-400'} mb-2 uppercase tracking-wide"><i class="fa-solid fa-right-from-bracket"></i> Chấm Ra</span>
+            ${timeOut ? `
+                <img src="${timeOut.image_url}" onclick="openImageViewer('${timeOut.image_url}')" class="w-20 h-28 md:w-24 md:h-32 object-cover rounded-lg shadow border border-amber-100 cursor-pointer mb-2 hover:opacity-80 transition">
+                <span class="text-sm md:text-base font-extrabold text-amber-600">${new Date(timeOut.time_log || timeOut.created_at).toLocaleTimeString('vi-VN')}</span>
+            ` : `<div class="w-20 h-28 md:w-24 md:h-32 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300 mb-2"><i class="fa-solid fa-camera-slash text-2xl"></i></div><span class="text-[10px] md:text-xs text-slate-400 font-medium">Chưa có dữ liệu</span>`}
+        </div>`;
+
+        html += `</div>`;
+        contentBox.innerHTML = html;
+
+        if(expSection) {
+            expSection.classList.remove('hidden');
+            expSection.classList.add('flex');
+        }
+
+    } catch (e) {
+        contentBox.innerHTML = '<div class="text-red-500 text-xs py-4 text-center">Không thể tải chi tiết. Lỗi mạng.</div>';
+    }
+};
+
+window.hideDayDetail = function() {
+    const box = document.getElementById('inlineDayDetail');
+    if(box) {
+        box.classList.add('hidden');
+        box.classList.remove('flex');
+    }
+};
    // ==========================================================
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
