@@ -3288,7 +3288,7 @@ function mapOrderDbToJs(db) {
     }
 }
 
-       async function handleLogin() {
+      async function handleLogin() {
     const email = document.getElementById('loginUsername').value.trim(); 
     const pass = document.getElementById('loginPassword').value.trim();
     
@@ -3296,7 +3296,8 @@ function mapOrderDbToJs(db) {
     if(!navigator.onLine) return alert("Hệ thống yêu cầu mạng Internet cho lần đăng nhập đầu tiên!");
 
     const loading = document.getElementById('globalLoading');
-    loading.style.display = 'flex'; loading.querySelector('.text-sm').innerText = 'Đang xác thực bảo mật...';
+    loading.style.display = 'flex'; 
+    loading.querySelector('.text-sm').innerText = 'Đang xác thực bảo mật...';
 
     try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pass });
@@ -3323,11 +3324,19 @@ function mapOrderDbToJs(db) {
         changeRole(activeUser.role);
         document.getElementById('loginPassword').value = '';
         
+        // ==========================================
+        // 👇 ĐÃ THÊM KÍCH HOẠT REALTIME VÀO ĐÂY 👇
+        // ==========================================
+        if (typeof initRealtimeSync === 'function') {
+            initRealtimeSync();
+        }
+        
         fetchLatestDataFromCloud(true);
     } catch (error) {
         alert("Đăng nhập thất bại: " + (error.message || "Tài khoản hoặc mật khẩu không chính xác!"));
     } finally {
-        loading.style.display = 'none'; loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
+        loading.style.display = 'none'; 
+        loading.querySelector('.text-sm').innerText = 'Đang đồng bộ dữ liệu...';
     }
 }
         // HÀM MỚI: Xóa sạch bóng ma giao diện của người cũ
