@@ -9862,26 +9862,44 @@ window.calculateEmployeeSalary = async function() {
     document.getElementById('empTotalHours').innerText = 'Đang tính...';
     document.getElementById('empTotalPenalty').innerText = 'Đang tính...';
     document.getElementById('empTotalSalary').innerText = 'Đang tính...';
+    
+    // Gắn ID cho phần lịch sử lương
+    const historyListEl = document.getElementById('empSalaryHistoryList');
+    if(historyListEl) historyListEl.innerHTML = '<div class="text-center py-2"><i class="fa-solid fa-spinner fa-spin text-slate-400"></i></div>';
 
     try {
         const [year, month] = monthFilter.split('-');
         const startDate = `${year}-${month}-01`;
         const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
-        // A. Lấy mức lương
+        // 1. KÉO MỨC LƯƠNG TỪ QUẢN LÝ
         const { data: salaryData } = await supabaseClient.from('salary_history')
-            .select('*').eq('username', state.currentUser.username).lte('effective_date', endDate).order('effective_date', { ascending: false });
+            .select('*')
+            .eq('username', state.currentUser.username)
+            .lte('effective_date', endDate)
+            .order('effective_date', { ascending: false });
 
         if (!salaryData || salaryData.length === 0) {
-            document.getElementById('empTotalHours').innerText = '0h';
+            document.getElementById('empTotalHours').innerText = '0.00h';
             document.getElementById('empTotalPenalty').innerText = '0 đ';
             document.getElementById('empTotalSalary').innerText = '0 đ';
-            document.getElementById('empSalaryHistoryList').innerHTML = '<div class="text-amber-600 text-center py-2 text-xs">Chưa cài đặt mức lương cơ bản.</div>';
+            if(historyListEl) historyListEl.innerHTML = '<div class="text-amber-600 text-center py-3 bg-amber-50 rounded-xl text-xs font-medium border border-amber-200">Chưa cài đặt mức lương cơ bản.</div>';
             return;
         }
+        
         const currentRate = salaryData[0].hourly_rate;
 
-        // B. Kéo dữ liệu Chấm công và Lịch
+        // BỔ SUNG LẠI: IN LỊCH SỬ LƯƠNG RA MÀN HÌNH CHO NHÂN VIÊN
+        if (historyListEl) {
+            historyListEl.innerHTML = salaryData.map(r => `
+                <div class="flex justify-between items-center bg-white p-2.5 border border-slate-100 rounded-xl shadow-sm mb-2">
+                    <span class="text-slate-500 font-bold text-[11px] md:text-xs">Từ ngày ${r.effective_date}</span>
+                    <span class="font-extrabold text-emerald-600 text-xs md:text-sm">${r.hourly_rate.toLocaleString('vi-VN')} đ/h</span>
+                </div>
+            `).join('');
+        }
+
+        // 2. KÉO DỮ LIỆU CHẤM CÔNG VÀ LỊCH
         const [timesRes, schedRes] = await Promise.all([
             supabaseClient.from('timesheets').select('*').eq('username', state.currentUser.username).gte('date', startDate).lte('date', endDate),
             supabaseClient.from('schedules').select('*').eq('username', state.currentUser.username).gte('date', startDate).lte('date', endDate)
@@ -9897,7 +9915,7 @@ window.calculateEmployeeSalary = async function() {
         let totalPenalty = 0;
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        // C. Vòng lặp tính toán thông minh từng ngày
+        // 3. TÍNH TOÁN THEO TỪNG NGÀY
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
             const sched = schedByDate[dateStr];
@@ -9906,35 +9924,44 @@ window.calculateEmployeeSalary = async function() {
             const outRec = tLogs.find(r => r.type === 'out');
 
             let dayHours = 0;
-            // Giả định mỗi ca (Sáng/Chiều) dài 5 tiếng. Tổng 2 ca = 10 tiếng
             let registeredHours = sched ? ((sched.shift_1 ? 5 : 0) + (sched.shift_2 ? 5 : 0)) : 0;
 
             if (sched && sched.daily_status === 'forgiven') {
-                // 1. CHỦ ĐÃ DUYỆT: Thưởng full công như đã đăng ký (Bất chấp có chấm thiếu)
                 dayHours = registeredHours;
-            } 
-            else if (sched && sched.daily_status === 'penalized') {
-                // 2. CHỦ KHÔNG DUYỆT
+            } else if (sched && sched.daily_status === 'penalized') {
                 if (sched.penalty_amount > 0) {
-                    // Từ chối XIN ĐI MUỘN (Bị trừ tiền mặt cứng) -> Giờ làm tính thực tế từ cam
-                    if (inRec && outRec) {
-                        dayHours = (new Date(outRec.time_log || outRec.created_at) - new Date(inRec.time_log || inRec.created_at)) / 3600000;
-                    }
-                    totalPenalty += sched.penalty_amount; // Cộng dồn tiền phạt
+                    if (inRec && outRec) dayHours = (new Date(outRec.time_log || outRec.created_at) - new Date(inRec.time_log || inRec.created_at)) / 3600000;
+                    totalPenalty += sched.penalty_amount;
                 } else {
-                    // Từ chối QUÊN CHẤM CÔNG (Bị trừ 50% lương ngày) -> Chỉ cộng 50% số giờ đăng ký
                     dayHours = registeredHours / 2; 
                 }
-            } 
-            else {
-                // 3. NGÀY BÌNH THƯỜNG: Đi làm bình thường hoặc Trốn việc
+            } else {
                 if (inRec && outRec) {
                     dayHours = (new Date(outRec.time_log || outRec.created_at) - new Date(inRec.time_log || inRec.created_at)) / 3600000;
                 }
             }
-
             if (dayHours > 0) totalHours += dayHours;
         }
+
+        // 4. KHẮC PHỤC LỖI TIỀN LẺ (Làm tròn chuẩn VNĐ)
+        // Ép số giờ về đúng 2 chữ số thập phân (Ví dụ 10.00245 -> 10.00)
+        const displayHours = parseFloat(totalHours.toFixed(2));
+        document.getElementById('empTotalHours').innerText = displayHours.toFixed(2) + 'h';
+        document.getElementById('empTotalPenalty').innerText = (totalPenalty > 0 ? '-' : '') + totalPenalty.toLocaleString('vi-VN') + ' đ';
+        
+        // Nhân tiền theo số giờ đã làm tròn
+        let finalSalary = (displayHours * currentRate) - totalPenalty;
+        
+        // Làm tròn số tiền về hàng nghìn (Ví dụ: 200.049 đ -> 200.000 đ)
+        finalSalary = Math.round(finalSalary / 1000) * 1000;
+        
+        document.getElementById('empTotalSalary').innerText = Math.max(0, finalSalary).toLocaleString('vi-VN') + ' đ';
+        
+    } catch (e) {
+        console.error("Lỗi tính lương:", e);
+        document.getElementById('empTotalSalary').innerText = 'Lỗi';
+    }
+};
 
         // D. In kết quả cuối cùng
         document.getElementById('empTotalHours').innerText = totalHours.toFixed(2) + 'h';
