@@ -899,15 +899,6 @@
                     </div>
 
                     <div class="flex flex-col lg:flex-row gap-4 items-start w-full">
-                        <!-- BẢNG LỊCH TUẦN NÀY DÀNH CHO QUẢN LÝ -->
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full lg:w-[350px] shrink-0">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">  
-            <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="fa-solid fa-calendar-week text-sky-500"></i> Lịch Tuần Này</h3>  
-        </div>
-        <div id="mgrWeeklyScheduleGrid" class="flex flex-col gap-1.5 mt-1">
-            <!-- Đổ dữ liệu lịch tuần vào đây -->
-        </div>
-    </div>
                         <!-- Bộ Lịch -->
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2 w-full lg:w-[350px] shrink-0">
                             <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
@@ -8071,41 +8062,39 @@ let mgrData = {
 };
 
 // 1. KHỞI TẠO TAB QUẢN LÝ (Gọi khi bấm vào tab "Nhân Viên")
-async function initStaffManagement() {  
-    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để quản lý nhân sự!");  
-    if (state.role !== 'owner' && state.role !== 'manager') return;  
+async function initStaffManagement() {
+    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để quản lý nhân sự!");
+    if (state.role !== 'owner' && state.role !== 'manager') return;
 
-    const loading = document.getElementById('globalLoading');  
-    loading.style.display = 'flex';  
-    loading.querySelector('.text-sm').innerText = 'Đang tải dữ liệu nhân sự & quét vi phạm...';  
+    const loading = document.getElementById('globalLoading');
+    loading.style.display = 'flex';
+    loading.querySelector('.text-sm').innerText = 'Đang tải dữ liệu nhân sự & quét vi phạm...';
 
-    try {  
-        const { data: usersData } = await supabaseClient.from('users').select('*').eq('role', 'staff');  
-        mgrData.staffList = usersData || [];  
+    try {
+        // A. Tải danh sách nhân viên (Chỉ lấy staff)
+        const { data: usersData } = await supabaseClient.from('users').select('*').eq('role', 'staff');
+        mgrData.staffList = usersData || [];
 
-        const { data: schedData } = await supabaseClient.from('schedules').select('*').eq('status', 'pending');  
-        mgrData.pendingSchedules = schedData || [];  
+        // B. Tải các lịch làm việc Đang chờ duyệt (pending)
+        const { data: schedData } = await supabaseClient.from('schedules').select('*').eq('status', 'pending');
+        mgrData.pendingSchedules = schedData || [];
 
-        const { data: leaveData } = await supabaseClient.from('leave_requests').select('*').eq('status', 'pending');  
-        mgrData.pendingLeaves = leaveData || [];  
+        // C. Tải các đơn xin nghỉ Đang chờ duyệt
+        const { data: leaveData } = await supabaseClient.from('leave_requests').select('*').eq('status', 'pending');
+        mgrData.pendingLeaves = leaveData || [];
 
-        await checkAndGenerateViolations();  
-        updateMgrBadgeCount();  
+        // D. CẢNH SÁT NGẦM: Quét vi phạm chấm công
+        await checkAndGenerateViolations();
 
-        // KHÔI PHỤC TRẠNG THÁI GIAO DIỆN CŨ THAY VÌ LUÔN VỀ TAB LIST
-        const viewingStaffId = localStorage.getItem('TRAM_MGR_VIEWING_STAFF');
-        const savedSubTab = localStorage.getItem('TRAM_MGR_SUBTAB') || 'list';
+        // E. Cập nhật giao diện
+        updateMgrBadgeCount();
+        switchMgrSubTab('list'); // Mặc định mở danh sách
 
-        if (viewingStaffId && mgrData.staffList.find(s => s.id === viewingStaffId)) {
-            await openMgrStaffDetail(viewingStaffId);
-        } else {
-            switchMgrSubTab(savedSubTab); 
-        }
-    } catch (err) {  
-        console.error("Lỗi tải dữ liệu quản lý:", err);  
-    } finally {  
-        loading.style.display = 'none';  
-    }  
+    } catch (err) {
+        console.error("Lỗi tải dữ liệu quản lý:", err);
+    } finally {
+        loading.style.display = 'none';
+    }
 }
 
 // 2. THUẬT TOÁN QUÉT VI PHẠM (ĐI MUỘN, QUÊN CHẤM CÔNG)
@@ -8534,202 +8523,39 @@ async function forceRefreshPendingApprovals() {
 let currentViewedStaff = null;
 let currentMgrCalendarDate = new Date();
 
-// Mở màn hình chi tiết nhân viên
-window.openMgrStaffDetail = async function(userId) {  
-    mgrCurrentStaffId = userId;  
-    localStorage.setItem('TRAM_MGR_VIEWING_STAFF', userId); // Nhớ nhân viên đang mở
+// Mở màn hình chi tiết
+async function openMgrStaffDetail(username) {
+    const staff = mgrData.staffList.find(s => s.username === username);
+    if (!staff) return;
+    
+    currentViewedStaff = staff;
+    currentMgrCalendarDate = new Date(); // Reset về tháng hiện tại
 
-    const u = state.users.find(x => x.id === userId);  
-    if (!u) return;  
+    // Đổi giao diện
+    document.getElementById('mgr-view-list').style.display = 'none';
+    document.getElementById('mgr-view-approve').style.display = 'none';
+    document.getElementById('mgr-view-detail').style.display = 'flex';
 
-    currentViewedStaff = u;  
-    currentMgrCalendarDate = new Date(); 
-
-    document.getElementById('mgr-view-list').style.display = 'none';  
-    document.getElementById('mgr-view-approve').style.display = 'none';  
-    document.getElementById('mgr-view-detail').style.display = 'flex';  
-    document.getElementById('mgr-view-detail').classList.remove('hidden');
-
-    document.getElementById('mgrDetailName').innerText = u.name;  
-    document.getElementById('mgrDetailUsername').innerText = u.username;  
-
+    // Ẩn bảng chi tiết ngày cũ
     const dayBox = document.getElementById('mgrDayDetailBox');
     if(dayBox) {
-        dayBox.classList.add('hidden');  
-        dayBox.classList.remove('flex');  
+        dayBox.classList.add('hidden');
+        dayBox.classList.remove('flex');
     }
 
-    mgrCalMonth = new Date().getMonth();  
-    mgrCalYear = new Date().getFullYear();  
-    
-    // Gọi vẽ cả 2 bảng: Lịch tuần (tính công) và Lịch tháng
-    await renderMgrWeeklySchedule();
-    renderMgrCalendar();  
-}  
+    document.getElementById('mgrDetailName').innerText = staff.name;
+    document.getElementById('mgrDetailUsername').innerText = staff.username;
 
-window.closeMgrStaffDetail = function() {  
-    mgrCurrentStaffId = null;  
+    // Tải dữ liệu và vẽ lịch
+    await renderMgrStaffCalendar();
+}
+
+// Đóng màn hình chi tiết (Quay lại danh sách)
+function closeMgrStaffDetail() {
     currentViewedStaff = null;
-    localStorage.removeItem('TRAM_MGR_VIEWING_STAFF'); // Xóa nhớ nhân viên
-    
-    const savedSubTab = localStorage.getItem('TRAM_MGR_SUBTAB') || 'list';
-    switchMgrSubTab(savedSubTab);  
-} 
+    switchMgrSubTab('list');
+}
 
-// HÀM MỚI: VẼ BẢNG LỊCH TUẦN & HIỂN THỊ GIỜ THẬT THEO CẤU HÌNH
-window.renderMgrWeeklySchedule = async function() {
-    if (!currentViewedStaff) return;
-    const container = document.getElementById('mgrWeeklyScheduleGrid');
-    if(!container) return;
-
-    container.innerHTML = '<div class="text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải bảng tính công...</div>';
-
-    // 1. Kéo thời gian cấu hình ca của nhân viên
-    let s1Time = "08:00 - 13:00";
-    let s2Time = "13:00 - 18:00";
-    try {
-        const { data: setDb } = await supabaseClient.from('staff_settings').select('shift1_time, shift2_time').eq('username', currentViewedStaff.username).maybeSingle();
-        if(setDb) {
-            if(setDb.shift1_time) s1Time = setDb.shift1_time;
-            if(setDb.shift2_time) s2Time = setDb.shift2_time;
-        }
-    } catch(e) {}
-
-    // 2. Tính ra từ Thứ 2 đến Chủ nhật tuần này
-    const today = new Date();
-    const currDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
-    const monday = new Date(today); monday.setDate(today.getDate() - currDay);
-    const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
-
-    const startStr = monday.toISOString().split('T')[0];
-    const endStr = sunday.toISOString().split('T')[0];
-
-    // 3. Kéo lịch đã đăng ký/chốt của nhân viên
-    const { data: schedules } = await supabaseClient.from('schedules')
-        .select('*')
-        .eq('username', currentViewedStaff.username)
-        .gte('date', startStr)
-        .lte('date', endStr);
-
-    let tableRows = '';
-    for(let i=0; i<7; i++) {
-        const d = new Date(monday); d.setDate(d.getDate() + i);
-        const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const ds = String(d.getDate()).padStart(2,'0');
-        const dateStr = `${y}-${m}-${ds}`;
-        const displayDate = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
-
-        const sched = (schedules || []).find(s => s.date === dateStr);
-        const isS1 = sched ? sched.shift_1 : false;
-        const isS2 = sched ? sched.shift_2 : false;
-
-        tableRows += `
-        <tr class="border-b hover:bg-slate-50 transition" data-date="${dateStr}">
-            <td class="p-2 border-r border-slate-200 font-bold text-slate-700 text-[10px] md:text-xs">${displayDate}</td>
-            <td class="p-2 border-r border-slate-200 text-center"><input type="checkbox" class="mgr-shift1-cb w-4 h-4 cursor-pointer text-emerald-600 focus:ring-emerald-500 rounded border-slate-300" data-date="${dateStr}" ${isS1 ? 'checked' : ''}></td>
-            <td class="p-2 text-center"><input type="checkbox" class="mgr-shift2-cb w-4 h-4 cursor-pointer text-emerald-600 focus:ring-emerald-500 rounded border-slate-300" data-date="${dateStr}" ${isS2 ? 'checked' : ''}></td>
-        </tr>`;
-    }
-
-    const html = `
-    <div class="overflow-hidden w-full border border-slate-200 rounded-xl mb-2 shadow-sm">
-        <table class="w-full text-left text-[11px] md:text-xs border-collapse whitespace-nowrap">
-            <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-center">
-                    <th class="p-2 border-r border-slate-200 font-bold w-14">Ngày</th>
-                    <th class="p-2 border-r border-slate-200"><span class="font-bold text-emerald-700">Ca 1</span><br><span class="text-[9px] font-medium text-slate-500">${s1Time}</span></th>
-                    <th class="p-2"><span class="font-bold text-emerald-700">Ca 2</span><br><span class="text-[9px] font-medium text-slate-500">${s2Time}</span></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100" id="mgrWeeklyScheduleBody">
-                ${tableRows}
-            </tbody>
-        </table>
-    </div>
-    <button onclick="mgrSubmitWeeklySchedule()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl transition active:scale-95 shadow-sm flex items-center justify-center gap-2 text-xs">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> Tính Công Nhanh Lịch Tuần
-    </button>
-    <p class="text-[9px] text-slate-400 italic mt-1.5 text-center">* Tính công chủ động ghi nhận full 100% công mà không cần dùng Camera.</p>
-    `;
-
-    container.innerHTML = html;
-};
-
-// HÀM MỚI: LƯU TÍNH CÔNG CHỦ ĐỘNG TỪ BẢNG VÀO SUPABASE
-window.mgrSubmitWeeklySchedule = async function() {
-    if (!navigator.onLine) return showNotification("Lỗi", "Vui lòng kết nối mạng để lưu lịch!");
-
-    const loading = document.getElementById('globalLoading');
-    if (loading) {
-        loading.style.display = 'flex';
-        loading.querySelector('.text-sm').innerText = 'Đang tính công...';
-    }
-
-    try {
-        const tbody = document.getElementById('mgrWeeklyScheduleBody');
-        if (!tbody) throw new Error("Không tìm thấy bảng lịch!");
-
-        const rows = tbody.querySelectorAll('tr');
-        let schedulesToUpsert = [];
-        let datesToDelete = [];
-
-        rows.forEach(row => {
-            const dateStr = row.getAttribute('data-date');
-            if (!dateStr) return; 
-
-            const cb1 = row.querySelector('.mgr-shift1-cb');
-            const cb2 = row.querySelector('.mgr-shift2-cb');
-            
-            const s1 = cb1 ? cb1.checked : false;
-            const s2 = cb2 ? cb2.checked : false;
-
-            if (s1 || s2) {
-                schedulesToUpsert.push({
-                    username: currentViewedStaff.username,
-                    date: dateStr,
-                    shift_1: s1,
-                    shift_2: s2,
-                    status: 'approved',     // Chốt duyệt ngay lập tức
-                    daily_status: 'forgiven',// Trạng thái forgiven = Tính tròn công không cần check-in/out
-                    penalty_amount: 0
-                });
-            } else {
-                datesToDelete.push(dateStr);
-            }
-        });
-
-        // 1. Xoá các ngày không tick
-        if (datesToDelete.length > 0) {
-            await supabaseClient.from('schedules').delete().eq('username', currentViewedStaff.username).in('date', datesToDelete);
-        }
-
-        // 2. Thêm/Sửa các ngày có tick
-        if (schedulesToUpsert.length > 0) {
-            const { error } = await supabaseClient.from('schedules').upsert(schedulesToUpsert, { onConflict: 'username,date' });
-            if (error) throw error;
-        }
-
-        // Render lại cả 2 lịch ngay lập tức
-        await renderMgrWeeklySchedule();
-        renderMgrCalendar();
-
-        // Làm mới ô chi tiết ngày (nếu đang bật)
-        const dayBox = document.getElementById('mgrDayDetailBox');
-        if(dayBox && !dayBox.classList.contains('hidden')) {
-            const titleEl = document.querySelector('#mgrDayDetailBox h4');
-            if(titleEl) {
-                const dateText = titleEl.innerText.replace('Chi tiết: ', '');
-                const [d, m, y] = dateText.split('/');
-                if (y && m && d && typeof showMgrDayDetail === 'function') showMgrDayDetail(`${y}-${m}-${d}`);
-            }
-        }
-
-        showNotification("✅ Đã tính công", "Lịch làm việc và công đã được cập nhật Realtime.");
-    } catch (err) {
-        showNotification("❌ Lỗi", err.message);
-    } finally {
-        if (loading) loading.style.display = 'none';
-    }
-};
 // Chuyển tháng trên lịch
 function changeMgrCalendarMonth(delta) {
     currentMgrCalendarDate.setMonth(currentMgrCalendarDate.getMonth() + delta);
@@ -10151,65 +9977,6 @@ window.calculateEmployeeSalary = async function() {
         document.getElementById('empTotalSalary').innerText = 'Lỗi';
     }
 };
-        async function renderMgrWeeklySchedule() {
-    if (!currentViewedStaff) return;
-    const container = document.getElementById('mgrWeeklyScheduleGrid');
-    if(!container) return;
-
-    container.innerHTML = '<div class="text-center py-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>';
-
-    // 1. Kéo thời gian cấu hình ca
-    let s1Time = "08:00 - 13:00";
-    let s2Time = "13:00 - 18:00";
-    try {
-        const { data: setDb } = await supabaseClient.from('staff_settings').select('shift1_time, shift2_time').eq('username', currentViewedStaff.username).maybeSingle();
-        if(setDb) {
-            if(setDb.shift1_time) s1Time = setDb.shift1_time;
-            if(setDb.shift2_time) s2Time = setDb.shift2_time;
-        }
-    } catch(e) {}
-
-    // 2. Tính ra từ Thứ 2 đến Chủ nhật tuần này
-    const today = new Date();
-    const currDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
-    const monday = new Date(today); monday.setDate(today.getDate() - currDay);
-    const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
-
-    const startStr = monday.toISOString().split('T')[0];
-    const endStr = sunday.toISOString().split('T')[0];
-
-    // 3. Kéo lịch đã đăng ký từ Supabase
-    const { data: schedules } = await supabaseClient.from('schedules')
-        .select('*')
-        .eq('username', currentViewedStaff.username)
-        .gte('date', startStr)
-        .lte('date', endStr)
-        .eq('status', 'approved'); // Chỉ lấy lịch đã chốt
-
-    let html = '';
-    for(let i=0; i<7; i++) {
-        const d = new Date(monday); d.setDate(d.getDate() + i);
-        const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const ds = String(d.getDate()).padStart(2,'0');
-        const dateStr = `${y}-${m}-${ds}`;
-        const displayDate = d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
-
-        const isToday = dateStr === today.toISOString().split('T')[0];
-        const sched = (schedules || []).find(s => s.date === dateStr);
-
-        let shiftsDetails = [];
-        if (sched && sched.shift_1) shiftsDetails.push(`<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">${s1Time}</span>`);
-        if (sched && sched.shift_2) shiftsDetails.push(`<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">${s2Time}</span>`);
-
-        const shiftHtml = shiftsDetails.length > 0 ? shiftsDetails.join(' ') : '<span class="text-slate-400 italic">Nghỉ</span>';
-
-        html += `
-        <div class="flex justify-between items-center p-2 rounded-lg border ${isToday ? 'border-sky-400 bg-sky-50' : 'border-slate-100 bg-slate-50'} text-[11px] md:text-xs">
-            <span class="font-bold ${isToday ? 'text-sky-700' : 'text-slate-600'}">${displayDate}</span>
-            <div class="flex gap-1 font-mono font-semibold">${shiftHtml}</div>
-        </div>`;
-    }
-    container.innerHTML = html;
-}
 
     </script>
 <!-- MODAL CAMERA TRỰC TIẾP CHỤP LIÊN TỤC -->
