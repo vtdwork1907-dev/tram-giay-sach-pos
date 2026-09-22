@@ -9337,21 +9337,21 @@ window.hideDayDetail = function() {
         box.classList.remove('flex');
     }
 };
-   // ==========================================================
+ // ==========================================================
 // HỆ THỐNG ĐỒNG BỘ REALTIME TỐI THƯỢNG (CHỐNG MISS SÓNG)
 // ==========================================================
+let myPosChannel = null; // Biến toàn cục giữ kênh kết nối
 
-
-async function initRealtimeSync() {
+function initRealtimeSync() {
     // Chặn kết nối nếu mất mạng hoặc chưa đăng nhập
     if (!supabaseClient || !state.currentUser || !navigator.onLine) return;
     
     // Dọn dẹp kênh cũ để chống gọi đè (chống lỗi WebSocket is closed...)
-    if (window.myPosChannel) {
-        supabaseClient.removeChannel(window.myPosChannel);
+    if (myPosChannel) {
+        supabaseClient.removeChannel(myPosChannel);
     }
 
-   window.myPosChannel = supabaseClient.channel('pos_realtime_channel')
+    myPosChannel = supabaseClient.channel('pos-master-channel'); // Đặt 1 tên kênh duy nhất
     
     myPosChannel
         // 1. Lắng nghe Đơn hàng
