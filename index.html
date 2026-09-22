@@ -7423,27 +7423,30 @@ async function submitLeaveRequest() {
         let mgrCalYear = new Date().getFullYear();
 
         // 1. Chuyển Sub-tab
-        function switchMgrSubTab(tabId) {
-            ['list', 'approve'].forEach(id => {
-                const btn = document.getElementById('btn-mgr-' + id);
-                if (btn) btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative";
-                const view = document.getElementById('mgr-view-' + id);
-                if (view) view.classList.add('hidden');
-            });
-            const detailView = document.getElementById('mgr-view-detail');
-            if (detailView) detailView.classList.add('hidden');
-            
-            const activeBtn = document.getElementById('btn-mgr-' + tabId);
-            if (activeBtn) activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative";
-            const activeView = document.getElementById('mgr-view-' + tabId);
-            if (activeView) {
-                activeView.classList.remove('hidden');
-                activeView.classList.add('flex');
-            }
+        function switchMgrSubTab(tabId) {  
+    // Lưu lại tab quản lý đang mở
+    localStorage.setItem('TRAM_MGR_SUBTAB', tabId);
 
-            if (tabId === 'list') renderMgrStaffList();
-            if (tabId === 'approve') renderMgrApprovals();
-        }
+    ['list', 'approve'].forEach(id => {  
+        const btn = document.getElementById('btn-mgr-' + id);  
+        if (btn) btn.className = "bg-white text-slate-700 hover:bg-slate-50 border-slate-300 border px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative";  
+        const view = document.getElementById('mgr-view-' + id);  
+        if (view) view.classList.add('hidden');  
+    });  
+    const detailView = document.getElementById('mgr-view-detail');  
+    if (detailView) detailView.classList.add('hidden');  
+
+    const activeBtn = document.getElementById('btn-mgr-' + tabId);  
+    if (activeBtn) activeBtn.className = "bg-navy-800 text-white shadow-md border border-navy-800 px-4 py-2.5 rounded-xl text-[11px] md:text-xs font-bold whitespace-nowrap transition active:scale-95 flex-1 flex items-center justify-center gap-1.5 relative";  
+    const activeView = document.getElementById('mgr-view-' + tabId);  
+    if (activeView) {  
+        activeView.classList.remove('hidden');  
+        activeView.classList.add('flex');  
+    }  
+
+    if (tabId === 'list') renderMgrStaffList();  
+    if (tabId === 'approve') renderMgrApprovals();  
+}
 
        // Khởi chạy khi bấm vào tab Nhân Viên (Chủ động gọi dữ liệu từ mây, không bao giờ bị trắng)
         async function initStaffManagement() {
