@@ -8524,38 +8524,47 @@ let currentViewedStaff = null;
 let currentMgrCalendarDate = new Date();
 
 // Mở màn hình chi tiết
-async function openMgrStaffDetail(username) {
-    const staff = mgrData.staffList.find(s => s.username === username);
-    if (!staff) return;
+async function openMgrStaffDetail(userId) {  
+    mgrCurrentStaffId = userId;  
+    // Lưu lại nhân viên đang xem
+    localStorage.setItem('TRAM_MGR_VIEWING_STAFF', userId);
+
+    const u = state.users.find(x => x.id === userId);  
+    if (!u) return;  
+
+    currentViewedStaff = u;  
+    currentMgrCalendarDate = new Date(); 
+
+    document.getElementById('mgr-view-list').classList.add('hidden');  
+    document.getElementById('mgr-view-list').classList.remove('flex');
+    document.getElementById('mgr-view-approve').classList.add('hidden'); 
+    document.getElementById('mgr-view-approve').classList.remove('flex');  
+    document.getElementById('mgr-view-detail').classList.remove('hidden');  
+    document.getElementById('mgr-view-detail').classList.add('flex');  
+
+    document.getElementById('mgrDetailName').innerText = u.name;  
+    document.getElementById('mgrDetailUsername').innerText = u.username;  
+
+    document.getElementById('mgrDayDetailBox').classList.add('hidden');  
+    document.getElementById('mgrDayDetailBox').classList.remove('flex');  
+
+    mgrCalMonth = new Date().getMonth();  
+    mgrCalYear = new Date().getFullYear();  
     
-    currentViewedStaff = staff;
-    currentMgrCalendarDate = new Date(); // Reset về tháng hiện tại
+    // Gọi hàm vẽ lịch tuần và lịch tháng
+    await renderMgrWeeklySchedule();
+    await renderMgrStaffCalendar();  
+}  
 
-    // Đổi giao diện
-    document.getElementById('mgr-view-list').style.display = 'none';
-    document.getElementById('mgr-view-approve').style.display = 'none';
-    document.getElementById('mgr-view-detail').style.display = 'flex';
-
-    // Ẩn bảng chi tiết ngày cũ
-    const dayBox = document.getElementById('mgrDayDetailBox');
-    if(dayBox) {
-        dayBox.classList.add('hidden');
-        dayBox.classList.remove('flex');
-    }
-
-    document.getElementById('mgrDetailName').innerText = staff.name;
-    document.getElementById('mgrDetailUsername').innerText = staff.username;
-
-    // Tải dữ liệu và vẽ lịch
-    await renderMgrStaffCalendar();
-}
-
-// Đóng màn hình chi tiết (Quay lại danh sách)
-function closeMgrStaffDetail() {
+function closeMgrStaffDetail() {  
+    mgrCurrentStaffId = null;  
     currentViewedStaff = null;
-    switchMgrSubTab('list');
+    // Xóa bộ nhớ nhân viên đang xem
+    localStorage.removeItem('TRAM_MGR_VIEWING_STAFF');
+    
+    const savedSubTab = localStorage.getItem('TRAM_MGR_SUBTAB') || 'list';
+    switchMgrSubTab(savedSubTab);  
 }
-
 // Chuyển tháng trên lịch
 function changeMgrCalendarMonth(delta) {
     currentMgrCalendarDate.setMonth(currentMgrCalendarDate.getMonth() + delta);
