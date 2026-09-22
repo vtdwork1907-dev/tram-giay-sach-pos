@@ -8167,6 +8167,7 @@ async function checkAndGenerateViolations() {
 
 // 3. ĐIỀU HƯỚNG TAB QUẢN LÝ
 function switchMgrSubTab(tab) {
+    localStorage.setItem('TRAM_STAFF_SUBTAB', tabId);
     document.getElementById('mgr-view-list').style.display = tab === 'list' ? 'flex' : 'none';
     document.getElementById('mgr-view-approve').style.display = tab === 'approve' ? 'flex' : 'none';
     document.getElementById('mgr-view-detail').style.display = 'none';
