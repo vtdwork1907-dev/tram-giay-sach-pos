@@ -8062,39 +8062,41 @@ let mgrData = {
 };
 
 // 1. KHỞI TẠO TAB QUẢN LÝ (Gọi khi bấm vào tab "Nhân Viên")
-async function initStaffManagement() {
-    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để quản lý nhân sự!");
-    if (state.role !== 'owner' && state.role !== 'manager') return;
+async function initStaffManagement() {  
+    if (!navigator.onLine) return alert("Vui lòng kết nối mạng để quản lý nhân sự!");  
+    if (state.role !== 'owner' && state.role !== 'manager') return;  
 
-    const loading = document.getElementById('globalLoading');
-    loading.style.display = 'flex';
-    loading.querySelector('.text-sm').innerText = 'Đang tải dữ liệu nhân sự & quét vi phạm...';
+    const loading = document.getElementById('globalLoading');  
+    loading.style.display = 'flex';  
+    loading.querySelector('.text-sm').innerText = 'Đang tải dữ liệu nhân sự & quét vi phạm...';  
 
-    try {
-        // A. Tải danh sách nhân viên (Chỉ lấy staff)
-        const { data: usersData } = await supabaseClient.from('users').select('*').eq('role', 'staff');
-        mgrData.staffList = usersData || [];
+    try {  
+        const { data: usersData } = await supabaseClient.from('users').select('*').eq('role', 'staff');  
+        mgrData.staffList = usersData || [];  
 
-        // B. Tải các lịch làm việc Đang chờ duyệt (pending)
-        const { data: schedData } = await supabaseClient.from('schedules').select('*').eq('status', 'pending');
-        mgrData.pendingSchedules = schedData || [];
+        const { data: schedData } = await supabaseClient.from('schedules').select('*').eq('status', 'pending');  
+        mgrData.pendingSchedules = schedData || [];  
 
-        // C. Tải các đơn xin nghỉ Đang chờ duyệt
-        const { data: leaveData } = await supabaseClient.from('leave_requests').select('*').eq('status', 'pending');
-        mgrData.pendingLeaves = leaveData || [];
+        const { data: leaveData } = await supabaseClient.from('leave_requests').select('*').eq('status', 'pending');  
+        mgrData.pendingLeaves = leaveData || [];  
 
-        // D. CẢNH SÁT NGẦM: Quét vi phạm chấm công
-        await checkAndGenerateViolations();
+        await checkAndGenerateViolations();  
+        updateMgrBadgeCount();  
 
-        // E. Cập nhật giao diện
-        updateMgrBadgeCount();
-        switchMgrSubTab('list'); // Mặc định mở danh sách
+        // KHÔI PHỤC TRẠNG THÁI GIAO DIỆN CŨ THAY VÌ LUÔN VỀ TAB LIST
+        const viewingStaffId = localStorage.getItem('TRAM_MGR_VIEWING_STAFF');
+        const savedSubTab = localStorage.getItem('TRAM_MGR_SUBTAB') || 'list';
 
-    } catch (err) {
-        console.error("Lỗi tải dữ liệu quản lý:", err);
-    } finally {
-        loading.style.display = 'none';
-    }
+        if (viewingStaffId && mgrData.staffList.find(s => s.id === viewingStaffId)) {
+            await openMgrStaffDetail(viewingStaffId);
+        } else {
+            switchMgrSubTab(savedSubTab); 
+        }
+    } catch (err) {  
+        console.error("Lỗi tải dữ liệu quản lý:", err);  
+    } finally {  
+        loading.style.display = 'none';  
+    }  
 }
 
 // 2. THUẬT TOÁN QUÉT VI PHẠM (ĐI MUỘN, QUÊN CHẤM CÔNG)
