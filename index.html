@@ -2295,14 +2295,20 @@ function mapOrderDbToJs(db) {
                 if (typeof renderSettingsServicesTable === 'function') renderSettingsServicesTable();
             }
 
-            // ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN
-            if(id === 'staff') {
-                if (typeof initStaffManagement === 'function') {
-                    initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
-                } else if (typeof renderMgrStaffList === 'function') {
-                    renderMgrStaffList();
-                }
-            }
+           // ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN
+if(id === 'staff') {
+    if (typeof initStaffManagement === 'function') {
+        initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
+    } else if (typeof renderMgrStaffList === 'function') {
+        renderMgrStaffList();
+    }
+    
+    // 👇 THÊM ĐOẠN NÀY ĐỂ KHÔI PHỤC SUB-TAB CUỐI CÙNG TRƯỚC KHI F5 👇
+    const lastStaffSubTab = localStorage.getItem('TRAM_STAFF_SUBTAB') || 'list';
+    if (typeof switchMgrSubTab === 'function') {
+        switchMgrSubTab(lastStaffSubTab);
+    }
+}
             
             // 6. Lưu lại lịch sử tab để khi load lại trang không bị văng ra ngoài
             localStorage.setItem('TRAM_LAST_TAB', id);
