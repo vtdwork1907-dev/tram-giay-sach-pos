@@ -9372,40 +9372,86 @@ function initRealtimeSync() {
         // 4. Lắng nghe Bảng giá dịch vụ
         .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, payload => {
             console.log("🔥 [REALTIME] Cập nhật bảng giá:", payload);
-            // Có thể bạn cần viết thêm 1 hàm fetchServices riêng, hoặc dùng tạm fetchLatestData
+            if (typeof fetchLatestDataFromCloud === 'function') fetchLatestDataFromCloud(false);
         })
-        // 5. Lắng nghe Lịch làm việc & Yêu cầu xin đi muộn/chấm bù
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        
+        // ==========================================================
+        // 5. LẮNG NGHE LỊCH LÀM VIỆC (ĐÃ ĐƯỢC NÂNG CẤP ĐỂ MỞ KHÓA NGAY LẬP TỨC)
+        // ==========================================================
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async payload => {
             console.log("🔥 [REALTIME] Lịch làm & Phê duyệt:", payload);
             
-            // A. TÁC ĐỘNG BÊN MÁY CHỦ CỬA HÀNG:
-            // 1. Cập nhật số lượng trên chuông báo ngay lập tức
-            if (typeof checkPendingRequests === 'function') checkPendingRequests();
-            
-            // 2. Nếu Quản lý đang mở bảng Duyệt -> Tự động load thêm đơn mới hoặc làm biến mất đơn đã duyệt
-            const approvalModal = document.getElementById('mgrApprovalModal');
-            if (approvalModal && !approvalModal.classList.contains('hidden')) {
-                if (typeof loadPendingRequests === 'function') loadPendingRequests();
+            const record = payload.new || payload.old;
+
+            // A. TÁC ĐỘNG BÊN MÁY QUẢN LÝ / CHỦ CỬA HÀNG:
+            if (state.role === 'owner' || state.role === 'manager') {
+                // Nếu có người GỬI lịch mới hoặc XIN CHẤM BÙ
+                if (payload.eventType === 'INSERT' || (payload.eventType === 'UPDATE' && record.status === 'PENDING')) {
+                    showNotification("🔔 Có yêu cầu mới", "Nhân viên vừa gửi đăng ký lịch hoặc yêu cầu duyệt.");
+                }
+
+                // Tự động load lại số lượng chuông báo
+                if (typeof checkPendingRequests === 'function') checkPendingRequests();
+                
+                // Tự động load lại bảng danh sách nhân viên & phê duyệt nếu đang mở Tab Nhân sự
+                const tabStaff = document.getElementById('tab-staff');
+                if (tabStaff && !tabStaff.classList.contains('hidden')) {
+                    if (typeof initStaffManagement === 'function') initStaffManagement();
+                }
+
+                const approvalModal = document.getElementById('mgrApprovalModal');
+                if (approvalModal && !approvalModal.classList.contains('hidden')) {
+                    if (typeof loadPendingRequests === 'function') loadPendingRequests();
+                }
             }
 
-            // B. TÁC ĐỘNG BÊN MÁY NHÂN VIÊN:
-            // 3. Nếu Nhân viên đang xem tab Cá nhân -> Tự động đổi màu ô lịch (từ Vàng chờ duyệt sang Xanh/Đỏ)
-            if (state.role === 'staff' && typeof renderEmpActualCalendar === 'function') {
-                renderEmpActualCalendar();
+            // B. TÁC ĐỘNG BÊN MÁY NHÂN VIÊN (CHÌA KHÓA MỞ KHÓA UI KHÔNG CẦN F5):
+            if (state.role === 'staff' && state.currentUser) {
+                // CHÚ Ý: Đảm bảo kiểm tra đúng dữ liệu của nhân viên đang đăng nhập
+                // (Tùy theo CSDL của bạn dùng 'user_id' hay 'username')
+                if (record && (record.user_id === state.currentUser.id || record.username === state.currentUser.username)) {
+                    
+                    if (payload.eventType === 'UPDATE') {
+                        // Bắn thông báo dựa trên kết quả duyệt của Quản lý
+                        if (record.status === 'APPROVED' || record.status === 'LOCKED') {
+                            showNotification("✅ Lịch đã được duyệt!", "Hệ thống chấm công đã được mở khóa. Bạn có thể làm việc ngay.");
+                        } else if (record.status === 'REJECTED') {
+                            showNotification("❌ Lịch bị từ chối", "Quản lý đã từ chối lịch, vui lòng kiểm tra lại.");
+                        }
+
+                        // MỞ KHÓA NGAY LẬP TỨC BẰNG CÁCH GỌI LẠI CÁC HÀM VẼ UI
+                        try {
+                            // 1. Kéo data mới nhất về ngầm
+                            if (typeof fetchLatestDataFromCloud === 'function') await fetchLatestDataFromCloud(false);
+                            
+                            // 2. Vẽ lại bảng đăng ký (bỏ disable nút)
+                            if (typeof renderWeeklyScheduleUI === 'function') renderWeeklyScheduleUI();
+                            
+                            // 3. Vẽ lại khung Chụp ảnh chấm công (Mở khóa nút Chụp ảnh)
+                            if (typeof loadTodayTimekeeping === 'function') loadTodayTimekeeping();
+                            
+                            // 4. Đổi màu ô lịch thực tế
+                            if (typeof renderEmpActualCalendar === 'function') renderEmpActualCalendar();
+                        } catch (e) {
+                            console.error("Lỗi khi auto-render mở khóa UI:", e);
+                        }
+                    }
+                }
             }
             
-            // C. TÁC ĐỘNG CHUNG:
-            // 4. Nhảy số tiền lương ngay lập tức nếu ai đó đang mở bảng lương
+            // C. TÁC ĐỘNG CHUNG: Nhảy số tiền lương ngay lập tức
             const salaryModal = document.getElementById('empSalaryModal');
             if (salaryModal && !salaryModal.classList.contains('hidden')) {
                 if (typeof calculateEmployeeSalary === 'function') calculateEmployeeSalary();
             }
         })
+        
         // 6. Lắng nghe Chấm công
         .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, payload => {
             console.log("🔥 [REALTIME] Chấm công:", payload);
             if (typeof handleRealtimeUpdate === 'function') handleRealtimeUpdate(payload);
         })
+        
         // Bắt đầu cắm ống nghe
         .subscribe((status, err) => {
             console.log("📡 [REALTIME] Trạng thái:", status);
@@ -9414,8 +9460,8 @@ function initRealtimeSync() {
                 console.log("✅ [REALTIME] Đã đồng bộ toàn hệ thống!");
             }
             
-            if (status === 'CHANNEL_ERROR') {
-                console.error("❌ [REALTIME] Bị từ chối kết nối. Thử lại sau 5s...");
+            if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+                console.error("❌ [REALTIME] Đứt kết nối. Đang thử móc lại dây sau 5s...");
                 myPosChannel = null;
                 setTimeout(initRealtimeSync, 5000);
             }
