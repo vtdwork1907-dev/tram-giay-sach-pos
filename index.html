@@ -2295,20 +2295,14 @@ function mapOrderDbToJs(db) {
                 if (typeof renderSettingsServicesTable === 'function') renderSettingsServicesTable();
             }
 
-           // ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN
-if(id === 'staff') {
-    if (typeof initStaffManagement === 'function') {
-        initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
-    } else if (typeof renderMgrStaffList === 'function') {
-        renderMgrStaffList();
-    }
-    
-    // 👇 THÊM ĐOẠN NÀY ĐỂ KHÔI PHỤC SUB-TAB CUỐI CÙNG TRƯỚC KHI F5 👇
-    const lastStaffSubTab = localStorage.getItem('TRAM_STAFF_SUBTAB') || 'list';
-    if (typeof switchMgrSubTab === 'function') {
-        switchMgrSubTab(lastStaffSubTab);
-    }
-}
+            // ĐOẠN XỬ LÝ CHUẨN CHO TAB NHÂN VIÊN
+            if(id === 'staff') {
+                if (typeof initStaffManagement === 'function') {
+                    initStaffManagement(); // Chủ động tải dữ liệu và vẽ tab nhân viên ngay lập tức
+                } else if (typeof renderMgrStaffList === 'function') {
+                    renderMgrStaffList();
+                }
+            }
             
             // 6. Lưu lại lịch sử tab để khi load lại trang không bị văng ra ngoài
             localStorage.setItem('TRAM_LAST_TAB', id);
@@ -8167,7 +8161,6 @@ async function checkAndGenerateViolations() {
 
 // 3. ĐIỀU HƯỚNG TAB QUẢN LÝ
 function switchMgrSubTab(tab) {
-    localStorage.setItem('TRAM_STAFF_SUBTAB', tabId);
     document.getElementById('mgr-view-list').style.display = tab === 'list' ? 'flex' : 'none';
     document.getElementById('mgr-view-approve').style.display = tab === 'approve' ? 'flex' : 'none';
     document.getElementById('mgr-view-detail').style.display = 'none';
