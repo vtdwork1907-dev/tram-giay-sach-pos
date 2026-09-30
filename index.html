@@ -2063,12 +2063,21 @@ function mapOrderDbToJs(db) {
         }
 
         function copyTrackingLink(orderId) {
-            const order = state.orders.find(o => o.id === orderId);
-            const trackingId = order ? (order.tracking_id || order.id) : orderId;
-            const trackingUrl = `${window.location.origin}${window.location.pathname}#track=${trackingId}`;
-            navigator.clipboard.writeText(trackingUrl).then(() => { showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn đã được sao chép vào bộ nhớ tạm!`); 
-            }).catch(err => { prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); });
-        }
+    const order = state.orders.find(o => o.id === orderId);
+    const trackingId = order ? (order.tracking_id || order.id) : orderId;
+    
+    // Tạo bộ đếm thời gian ngẫu nhiên để đánh lừa bộ nhớ đệm của Zalo
+    const timestamp = new Date().getTime();
+    
+    // Chèn ?_t=timestamp vào trước dấu #
+    const trackingUrl = `${window.location.origin}${window.location.pathname}?_t=${timestamp}#track=${trackingId}`;
+    
+    navigator.clipboard.writeText(trackingUrl).then(() => { 
+        showNotification("🔗 ĐÃ COPY LINK", `Link tra cứu đơn đã được sao chép vào bộ nhớ tạm!`); 
+    }).catch(err => { 
+        prompt("Sao chép đường link tra cứu cho khách:", trackingUrl); 
+    });
+}
 
         // HÀM CHIA SẺ ẢNH GỐC (DÙNG CHO KHO ĐẾ / BEFORE AFTER THỦ CÔNG)
         async function shareImage(imageUrl, title) {
