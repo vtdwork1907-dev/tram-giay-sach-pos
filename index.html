@@ -1550,11 +1550,11 @@ async function fetchLatestDataFromCloud(isLogin = false) {
     }
 }
 
-        async function dbInsertOrder(o) { 
-            await saveLocalState(); 
-            await idbPut('pending_sync', { syncId: Date.now() + '_' + Math.random().toString(36).substr(2, 5), type: 'INSERT_ORDER', data: o }); 
-            syncPendingData(); 
-        }
+       async function dbInsertOrder(o) { 
+    await saveLocalState(); 
+    await idbPut('pending_sync', { syncId: Date.now() + '_' + Math.random().toString(36).substr(2, 5), type: 'INSERT_ORDER', data: o }); 
+    await syncPendingData(); 
+}
 
         async function dbUpdateOrder(orderId) { 
             const o = state.orders.find(x => x.id === orderId); 
