@@ -423,10 +423,9 @@
                         <div class="relative flex-1 max-w-[170px] md:max-w-[220px]">
     <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
     <input type="text" id="searchOrderInput" 
-        onkeyup="debouncedSearchOrder()" 
-        oninput="document.getElementById('clearSearchBtn').style.display = this.value.length > 0 ? 'block' : 'none'" 
-        placeholder="Tìm Mã, SĐT..." 
-        class="pl-7 pr-7 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50 transition-all">
+oninput="document.getElementById('clearSearchBtn').style.display = this.value.length > 0 ? 'block' : 'none'; debouncedSearchOrder();" 
+placeholder="Tìm Mã, SĐT..." 
+class="pl-7 pr-7 py-1 text-[11px] md:text-xs rounded-lg border border-slate-300 outline-none w-full bg-slate-50 transition-all">
     <i id="clearSearchBtn" 
         onclick="document.getElementById('searchOrderInput').value=''; this.style.display='none'; debouncedSearchOrder();" 
         class="fa-solid fa-circle-xmark absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 hidden cursor-pointer text-xs p-1" 
