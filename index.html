@@ -4808,32 +4808,37 @@ actionColumn += `</div>`; // Đóng thẻ div actionColumn
             if (nextBtn) nextBtn.disabled = currentOrderPage >= totalPages;
         }
         // CÁC THAO TÁC KHÁC TRONG KHO ĐƠN
-        function debouncedSearchOrder() { 
-            clearTimeout(searchTimeout); 
-            searchTimeout = setTimeout(async () => { 
-                const searchVal = document.getElementById('searchOrderInput').value.trim(); 
-                if (searchVal.length > 0) { 
-                    const loading = document.getElementById('globalLoading'); 
-                    loading.style.display = 'flex'; 
-                    loading.querySelector('.text-sm').innerText = 'Đang tìm dữ liệu cũ...'; 
-                    try { 
-                        if (navigator.onLine) {
-                            const { data, error } = await supabaseClient.from('orders').select('*').or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_name.ilike.%${searchVal}%`).order('date', { ascending: false }).limit(500); 
-                            if (data && !error) { 
-                                const fetchedOrders = data.map(mapOrderDbToJs); 
-                                fetchedOrders.forEach(fetchedObj => { 
-                                    const existsIndex = state.orders.findIndex(o => o.id === fetchedObj.id); 
-                                    if (existsIndex === -1) state.orders.push(fetchedObj); 
-                                    else state.orders[existsIndex] = fetchedObj; 
-                                }); 
-                            } 
-                        }
-                    } catch(err) {} 
-                    finally { loading.style.display = 'none'; } 
-                } 
-                renderOrdersTable(true); 
-            }, 600); 
-        }
+       function debouncedSearchOrder() { 
+    clearTimeout(searchTimeout); 
+    // Lọc ngay lập tức trên danh sách hiện tại để cho phản hồi tức thì
+    renderOrdersTable(true);
+
+    searchTimeout = setTimeout(async () => { 
+        const searchVal = document.getElementById('searchOrderInput').value.trim(); 
+        if (searchVal.length > 0) { 
+            try { 
+                if (navigator.onLine) {
+                    const cleanSearch = searchVal.replace(/[\s\-\+]/g, '');
+                    const { data, error } = await supabaseClient.from('orders')
+                        .select('*')
+                        .or(`id.ilike.%${searchVal}%,customer_phone.ilike.%${searchVal}%,customer_phone.ilike.%${cleanSearch}%,customer_name.ilike.%${searchVal}%`)
+                        .order('date', { ascending: false })
+                        .limit(500); 
+                    
+                    if (data && !error) { 
+                        const fetchedOrders = data.map(mapOrderDbToJs); 
+                        fetchedOrders.forEach(fetchedObj => { 
+                            const existsIndex = state.orders.findIndex(o => o.id === fetchedObj.id); 
+                            if (existsIndex === -1) state.orders.push(fetchedObj); 
+                            else state.orders[existsIndex] = fetchedObj; 
+                        }); 
+                        renderOrdersTable(false); 
+                    } 
+                }
+            } catch(err) {} 
+        } 
+    }, 200); // Giảm độ trễ từ 600ms xuống 200ms để mượt mà hơn
+}
 
         function changeOrderPage(delta) { currentOrderPage += delta; renderOrdersTable(false); }
         function toggleSelectAllOrders(checked) { document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = checked); updateBulkSelectionUI(); }
