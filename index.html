@@ -4660,25 +4660,38 @@ function removeShoeImage(shoeId, imgIdOrUrl) {
             const clrStatus = { RECEIVED: 'bg-slate-100 text-slate-700', PROCESSING: 'bg-amber-100 text-amber-800', PROCESSED: 'bg-blue-100 text-blue-800', PAID: 'bg-emerald-100 text-emerald-800', DELIVERED: 'bg-purple-100 text-purple-800' };
             
             const filtered = state.orders.filter(o => {
-                const dateOnly = o.date.split(' ')[0]; 
-                if(sDate && dateOnly < sDate) return false; 
-                if(eDate && dateOnly > eDate) return false;
-                
-                if (statusFilter === 'ACTIVE') { 
-                    if (o.status === 'DELIVERED' || o.status === 'PAID') return false; 
-                } else if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
-                
-                if(serviceFilter !== 'ALL') { 
-                    const hasService = o.items.some(item => { 
-                        const svcInfo = state.services.find(s => s.id === item.id); 
-                        return svcInfo && svcInfo.category === serviceFilter; 
-                    }); 
-                    if (!hasService) return false; 
-                }
-                
-                if(!o.id.toLowerCase().includes(search) && !o.customer.phone.includes(search) && !o.customer.name.toLowerCase().includes(search)) return false; 
-                return true;
-            });
+    const dateOnly = o.date.split(' ')[0]; 
+    if(sDate && dateOnly < sDate) return false; 
+    if(eDate && dateOnly > eDate) return false;
+    
+    if (statusFilter === 'ACTIVE') { 
+        if (o.status === 'DELIVERED' || o.status === 'PAID') return false; 
+    } else if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+    
+    if(serviceFilter !== 'ALL') { 
+        const hasService = o.items.some(item => { 
+            const svcInfo = state.services.find(s => s.id === item.id); 
+            return svcInfo && svcInfo.category === serviceFilter; 
+        }); 
+        if (!hasService) return false; 
+    }
+    
+    // Chuẩn hóa dữ liệu tìm kiếm và dữ liệu đơn hàng (loại bỏ khoảng trắng, dấu gạch ngang)
+    const search = document.getElementById('searchOrderInput').value.toLowerCase().trim();
+    const cleanSearch = search.replace(/[\s\-\+]/g, '');
+
+    const orderId = (o.id || '').toLowerCase();
+    const custName = (o.customer.name || '').toLowerCase();
+    const rawPhone = (o.customer.phone || '').toLowerCase();
+    const cleanPhone = rawPhone.replace(/[\s\-\+]/g, '');
+
+    const matchId = orderId.includes(search) || (cleanSearch && orderId.includes(cleanSearch));
+    const matchName = custName.includes(search) || (cleanSearch && custName.includes(cleanSearch));
+    const matchPhone = rawPhone.includes(search) || (cleanSearch && cleanPhone.includes(cleanSearch));
+
+    if (!matchId && !matchName && !matchPhone) return false; 
+    return true;
+});
             filtered.sort((a, b) => b.date.localeCompare(a.date));
 
             const totalItems = filtered.length; 
